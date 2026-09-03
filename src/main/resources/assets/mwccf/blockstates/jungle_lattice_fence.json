@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:jungle_lattice_fence" },
+    "facing=north": { "model": "refurbished_furniture:jungle_lattice_fence" },
+    "facing=south": { "model": "refurbished_furniture:jungle_lattice_fence", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:jungle_lattice_fence", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:jungle_lattice_fence", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:jungle_lattice_fence" }
+  }
+}

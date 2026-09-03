@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "/P/",
+    "/P/"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:white_mangrove_planks"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mwccf:white_mangrove_fence_gate",
+    "count": 1
+  }
+}

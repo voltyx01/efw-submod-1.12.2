@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:post_box" },
+    "facing=north": { "model": "refurbished_furniture:post_box" },
+    "facing=south": { "model": "refurbished_furniture:post_box", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:post_box", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:post_box", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:post_box" }
+  }
+}

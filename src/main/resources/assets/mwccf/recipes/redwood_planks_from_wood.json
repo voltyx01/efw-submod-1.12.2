@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:redwood_wood"
+    }
+  ],
+  "result": {
+    "item": "mwccf:redwood_planks",
+    "count": 4
+  }
+}

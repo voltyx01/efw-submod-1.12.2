@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:stripped_jacaranda_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:jacaranda_planks",
+    "count": 4
+  }
+}

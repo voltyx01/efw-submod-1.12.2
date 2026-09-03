@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:drawer_right_open" },
+    "facing=north": { "model": "refurbished_furniture:drawer_right_open" },
+    "facing=south": { "model": "refurbished_furniture:drawer_right_open", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:drawer_right_open", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:drawer_right_open", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:drawer_right_open" }
+  }
+}

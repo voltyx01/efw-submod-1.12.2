@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P  ",
+    "PP ",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:jacaranda_planks"
+    }
+  },
+  "result": {
+    "item": "mwccf:jacaranda_stairs",
+    "count": 4
+  }
+}

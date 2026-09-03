@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:sakura_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:sakura_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:sakura_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:sakura_leaves" },
+        "normal": { "model": "mwccf:sakura_leaves" }
+    }
+}

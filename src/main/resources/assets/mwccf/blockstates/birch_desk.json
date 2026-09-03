@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:birch_desk" },
+    "facing=north": { "model": "refurbished_furniture:birch_desk" },
+    "facing=south": { "model": "refurbished_furniture:birch_desk", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:birch_desk", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:birch_desk", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:birch_desk" }
+  }
+}

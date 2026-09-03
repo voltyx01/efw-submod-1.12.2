@@ -1,0 +1,1 @@
+{ "parent": "block/outer_stairs", "textures": { "bottom": "mwccf:blocks/mahogany/planks", "top": "mwccf:blocks/mahogany/planks", "side": "mwccf:blocks/mahogany/planks" } }

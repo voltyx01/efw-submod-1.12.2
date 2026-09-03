@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/chair",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/acacia_chair",
+    "particle": "refurbished_furniture:blocks/acacia_chair"
+  }
+}

@@ -1,0 +1,6 @@
+{
+    "parent": "mwccf:block/lamp_inventory_base",
+    "textures": {
+        "tex": "mwccf:blocks/lamp01"
+    }
+}

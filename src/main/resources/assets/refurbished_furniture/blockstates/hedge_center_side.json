@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:hedge_center_side" },
+    "facing=north": { "model": "refurbished_furniture:hedge_center_side" },
+    "facing=south": { "model": "refurbished_furniture:hedge_center_side", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:hedge_center_side", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:hedge_center_side", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:hedge_center_side" }
+  }
+}

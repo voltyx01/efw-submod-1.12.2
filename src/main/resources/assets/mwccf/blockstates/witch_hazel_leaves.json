@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:witch_hazel_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:witch_hazel_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:witch_hazel_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:witch_hazel_leaves" },
+        "normal": { "model": "mwccf:witch_hazel_leaves" }
+    }
+}

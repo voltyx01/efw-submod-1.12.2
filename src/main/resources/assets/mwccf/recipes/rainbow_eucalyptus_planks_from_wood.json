@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:rainbow_eucalyptus_wood"
+    }
+  ],
+  "result": {
+    "item": "mwccf:rainbow_eucalyptus_planks",
+    "count": 4
+  }
+}

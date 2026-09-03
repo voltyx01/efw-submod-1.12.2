@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "snowy=false": { "model": "mwccf:loamy_grass" },
+        "snowy=true": { "model": "mwccf:loamy_grass_snowed" },
+        "normal": { "model": "mwccf:loamy_grass" }
+    }
+}

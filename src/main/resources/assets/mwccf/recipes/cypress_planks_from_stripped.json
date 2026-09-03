@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:stripped_cypress_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:cypress_planks",
+    "count": 4
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/lattice_fence_center",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/dark_oak_lattice_fence",
+    "particle": "refurbished_furniture:blocks/dark_oak_lattice_fence"
+  }
+}

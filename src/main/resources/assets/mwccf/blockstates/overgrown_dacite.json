@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "snowy=false": { "model": "mwccf:overgrown_dacite" },
+    "snowy=true": { "model": "mwccf:overgrown_dacite_snow" }
+  }
+}

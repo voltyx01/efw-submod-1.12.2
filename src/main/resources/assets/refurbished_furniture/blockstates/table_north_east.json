@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:table_north_east" },
+    "facing=north": { "model": "refurbished_furniture:table_north_east" },
+    "facing=south": { "model": "refurbished_furniture:table_north_east", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:table_north_east", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:table_north_east", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:table_north_east" }
+  }
+}

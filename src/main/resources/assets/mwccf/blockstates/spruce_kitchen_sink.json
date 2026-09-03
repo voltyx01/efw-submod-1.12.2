@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:spruce_kitchen_sink" },
+    "facing=north": { "model": "refurbished_furniture:spruce_kitchen_sink" },
+    "facing=south": { "model": "refurbished_furniture:spruce_kitchen_sink", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:spruce_kitchen_sink", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:spruce_kitchen_sink", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:spruce_kitchen_sink" }
+  }
+}

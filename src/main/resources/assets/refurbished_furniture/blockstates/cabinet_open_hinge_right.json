@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:cabinet_open_hinge_right" },
+    "facing=north": { "model": "refurbished_furniture:cabinet_open_hinge_right" },
+    "facing=south": { "model": "refurbished_furniture:cabinet_open_hinge_right", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:cabinet_open_hinge_right", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:cabinet_open_hinge_right", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:cabinet_open_hinge_right" }
+  }
+}

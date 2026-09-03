@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:red_spruce_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:red_spruce_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:red_spruce_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:red_spruce_leaves" },
+        "normal": { "model": "mwccf:red_spruce_leaves" }
+    }
+}

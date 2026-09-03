@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/adrenaline_injector",
+  "textures": {
+    "0": "mwccf:blocks/adrenaline_injector",
+    "particle": "mwccf:items/adrenaline_syringe"
+  }
+}

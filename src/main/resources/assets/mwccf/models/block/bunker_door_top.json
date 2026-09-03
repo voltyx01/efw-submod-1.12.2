@@ -1,0 +1,7 @@
+{
+    "parent": "block/door_top",
+    "textures": {
+        "bottom": "mwccf:blocks/bunker_door_lower",
+        "top": "mwccf:blocks/bunker_door_upper"
+    }
+}

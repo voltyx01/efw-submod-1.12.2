@@ -1,0 +1,26 @@
+{
+	"parent": "block/block",
+	"textures": {
+		"particle": "mwccf:blocks/tiny_lily_pads",
+		"base": "mwccf:blocks/tiny_lily_pads",
+		"flower": "mwccf:blocks/tiny_lily_pads_flower_overlay"
+	},
+	"elements": [
+		{
+			"from": [0, 0.25, 0],
+			"to": [16, 0.25, 16],
+			"faces": {
+				"up": {"uv": [0, 0, 16, 16], "texture": "#base"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#base"}
+			}
+		},
+		{
+			"from": [0, 0.5, 0],
+			"to": [16, 0.5, 16],
+			"faces": {
+				"up": {"uv": [0, 0, 16, 16], "texture": "#flower"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#flower"}
+			}
+		}
+	]
+}

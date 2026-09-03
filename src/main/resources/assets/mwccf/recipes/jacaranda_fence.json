@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P/P",
+    "P/P"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:jacaranda_planks"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mwccf:jacaranda_fence",
+    "count": 3
+  }
+}

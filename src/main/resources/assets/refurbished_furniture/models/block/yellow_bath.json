@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/bath_bottom",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/yellow_bath",
+    "particle": "refurbished_furniture:blocks/yellow_bath"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:lattice_fence_gate_closed" },
+    "facing=north": { "model": "refurbished_furniture:lattice_fence_gate_closed" },
+    "facing=south": { "model": "refurbished_furniture:lattice_fence_gate_closed", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:lattice_fence_gate_closed", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:lattice_fence_gate_closed", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:lattice_fence_gate_closed" }
+  }
+}

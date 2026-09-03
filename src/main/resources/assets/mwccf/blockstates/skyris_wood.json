@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "axis=y":    { "model": "mwccf:skyris_wood" },
+        "axis=z":    { "model": "mwccf:skyris_wood", "x": 90 },
+        "axis=x":    { "model": "mwccf:skyris_wood", "x": 90, "y": 90 },
+        "axis=none": { "model": "mwccf:skyris_wood" }
+    }
+}

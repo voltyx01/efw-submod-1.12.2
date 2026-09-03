@@ -1,0 +1,7 @@
+{
+    "parent": "mwccf:block/lantern_inventory_base",
+    "textures": {
+        "top": "mwccf:blocks/lantern01_top",
+		"side": "mwccf:blocks/lantern01_side"
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P  ",
+    "PP ",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:white_mangrove_planks"
+    }
+  },
+  "result": {
+    "item": "mwccf:white_mangrove_stairs",
+    "count": 4
+  }
+}

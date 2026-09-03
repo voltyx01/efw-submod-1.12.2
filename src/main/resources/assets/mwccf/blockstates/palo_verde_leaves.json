@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:palo_verde_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:palo_verde_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:palo_verde_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:palo_verde_leaves" },
+        "normal": { "model": "mwccf:palo_verde_leaves" }
+    }
+}

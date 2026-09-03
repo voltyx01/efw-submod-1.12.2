@@ -1,0 +1,19 @@
+{
+	"forge_marker": 1,
+	 "defaults": {
+        "model": "mwccf:camonet_top_inventory"
+    },
+    "variants": {
+		"type": {
+			"wood":{
+				"textures": { "0": "mwccf:blocks/camonet", "particle": "mwccf:blocks/camonet"}
+			},
+			"desert": {
+				"textures": { "0": "mwccf:blocks/camonet_desert", "particle": "mwccf:blocks/camonet_desert"}
+			},
+			"snow": {
+				"textures": { "0": "mwccf:blocks/camonet_snow", "particle": "mwccf:blocks/camonet_snow"}
+			}
+		}
+	}
+}

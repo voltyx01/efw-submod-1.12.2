@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P/P",
+    "P/P"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:ebony_planks"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mwccf:ebony_fence",
+    "count": 3
+  }
+}

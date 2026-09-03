@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:stripped_pine_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:pine_planks",
+    "count": 4
+  }
+}

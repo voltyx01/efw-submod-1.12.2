@@ -1,0 +1,16 @@
+item.note.name=Note
+item.c_diary.name=Collector's Diary
+itemGroup.efw_tab=Notes & Diary
+item.machete.name=Machete
+item.modern_axe.name=Modern Axe
+item.med_kit.name=Med Kit
+item.bandage.name=Bandage
+item.cloth.name=Cloth
+item.dpor.name=Defiled Page of Revelation
+tooltip.mwccf.dpor.consumable=Used to increase your Sin level.
+tooltip.mwccf.dpor.inspect=When the Seventh Angel fell, the earth trembled, and beasts crawled from the abyss, resembling horses prepared for battle... Their names are Death and Decay.
+item.manual_melee.name=Melee Weapons Manual
+item.manual_firearms.name=Firearms Manual
+item.manual_meds.name=Medical Manual
+item.manual_lockpick.name=Lockpicking Manual
+item.manual_tools.name=Tools Manual

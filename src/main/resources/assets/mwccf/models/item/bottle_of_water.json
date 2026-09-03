@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/bottle_of_water",
+  "textures": {
+    "0": "mwccf:blocks/bottle_of_water",
+    "particle": "mwccf:items/bottle_of_water"
+  }
+}

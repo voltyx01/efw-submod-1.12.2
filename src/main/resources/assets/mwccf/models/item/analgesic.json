@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/paninkillers",
+  "textures": {
+    "0": "mwccf:blocks/painkillers",
+    "particle": "mwccf:items/analgesic"
+  }
+}

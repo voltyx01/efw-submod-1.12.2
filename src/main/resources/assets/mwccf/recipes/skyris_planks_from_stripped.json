@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:stripped_skyris_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:skyris_planks",
+    "count": 4
+  }
+}

@@ -1,0 +1,1 @@
+{ "parent": "block/upper_slab", "textures": { "bottom": "mwccf:blocks/ironwood/planks", "top": "mwccf:blocks/ironwood/planks", "side": "mwccf:blocks/ironwood/planks" } }

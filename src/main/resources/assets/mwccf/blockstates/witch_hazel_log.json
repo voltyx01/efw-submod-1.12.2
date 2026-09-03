@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "axis=y":    { "model": "mwccf:witch_hazel_log" },
+        "axis=z":    { "model": "mwccf:witch_hazel_log", "x": 90 },
+        "axis=x":    { "model": "mwccf:witch_hazel_log", "x": 90, "y": 90 },
+        "axis=none": { "model": "mwccf:witch_hazel_log" }
+    }
+}

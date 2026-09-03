@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:brown_zelkova_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:brown_zelkova_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:brown_zelkova_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:brown_zelkova_leaves" },
+        "normal": { "model": "mwccf:brown_zelkova_leaves" }
+    }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/lamp_off",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/lime_lamp",
+    "particle": "refurbished_furniture:blocks/lime_lamp"
+  }
+}

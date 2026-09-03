@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mwccf:items/black_plate_carrier_light"
+  }
+}

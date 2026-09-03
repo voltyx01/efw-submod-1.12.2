@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/lemon_soda",
+  "textures": {
+    "0": "mwccf:blocks/lemon_soda",
+    "particle": "mwccf:items/lemon_soda"
+  }
+}

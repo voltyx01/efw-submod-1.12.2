@@ -1,0 +1,7 @@
+{
+  "parent": "mwccf:block/cube_glow_frame_all",
+  "textures": {
+  	"all": "mwccf:blocks/nethermetal_border_alpha",
+	"glow": "minecraft:blocks/lava_still"
+  }
+}

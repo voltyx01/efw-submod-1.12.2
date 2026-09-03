@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P/P",
+    "P/P"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:aspen_planks"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mwccf:aspen_fence",
+    "count": 3
+  }
+}

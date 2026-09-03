@@ -1,0 +1,177 @@
+{
+  "text": {
+    "titleScale": 1.25,
+    "titleOffsetX": 0,
+    "titleOffsetY": 9,
+    "descScale": 1.0,
+    "textOffsetY": -91,
+    "dividerWidth": 260,
+    "dividerGap": 16,
+    "descGap": 8,
+    "maxTextWidth": 436
+  },
+  "groups": {
+    "armor_mwccf": {
+      "scale": 1.3484076,
+      "pivotX": 0.0,
+      "pivotY": -0.82802546,
+      "pivotZ": 0.0,
+      "startYaw": 138.72612,
+      "startPitch": 12.611467,
+      "startRoll": 180.0
+    },
+    "note": {
+      "scale": 2.0,
+      "pivotX": 0.0,
+      "pivotY": 0.0,
+      "pivotZ": 0.0,
+      "startYaw": 145.60509,
+      "startPitch": 14.904456,
+      "startRoll": 180.0
+    },
+    "helmet_mcore": {
+      "scale": 1.6605096,
+      "pivotX": 0.0,
+      "pivotY": -0.49681532,
+      "pivotZ": 0.0,
+      "startYaw": 118.089165,
+      "startPitch": -12.611467,
+      "startRoll": 180.0
+    },
+    "helmet_vanilla": {
+      "scale": 2.0,
+      "pivotX": 0.0,
+      "pivotY": 0.0,
+      "pivotZ": 0.0,
+      "startYaw": 25.0,
+      "startPitch": 15.0,
+      "startRoll": 0.0
+    },
+    "helmet_mwccf": {
+      "scale": 1.72293,
+      "pivotX": 0.0,
+      "pivotY": -0.4458599,
+      "pivotZ": 0.0,
+      "startYaw": 152.48407,
+      "startPitch": -10.318469,
+      "startRoll": 180.0
+    },
+    "baubles": {
+      "scale": 1.6605096,
+      "pivotX": -0.012738824,
+      "pivotY": -0.700637,
+      "pivotZ": 0.2165606,
+      "startYaw": -24.076431,
+      "startPitch": 8.02547,
+      "startRoll": 180.0
+    },
+    "bracelet": {
+      "scale": 2.5,
+      "pivotX": 0.06369424,
+      "pivotY": -1.4649682,
+      "pivotZ": -0.012738824,
+      "startYaw": 47.00638,
+      "startPitch": 12.611467,
+      "startRoll": 1.1465049
+    },
+    "smg": {
+      "scale": 2.4407642,
+      "pivotX": -0.012738824,
+      "pivotY": 0.012738943,
+      "pivotZ": 0.03821659,
+      "startYaw": 90.57324,
+      "startPitch": 1.1465049,
+      "startRoll": -1.1464942
+    },
+    "items_2d": {
+      "scale": 1.8789809,
+      "pivotX": 0.0,
+      "pivotY": -0.089172006,
+      "pivotZ": 0.0,
+      "startYaw": 25.0,
+      "startPitch": 15.0,
+      "startRoll": 180.0
+    },
+    "pistols": {
+      "scale": 3.4707007,
+      "pivotX": -0.012738824,
+      "pivotY": 0.06369424,
+      "pivotZ": 0.03821659,
+      "startYaw": 113.50319,
+      "startPitch": 12.611467,
+      "startRoll": -10.318469
+    },
+    "headlamp": {
+      "scale": 2.5,
+      "pivotX": 0.0,
+      "pivotY": -1.1592357,
+      "pivotZ": 0.0,
+      "startYaw": 147.8981,
+      "startPitch": 14.904456,
+      "startRoll": 0.0
+    },
+    "diary": {
+      "scale": 2.0,
+      "pivotX": 0.0,
+      "pivotY": 0.0,
+      "pivotZ": 0.0,
+      "startYaw": 145.60509,
+      "startPitch": 14.904456,
+      "startRoll": 180.0
+    },
+    "armor": {
+      "scale": 1.8,
+      "pivotX": 0.0,
+      "pivotY": -1.2611465,
+      "pivotZ": 0.0,
+      "startYaw": 145.60509,
+      "startPitch": 12.611467,
+      "startRoll": 180.0
+    },
+    "weapons_other": {
+      "scale": 1.9726115,
+      "pivotX": 0.03821659,
+      "pivotY": -0.012738824,
+      "pivotZ": 0.19108272,
+      "startYaw": 118.089165,
+      "startPitch": 8.02547,
+      "startRoll": 8.02547
+    },
+    "armor_geo_mwccf": {
+      "scale": 1.6292993,
+      "pivotX": -0.012738824,
+      "pivotY": -0.77707005,
+      "pivotZ": 0.0,
+      "startYaw": -26.36943,
+      "startPitch": 19.490454,
+      "startRoll": 180.0
+    },
+    "tools_2d": {
+      "scale": 2.6280255,
+      "pivotX": 0.0,
+      "pivotY": 0.08917189,
+      "pivotZ": 0.0,
+      "startYaw": -1.1464942,
+      "startPitch": -1.1464942,
+      "startRoll": -47.006367
+    },
+    "armor_vanilla": {
+      "scale": 2.4095542,
+      "pivotX": 0.0,
+      "pivotY": -1.1847134,
+      "pivotZ": 0.0,
+      "startYaw": 138.72612,
+      "startPitch": 10.31848,
+      "startRoll": 180.0
+    },
+    "armor_mcore": {
+      "scale": 1.6917197,
+      "pivotX": 0.0,
+      "pivotY": -0.7515924,
+      "pivotZ": 0.0,
+      "startYaw": 145.60509,
+      "startPitch": 5.7324815,
+      "startRoll": -180.0
+    }
+  }
+}

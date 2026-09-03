@@ -1,0 +1,9 @@
+{
+    "parent": "block/cube_bottom_top",
+    "textures": {
+        "particle": "mwccf:blocks/podzol_dacite",
+        "bottom": "mwccf:blocks/dacite",
+        "top": "minecraft:blocks/dirt_podzol_top",
+        "side": "mwccf:blocks/podzol_dacite"
+    }
+}

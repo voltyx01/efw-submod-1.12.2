@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/desk",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/jungle_desk",
+    "particle": "refurbished_furniture:blocks/jungle_desk"
+  }
+}

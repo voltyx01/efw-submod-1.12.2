@@ -1,0 +1,1 @@
+{ "parent": "block/upper_slab", "textures": { "bottom": "mwccf:blocks/mahogany/planks", "top": "mwccf:blocks/mahogany/planks", "side": "mwccf:blocks/mahogany/planks" } }

@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/lattice_fence_gate_closed",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/jungle_lattice_fence_gate",
+    "particle": "refurbished_furniture:blocks/jungle_lattice_fence_gate"
+  }
+}

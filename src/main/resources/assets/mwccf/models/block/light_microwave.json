@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/microwave_closed",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/light_microwave",
+    "particle": "refurbished_furniture:blocks/light_microwave"
+  }
+}

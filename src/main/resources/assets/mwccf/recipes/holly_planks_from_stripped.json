@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:stripped_holly_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:holly_planks",
+    "count": 4
+  }
+}

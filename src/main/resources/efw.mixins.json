@@ -1,0 +1,49 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "efw.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinEntityPlayer",
+    "InventoryPlayerMixin",
+    "InventoryPickupMixin",
+    "MixinPreventBackpackEquip",
+    "ItemBackpackMixin",
+    "ContainerDiaryMixin"
+  ],
+  "client": [
+    "MixinRenderGlobal",
+    "MixinWorldSky",
+    "MixinWorldProviderSky",
+    "MixinEntity",
+    "MixinExplosionParticles",
+    "MixinGuiConnecting",
+    "MixinGuiWorldSelection",
+    "MixinMinecraftLoadWorld",
+    "MixinRenderLivingBase",
+    "MixinModelBiped",
+    "MixinLayerHeldItem",
+    "ItemMixin",
+    "ActionBarShiftMixin",
+    "EntityBrightnessFixMixin",
+    "MixinLayerArmorBase",
+    "MixinModelBipedState",
+    "MixinModelRendererSlim",
+    "MixinLayerArmorBaseOverride",
+    "MixinParticle",
+    "MixinRenderMalleable",
+    "MixinRenderPlayer",
+    "MixinItemRenderer",
+    "MixinGuiIngame",
+    "MixinGuiIngameForge",
+    "MixinGuiInventory",
+    "MixinMinecraftSplash",
+    "MixinFMLClientHandler",
+    "MixinSplashProgress"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "refmap": "efw.mixins.refmap.json"
+}

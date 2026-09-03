@@ -1,0 +1,1 @@
+{ "parent": "block/grass", "textures": { "particle": "blocks/snow", "bottom": "blocks/stone", "top": "blocks/snow", "side": "mwccf:blocks/overgrown_stone_snow_side", "overlay": "mwccf:blocks/overgrown_stone_side_overlay" } }

@@ -1,0 +1,416 @@
+[
+  {
+    "item": "mwc:m4a1",
+    "meta": 0,
+    "description": "An American automatic carbine chambered in 5.56×45mm, a shortened variant of the M16. Actively used by US armed forces and special operations units since the 1990s. Features a collapsible stock and Picatinny rail for various attachments.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ar15",
+    "meta": 0,
+    "description": "A semi-automatic civilian rifle designed by Eugene Stoner, the direct predecessor of the military M16/M4 platform. Chambered in 5.56×45mm, lightweight and accurate, widely modified for sport, hunting, and self-defense. One of the most widespread rifles in the United States.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m16a1",
+    "meta": 0,
+    "description": "The first mass-produced variant of the rifle adopted by the US Army in the 1960s, seeing heavy use during the Vietnam War. Chambered in 5.56×45mm with fully automatic fire, lighter than its predecessor the M14. Known for early reliability issues in field conditions.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m16a4",
+    "meta": 0,
+    "description": "A modernized variant featuring a fixed stock and Picatinny rail replacing the integrated carry handle. Served as the primary standard-issue weapon of the US Marine Corps throughout the 2000s. Allows mounting of optics, grenade launchers, and various other attachments.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m38_dmr",
+    "meta": 0,
+    "description": "A designated marksman rifle built on the AR platform chambered in 5.56×45mm, intended for semi-automatic precision fire at medium ranges. Typically fitted with a heavier barrel and optical sight. Fills the gap between an assault rifle and a dedicated sniper rifle.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:acr",
+    "meta": 0,
+    "description": "A modular rifle originally developed by Magpul, allowing caliber changes between 5.56, 6.8 SPC, and 7.62×39 by swapping barrels. Features a gas piston system instead of direct impingement, reducing fouling of the action. Was developed as a competitor in the M4 replacement program.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ngsw_r",
+    "meta": 0,
+    "description": "A rifle adopted by the US Army under the designation XM7 as part of the Next Generation Squad Weapon program. Fires the powerful 6.8×51mm cartridge, offering superior body armor penetration at longer ranges. Replacing a portion of carbines and light machine guns in front-line units.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:sig_mcx",
+    "meta": 0,
+    "description": "A modular carbine from a Swiss-American manufacturer, most commonly chambered in 5.56×45mm or subsonic .300 Blackout. Known for its compact profile and ease of suppressor integration. Popular with special operations units due to the platform\u0027s versatility.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:aac_honey_badger",
+    "meta": 0,
+    "description": "A compact rifle chambered in .300 Blackout, designed specifically for effective suppressed fire. Combines a short overall length with sufficient stopping power at close and medium ranges. Strongly associated with covert special operations.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:k2c1",
+    "meta": 0,
+    "description": "A South Korean assault rifle chambered in 5.56×45mm, in service since the 1980s. Features a folding metal stock and a gas regulator for grenade launching. Serves as the primary infantry weapon of the South Korean military.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:kbp_9a91",
+    "meta": 0,
+    "description": "A Russian compact submachine gun chambered in the subsonic 9×39mm cartridge, developed for covert special operations. The heavy subsonic projectile allows effective suppressed fire without sacrificing lethality. Notable for its compact dimensions combined with reasonable body armor penetration.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ak74",
+    "meta": 0,
+    "description": "A Soviet/Russian assault rifle chambered in 5.45×39mm, adopted in 1974 as a replacement for its predecessor. Offers reduced recoil and improved accuracy compared to earlier designs. Remains a primary service weapon of the Russian military to this day.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ak101",
+    "meta": 0,
+    "description": "An export variant of the Kalashnikov assault rifle chambered in the NATO-standard 5.56×45mm. Developed for countries operating on the Western ammunition standard while retaining the classic platform\u0027s reliability. Mechanically near-identical to its sibling chambered in a different caliber.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:izhmash_ak12",
+    "meta": 0,
+    "description": "An early prototype of the next-generation Kalashnikov assault rifle from the original manufacturer, presented as a significant upgrade with Picatinny rails and improved ergonomics. Developed in the early 2010s as a candidate to replace older AK variants. Later revised substantially before official adoption.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ak12_kal",
+    "meta": 0,
+    "description": "The final adopted version of the next-generation Kalashnikov assault rifle, officially in service with the Russian military since 2018. Chambered in 5.45×39mm with improved ergonomics, an adjustable stock, and rails for optics. Considered Russia\u0027s primary modern service assault rifle.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:malyuk",
+    "meta": 0,
+    "description": "A Ukrainian bullpup assault rifle chambered in 5.56×45mm NATO, designed for maneuverability in urban combat. Developed to meet the needs of the Ukrainian military as a compact modern platform. Achieves a short overall length while retaining a full-length barrel.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ak15",
+    "meta": 0,
+    "description": "A modern Kalashnikov variant chambered in 7.62×39mm, built on the same platform as the next-generation AK series. Offers improved accuracy and ergonomics compared to classic predecessors. Considered as one of the service rifle options for the Russian military.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ak47",
+    "meta": 0,
+    "description": "The legendary assault rifle, the most widely produced firearm in history, adopted in 1949. Chambered in 7.62×39mm, renowned for exceptional reliability in harsh conditions and ease of maintenance. Has become a global symbol of guerrilla and insurgent movements worldwide.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:scar_h_cqc",
+    "meta": 0,
+    "description": "A shortened variant of the heavy version of the modular SCAR rifle, chambered in the powerful 7.62×51mm NATO cartridge. Designed for close-quarters combat and used by special operations forces including US special forces. Combines compact dimensions with the stopping power of a full-power rifle cartridge.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:scar_l",
+    "meta": 0,
+    "description": "The light version of the modular SCAR rifle, chambered in 5.56×45mm. Developed by a Belgian manufacturer at the request of US Special Operations Command. Distinguished by its modularity, allowing barrel swaps of different lengths to suit specific mission requirements.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:sig556",
+    "meta": 0,
+    "description": "A Swiss assault rifle built around a reliable rotating bolt gas-operated mechanism. Chambered in 5.56×45mm, known for high accuracy and quality of manufacture. The export variant was supplied to numerous countries and law enforcement agencies.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:cz805_bren",
+    "meta": 0,
+    "description": "A Czech modular assault rifle chambered in 5.56×45mm, adopted by the Czech Army. Replaced aging Soviet-era rifles in service. Distinguished by its lightweight construction and ability to quickly change caliber configurations.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:arx160",
+    "meta": 0,
+    "description": "An Italian assault rifle chambered in 5.56×45mm, in service with the Italian Army. Features a folding stock and ambidextrous controls suitable for both left- and right-handed shooters. Developed as a replacement for the previous-generation Italian service rifle.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:type20",
+    "meta": 0,
+    "description": "A Japanese assault rifle of the Self-Defense Forces chambered in 5.56×45mm, adopted in 2020. Replaces an older model that had been in service since the 1980s. Features a modular design and a lightweight construction.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:famas_f1",
+    "meta": 0,
+    "description": "A French bullpup rifle chambered in 5.56×45mm, adopted in 1978. Known for its distinctive silhouette with a carrying handle and a high cyclic rate of fire. Served as the primary weapon of the French Army for decades.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:g36c",
+    "meta": 0,
+    "description": "A compact variant of the German assault rifle chambered in 5.56×45mm, featuring a shortened barrel and folding stock. Designed for airborne and police units where maneuverability is critical. Retains the reliable gas-operated action of the full-sized model.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:g11",
+    "meta": 0,
+    "description": "An experimental German rifle using caseless ammunition, developed throughout the 1970s and 1980s. Employed a unique ignition system without a traditional brass case, significantly reducing ammunition weight. The program was cancelled after German reunification and never entered mass production.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:f2000",
+    "meta": 0,
+    "description": "A Belgian bullpup rifle chambered in 5.56×45mm with the option to mount an integrated grenade launcher. Its forward ejection system allows ambidextrous use by both left- and right-handed shooters. In service with several countries including Belgium and Slovenia.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ar10_super_sass",
+    "meta": 0,
+    "description": "A semi-automatic designated marksman rifle built on a classic platform, chambered in 7.62×51mm. Intended for precision fire at medium and long ranges in semi-automatic mode. Typically fitted with a heavy barrel and high-quality optics.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:beowulf_50_cal",
+    "meta": 0,
+    "description": "An AR-platform rifle chambered in .50 Beowulf, a cartridge designed specifically for increased stopping power at close ranges. The large-caliber projectile is effective against lightly armored targets and barriers. Used primarily for hunting and defensive applications.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m110_sass",
+    "meta": 0,
+    "description": "A US Army sniper/marksman rifle chambered in 7.62×51mm, adopted in the mid-2000s. Used for semi-automatic precision fire, complementing traditional bolt-action sniper rifles. Typically fitted with a suppressor and optical sight for covert operations.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:zbroyar_z10",
+    "meta": 0,
+    "description": "A Ukrainian semi-automatic designated marksman rifle developed for military and hunting use. Features a modular construction with compatibility for various optics and accessories. Used as an accessible alternative to more expensive Western counterparts.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:hk_417",
+    "meta": 0,
+    "description": "A German designated marksman and battle rifle chambered in 7.62×51mm, built on a popular platform scaled up for a more powerful cartridge. Known for high accuracy and a reliable gas piston operating system. Used by special operations units worldwide.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:mk14_ebr",
+    "meta": 0,
+    "description": "A modernized marksman rifle based on a classic mid-20th-century semi-automatic design, chambered in 7.62×51mm. Received a modern chassis, optics rails, and a folding stock. Used by US special operations units.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:fnfal",
+    "meta": 0,
+    "description": "A Belgian automatic rifle chambered in 7.62×51mm, widely known as the right arm of the free world due to its mass adoption across NATO and allied nations during the Cold War. Noted for its reliability and the power of its cartridge. Served in the armies of dozens of countries.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:g3",
+    "meta": 0,
+    "description": "A German automatic rifle chambered in 7.62×51mm, developed in the 1950s and adopted by the Bundeswehr. Uses a roller-delayed blowback system providing high reliability. Was exported and license-produced in numerous countries.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:kriss_vector",
+    "meta": 0,
+    "description": "A submachine gun chambered in .45 ACP featuring a unique bolt displacement system that reduces muzzle rise during firing. Developed by an American company to improve burst fire controllability. Popular among civilian shooters and law enforcement agencies.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:mac10",
+    "meta": 0,
+    "description": "A compact submachine gun chambered in .45 ACP or 9mm, developed in the 1960s. Known for an extremely high cyclic rate of fire and very small dimensions. Frequently fitted with a suppressor for covert use.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:p90",
+    "meta": 0,
+    "description": "A Belgian submachine gun chambered in the proprietary 5.7×28mm cartridge, developed to provide improved armor penetration at close ranges. Distinguished by its futuristic design with a horizontally mounted top-feeding magazine. Used by police and military units worldwide.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:mp5a5",
+    "meta": 0,
+    "description": "A classic German submachine gun chambered in 9mm, using a roller-delayed blowback system for enhanced accuracy. One of the most recognizable close-quarters weapons of the 20th century. Widely used by special forces and police units across the world.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:mp7",
+    "meta": 0,
+    "description": "A compact German submachine gun chambered in 4.6×30mm with improved armor penetration. Developed as a personal defense weapon for vehicle crews and support personnel. Notable for its low weight and mild recoil.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:vss_vintorez",
+    "meta": 0,
+    "description": "A Russian integrally suppressed sniper rifle chambered in the subsonic 9×39mm cartridge, developed for special forces use. The built-in suppressor enables near-silent fire without sacrificing accuracy. Primarily used for covert operations at medium ranges.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:svd_dragunov",
+    "meta": 0,
+    "description": "A Soviet/Russian sniper rifle chambered in 7.62×54R, adopted in 1963. One of the first mass-produced semi-automatic sniper rifles in the world, widely distributed globally. Serves as a squad-level sniper support weapon.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m40a6",
+    "meta": 0,
+    "description": "A US Marine Corps sniper rifle chambered in .308, representing the latest in a long line of upgrades to a classic bolt-action platform. Known for exceptional accuracy and field reliability. Used by scout snipers and sniper teams.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m82_barrett",
+    "meta": 0,
+    "description": "A large-caliber anti-materiel rifle chambered in .50 BMG, developed by an American company in the 1980s. Designed to engage equipment, fortifications, and targets at extreme long range. One of the most powerful production sniper systems in the world.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:ump_45",
+    "meta": 0,
+    "description": "A German submachine gun chambered in .45 ACP, developed as a simpler and more cost-effective alternative to earlier models from the same manufacturer. Features a polymer frame and folding stock. Used by police and military units.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:scorpion_evo3_a1",
+    "meta": 0,
+    "description": "A Czech submachine gun chambered in 9mm, developed as a modern replacement for aging Soviet-era designs. Distinguished by its modularity and compatibility with a wide range of accessories. Popular among European law enforcement agencies.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:sig_mpx",
+    "meta": 0,
+    "description": "A compact submachine gun chambered in 9mm with a gas-operated action ensuring consistent reliability. Developed by a Swiss-American manufacturer as a modern alternative to roller-delayed designs. Used by civilian shooters and law enforcement.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:fmg9",
+    "meta": 0,
+    "description": "A folding concept submachine gun chambered in 9mm, developed by Magpul as a demonstration prototype. When folded it resembles a large pistol, deploying into a full weapon with a shoulder stock. Never entered series production.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:uzi",
+    "meta": 0,
+    "description": "An Israeli compact submachine gun chambered in 9mm, developed in the early 1950s. Known for its distinctive shape with the magazine housed in the pistol grip and a folding metal stock. Widely exported and used by militaries and police forces of dozens of countries.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:s7_10_tricun",
+    "meta": 0,
+    "description": "A rare hybrid weapon combining features of a shotgun and a submachine gun. Information on a confirmed real-world prototype is limited, suggesting a custom or obscure development. Presumably intended for close-quarters combat with high stopping power.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:apc9",
+    "meta": 0,
+    "description": "A Swiss compact submachine gun chambered in 9mm, developed as a modern modular platform. Features low recoil and compatibility with a wide range of optics and accessories. Used by European police special operations units.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:origin12",
+    "meta": 0,
+    "description": "An American semi-automatic shotgun in 12 gauge featuring a detachable box magazine instead of a traditional tube magazine. Designed to increase ammunition capacity and reload speed compared to conventional pump-action designs. Used for tactical purposes and competitive shooting.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m249",
+    "meta": 0,
+    "description": "A US Army squad automatic weapon chambered in 5.56×45mm, capable of feeding from both a belt and a standard magazine. Provides a high volume of fire to support infantry squads. Adopted in the 1980s and remains the primary squad light machine gun to this day.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:python",
+    "meta": 0,
+    "description": "An iconic revolver chambered in .357 Magnum, produced by an American manufacturer since 1955. Renowned for exceptional accuracy and a high level of fit and finish. Favored by hunters, competitive shooters, and law enforcement.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:taurus_raging_hunter",
+    "meta": 0,
+    "description": "A powerful hunting revolver of Brazilian manufacture, available in large calibers such as .44 Magnum. Fitted with a long barrel and a Picatinny rail for mounting optics. Designed primarily for hunting large game.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:aps",
+    "meta": 0,
+    "description": "A Soviet automatic pistol chambered in 9×18mm, developed in the late 1940s. Capable of fully automatic fire thanks to a fire selector and a detachable wooden shoulder stock holster. Used by armored vehicle crews and special units.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:makarov_pm",
+    "meta": 0,
+    "description": "A Soviet/Russian service pistol chambered in 9×18mm, adopted in 1951. Distinguished by a simple and reliable straight blowback design. Served for decades as the standard sidearm of the Soviet and Russian military and police.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:desert_eagle",
+    "meta": 0,
+    "description": "A powerful semi-automatic pistol available in large calibers including .50 AE and .44 Magnum. Uses a gas-operated action, unusual for a pistol platform. Known for its massive dimensions and iconic appearance in popular culture.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:glock_18c",
+    "meta": 0,
+    "description": "A fully automatic variant of a popular 9mm pistol fitted with a compensator to manage muzzle rise during automatic fire. Developed for special units requiring a fully automatic sidearm. Externally nearly identical to the standard semi-automatic model.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:glock_19",
+    "meta": 0,
+    "description": "A compact police and civilian pistol chambered in 9mm, balancing concealability with adequate magazine capacity. Uses a polymer frame and a striker-fired mechanism without a traditional external hammer. One of the most popular concealed carry pistols in the world.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:fiveseven",
+    "meta": 0,
+    "description": "A Belgian pistol chambered in 5.7×28mm, offering improved armor penetration for its class. Features low recoil and a high-capacity magazine. Used by police and military organizations in various countries.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m9a1",
+    "meta": 0,
+    "description": "A standard-issue US military pistol chambered in 9mm, representing a modernized version of a classic Italian design. Equipped with a Picatinny rail and improved sights. Served as the primary sidearm of American service members for many years.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:hk_p12",
+    "meta": 0,
+    "description": "A German pistol chambered in 9mm, developed as part of a line of compact service models from a well-known manufacturer. Features a reliable construction and an ergonomic grip. Oriented toward law enforcement use.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:sccy_cpx_2",
+    "meta": 0,
+    "description": "A budget-oriented compact American pistol chambered in 9mm, designed for concealed carry. Offers acceptable reliability at a low price point. Popular among civilian buyers seeking an affordable self-defense firearm.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:m17",
+    "meta": 0,
+    "description": "The current standard-issue pistol of the US Army chambered in 9mm, adopted in 2017 following a competition to replace the previous service pistol. Features a modular frame and improved ergonomics. Replaced a design that had served the US military for several decades.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:vp70",
+    "meta": 0,
+    "description": "A German pistol chambered in 9mm, one of the earliest production handguns to feature a polymer frame. Developed in the early 1970s and offered in a variant capable of burst fire when a shoulder stock holster was attached. Was ahead of its time in terms of materials used.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:mp443",
+    "meta": 0,
+    "description": "A Russian military pistol chambered in 9×19mm, developed as a replacement for the aging Soviet-era service pistol. Features an increased magazine capacity and improved ergonomics. Adopted by the Russian military in the early 2000s.",
+    "lore": ""
+  },
+  {
+    "item": "mwc:p226",
+    "meta": 0,
+    "description": "A popular pistol chambered in 9mm from a Swiss-German manufacturer, widely used by special forces and police worldwide. Renowned for exceptional reliability and shooting accuracy. Long considered one of the premier candidates for the US Army standard sidearm role.",
+    "lore": ""
+  }
+]

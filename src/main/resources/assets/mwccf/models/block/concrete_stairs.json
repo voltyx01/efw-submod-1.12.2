@@ -1,0 +1,8 @@
+{
+    "parent": "block/stairs",
+    "textures": {
+        "bottom": "mwccf:blocks/concrete_grey_dark",
+        "top": "mwccf:blocks/concrete_grey_dark",
+        "side": "mwccf:blocks/concrete_grey_dark"
+    }
+}

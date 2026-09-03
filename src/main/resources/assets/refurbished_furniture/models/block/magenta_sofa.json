@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/sofa",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/magenta_sofa",
+    "particle": "refurbished_furniture:blocks/magenta_sofa"
+  }
+}

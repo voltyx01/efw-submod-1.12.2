@@ -1,0 +1,12 @@
+{
+	"parent": "block/cube",
+	"textures": {
+		"particle": "mwccf:blocks/paintmachine_side",
+		"north": "mwccf:blocks/repairbench_front",
+		"south": "mwccf:blocks/paintmachine_side",
+		"east": "mwccf:blocks/paintmachine_side",
+		"west": "mwccf:blocks/paintmachine_side",
+		"up": "mwccf:blocks/repairbench_top",
+		"down": "mwccf:blocks/paintmachine_side"
+	}
+}

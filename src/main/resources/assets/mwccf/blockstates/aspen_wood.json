@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "axis=y":    { "model": "mwccf:aspen_wood" },
+        "axis=z":    { "model": "mwccf:aspen_wood", "x": 90 },
+        "axis=x":    { "model": "mwccf:aspen_wood", "x": 90, "y": 90 },
+        "axis=none": { "model": "mwccf:aspen_wood" }
+    }
+}

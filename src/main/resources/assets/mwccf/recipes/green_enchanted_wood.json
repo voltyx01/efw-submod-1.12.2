@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LL",
+    "LL"
+  ],
+  "key": {
+    "L": {
+      "item": "mwccf:green_enchanted_log"
+    }
+  },
+  "result": {
+    "item": "mwccf:green_enchanted_wood",
+    "count": 3
+  }
+}

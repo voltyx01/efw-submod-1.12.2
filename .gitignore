@@ -1,0 +1,177 @@
+# ================================
+# Gradle & Java build artifacts
+# ================================
+.gradle/
+build/
+bin/
+out/
+gradle-temp/
+jar-check/
+jar-temp/
+*.class
+
+# ================================
+# IDEs & System files
+# ================================
+.idea/
+*.ipr
+*.iws
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.mcreator/
+.metadata/
+*.launch
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ================================
+# Run directory & Minecraft runtime
+# ================================
+run/saves/
+run/world/
+run/logs/
+run/crash-reports/
+run/natives/
+run/tv-cache/
+run/local/
+run/XaeroWaypoints_BACKUP*/
+run/xaero/
+run/*.log
+run/*.txt
+run/replay_*.log
+run/usercache.json
+run/usernamecache.json
+
+# ================================
+# Scratch scripts & temporary files in root
+# ================================
+*.py
+*.ps1
+*.txt
+*.html
+*.bbmodel
+*.png
+!gradlew*
+
+# Single loose java files in root (test / decomp remnants)
+/*.java
+
+# Working draft / asset folders in root
+backpack/
+backpack_core/
+bracelet/
+braceletnew/
+dashassetnew/
+headlightasset/
+pmap/
+pmg/
+syr/
+
+# Reference documentation / scratch md in root
+ATTACHMENTS_LIST.md
+attachment_effects_generated.md
+attachment_stats_glossary_and_effects (1).md
+sins_ui_spec.md
+
+# Loose configs/meta in root
+mixins.nothirium.json
+registry_map.json
+META-INF/
+
+# MCreator generator files
+mcreator.gradle
+mwccf.mcreator
+
+# ================================
+# Decompiled, Reference & Open Source mods
+# ================================
+# TACZ and 1.20.1 animation research
+anim1.20.1/
+assets_1.20.1/
+flashlight_mod/
+newbiomes/
+newbrac/
+flower/
+desc/
+books/
+opt/
+
+# Decompilation folders & clones
+decomp/
+decompiled_techguns/
+extracted_ev/
+lostcities_decomp/
+quark_decompiled/
+src_decompiled/
+tacz_decompiled/
+tacz_unzipped/
+temp_*/
+tmp_*/
+efwlog/
+modpack/
+server_pack/
+scratch/
+scripts/
+BiomeInfo-26.1.1/
+FemaleGenderMod-forge-1.20.1/
+LostCities-1.12/
+Novam-Terram-Continuation-master/
+NovamTerram_src/
+Oh-The-Biomes-Weve-Gone-1.7.5/
+Realistic-Terrain-Generation-1.12.2-dev/
+Realistic-Terrain-Generation-Community-master/
+ShoulderSurfing-1.12.2/
+ShoulderSurfing-1.20.1/
+Techguns2-master/
+WrapUp-1.12/
+lazydfu-master/
+mc-smoothboot-1.12-forge/
+obscure-tooltips-1.12.2/
+jars-to-backport/
+
+# Temporary archives & archives in root
+*.zip
+
+# Old / unused root jars
+B3M-1.12.2-20.jar
+cfr.jar
+combatroll-forge-1.3.3+1.20.1.jar
+EnhancedVisuals_v1.4.4_mc1.12.2.jar
+extragore-6.0.jar
+firstaid-1.6.22-efwfix.jar
+flashlight-5.1-forge-1.20.1.jar
+naughthirium-2.3.0.jar
+Nothirium-1.12.2-0.4.9-beta.jar
+OptiFine_1.12.2_HD_U_G5.jar
+player-animation-lib-forge-1.0.2-rc1+1.20.jar
+ShoulderSurfing-1.12.2-2.9.6.jar
+Simplest.jar
+efw.jar
+libs_old/
+
+# Crash logs & backups
+*.log
+hs_err_*.log
+*.backup
+run_output.txt
+
+# ================================
+# Exclude large jars (>100MB / dev caches)
+# ================================
+libs/SRParasites-1.10.7.jar
+Modern-Warfare-Cubed-0.1.9-dev.jar
+Modern-Warfare-Cubed-0.1.8.1.jar
+tacz-1.20.1-1.1.8-hotfix.jar
+
+# ================================
+# Keep important build/run files
+# ================================
+!run/config/
+!run/mods/
+!run/balancepacks/
+!gradle/wrapper/gradle-wrapper.jar
+!Modern-Warfare-Cubed-0.1.9.jar

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P  ",
+    "PP ",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:pine_planks"
+    }
+  },
+  "result": {
+    "item": "mwccf:pine_stairs",
+    "count": 4
+  }
+}

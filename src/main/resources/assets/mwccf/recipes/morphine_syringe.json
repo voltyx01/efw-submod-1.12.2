@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "firstaid:morphine"
+    },
+    {
+      "item": "mwccf:syringe"
+    },
+    {
+      "item": "mwccf:syringe"
+    },
+    {
+      "item": "mwccf:syringe"
+    }
+  ],
+  "result": {
+    "item": "mwccf:morphine_syringe",
+    "count": 3
+  }
+}

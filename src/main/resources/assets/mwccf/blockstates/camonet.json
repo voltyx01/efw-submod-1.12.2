@@ -1,0 +1,124 @@
+{
+	"forge_marker": 1,
+    "variants": {
+		"type": {
+			"wood":{
+				"textures": { "0": "blocks/planks_oak", "1": "mwccf:blocks/camonet", "particle": "mwccf:blocks/camonet"}
+			},
+			"desert": {
+				"textures": { "0": "blocks/planks_acacia", "1": "mwccf:blocks/camonet_desert", "particle": "mwccf:blocks/camonet_desert"}
+			},
+			"snow": {
+				"textures": { "0": "blocks/planks_spruce", "1": "mwccf:blocks/camonet_snow", "particle": "mwccf:blocks/camonet_snow"}
+			}
+		},
+		"connection": {
+			"none": {
+				"submodel": "mwccf:camonet_stick"
+			},
+			"w": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+                    "net1": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true }
+                }
+			},
+			"s": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+                    "net1": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true }
+                }
+			},
+			"sw": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true },
+                    "net2": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true }
+                }
+			},
+			"e": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true }
+                }
+			},
+			"ew": {
+				"submodel": {
+					"net": { "model": "mwccf:camonet_full", "y": 0, "uvlock": true }
+                }
+			},
+			"es": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true }
+                }
+			},
+			"esw": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true },
+					"net3": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true }
+                }
+			},
+			"n": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true }
+                }
+			},
+			"nw": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true }
+                }
+			},
+			"ns": {
+				"submodel": {
+					"net": { "model": "mwccf:camonet_full", "y": -90, "uvlock": true }
+                }
+			},
+			"nsw": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true },
+					"net3": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true }
+                }
+			},
+			"ne": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true }
+                }
+			},
+			"new": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true },
+					"net3": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true }
+                }
+			},
+			"nes": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true },
+					"net3": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true }
+                }
+			},
+			"nesw": {
+				"submodel": {
+                    "stick": { "model": "mwccf:camonet_stick" },
+					"net1": { "model": "mwccf:camonet_half", "y": -90, "uvlock": true },
+					"net2": { "model": "mwccf:camonet_half", "y": 0, "uvlock": true },
+					"net3": { "model": "mwccf:camonet_half", "y": 90, "uvlock": true },
+					"net4": { "model": "mwccf:camonet_half", "y": 180, "uvlock": true }
+                }
+			}
+		}
+	}
+}

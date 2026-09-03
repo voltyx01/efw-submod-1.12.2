@@ -1,0 +1,549 @@
+package com.paneedah.weaponlib;
+
+import com.paneedah.mwc.network.NetworkPermitManager;
+import com.paneedah.mwc.network.messages.MuzzleFlashMessage;
+import com.paneedah.mwc.network.messages.ShellMessageClient;
+import com.paneedah.mwc.network.messages.TryFireMessage;
+import com.paneedah.weaponlib.animation.ClientValueRepo;
+import com.paneedah.weaponlib.config.BalancePackManager;
+import com.paneedah.weaponlib.config.ModernConfigManager;
+import com.paneedah.weaponlib.render.shells.ShellParticleSimulator.Shell;
+import com.paneedah.weaponlib.state.Aspect;
+import com.paneedah.weaponlib.state.StateManager;
+import io.redstudioragnarok.redcore.vectors.Vector3D;
+import net.minecraft.client.audio.PositionedSoundRecord;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
+
+import static com.paneedah.mwc.MWC.CHANNEL;
+import static com.paneedah.mwc.proxies.ClientProxy.MC;
+import static com.paneedah.mwc.utils.ModReference.LOG;
+
+
+/*
+ * On a client side this class is used from within a separate client "ticker" thread
+ */
+public class WeaponFireAspect implements Aspect<WeaponState, PlayerWeaponInstance> {
+
+    private static final float FLASH_X_OFFSET_ZOOMED = -0.03f;
+
+    private static final long ALERT_TIMEOUT = 500;
+    
+//    private static <T> Predicate<T> logging(Predicate<T> predicate, String message) {
+//        return t -> {
+//            boolean result = predicate.test(t);
+//            log.debug(message, result);
+//            return result;
+//        };
+//    }
+
+    private static Predicate<PlayerWeaponInstance> readyToShootAccordingToFireRate = instance ->
+    System.currentTimeMillis() - instance.getLastFireTimestamp() >= 50f / BalancePackManager.getFirerate(instance.getWeapon());
+        
+    //System.currentTimeMillis() - instance.getLastFireTimestamp() >= 50f / instance.getWeapon().builder.fireRate;
+        
+    private static Predicate<PlayerWeaponInstance> postBurstTimeoutExpired = instance ->
+        System.currentTimeMillis() - instance.getLastBurstEndTimestamp()
+            >= instance.getWeapon().builder.burstTimeoutMilliseconds;
+
+    private static Predicate<PlayerWeaponInstance> readyToShootAccordingToFireMode =
+            instance -> instance.getSeriesShotCount() < instance.getMaxShots();
+            
+    private static Predicate<PlayerWeaponInstance> oneClickBurstEnabled = PlayerWeaponInstance::isOneClickBurstAllowed;
+    
+    private static Predicate<PlayerWeaponInstance> seriesResetAllowed = PlayerWeaponInstance::isSeriesResetAllowed;
+
+    private static Predicate<PlayerWeaponInstance> hasAmmo = instance -> instance.getAmmo() > 0
+            && Tags.getAmmo(instance.getItemStack()) > 0;
+
+    private static Predicate<PlayerWeaponInstance> ejectSpentRoundRequired = instance -> instance.getWeapon().ejectSpentRoundRequired();
+
+    private static Predicate<PlayerWeaponInstance> ejectSpentRoundTimeoutExpired = instance -> {
+    	
+    	boolean time = System.currentTimeMillis() >= instance.getWeapon().builder.pumpTimeoutMilliseconds + instance.getStateUpdateTimestamp();
+
+    	// HERE
+    
+    	return time;
+    	
+    };
+        
+    private static Predicate<PlayerWeaponInstance> alertTimeoutExpired = instance ->
+        System.currentTimeMillis() >= ALERT_TIMEOUT + instance.getStateUpdateTimestamp();
+
+    private static Predicate<PlayerWeaponInstance> sprinting = instance -> instance.getPlayer().isSprinting();
+
+    private static Predicate<PlayerWeaponInstance> notLowering = instance -> !com.paneedah.weaponlib.WeaponRenderer.isLoweringActive;
+
+    private static final Set<WeaponState> allowedFireOrEjectFromStates = new HashSet<>(
+            Arrays.asList(WeaponState.READY, WeaponState.PAUSED, WeaponState.EJECT_REQUIRED));
+
+    private static final Set<WeaponState> allowedUpdateFromStates = new HashSet<>(
+            Arrays.asList(WeaponState.EJECTING, WeaponState.PAUSED, WeaponState.FIRING,
+                    WeaponState.RECOILED, WeaponState.PAUSED, WeaponState.ALERT));
+
+    private ModContext modContext;
+
+    private StateManager<WeaponState, ? super PlayerWeaponInstance> stateManager;
+
+    public WeaponFireAspect(CommonModContext modContext) {
+        this.modContext = modContext;
+    }
+
+    @Override
+    public void setPermitManager(NetworkPermitManager permitManager) {}
+
+    @Override
+    public void setStateManager(StateManager<WeaponState, ? super PlayerWeaponInstance> stateManager) {
+        this.stateManager = stateManager;
+
+        stateManager
+
+        .in(this).change(WeaponState.READY).to(WeaponState.ALERT)
+        .when(hasAmmo.negate())
+        .withAction(this::cannotFire)
+        .manual() // on start fire
+
+        .in(this).change(WeaponState.ALERT).to(WeaponState.READY)
+        .when(alertTimeoutExpired)
+        .automatic() //
+
+        .in(this).change(WeaponState.READY).to(WeaponState.FIRING)
+        .when(hasAmmo.and(sprinting.negate()).and(readyToShootAccordingToFireRate).and(notLowering))
+        .withAction(this::fire)
+        .manual() // on start fire
+
+        .in(this).change(WeaponState.COMPOUND_RELOAD_FINISHED).to(WeaponState.FIRING)
+        .when(sprinting.negate().and(readyToShootAccordingToFireRate).and(notLowering).and(instance -> instance.wasReloadedFromEmpty))
+        .withAction(this::fire)
+        .manual() // allow interrupting empty reload padding by shooting (ammo is predicted)
+
+        .in(this).change(WeaponState.FIRING).to(WeaponState.RECOILED)
+        .automatic() // unconditional
+
+        .in(this).change(WeaponState.RECOILED).to(WeaponState.PAUSED)
+        .automatic() // unconditional
+
+        .in(this).change(WeaponState.PAUSED).to(WeaponState.EJECT_REQUIRED)
+        .when(ejectSpentRoundRequired)
+        .manual() // on stop
+
+        .in(this).change(WeaponState.EJECT_REQUIRED).to(WeaponState.EJECTING)
+        .withAction(this::ejectSpentRound)
+        .manual() // on fire ?
+
+        .in(this).change(WeaponState.EJECTING).to(WeaponState.READY)
+        .when(ejectSpentRoundTimeoutExpired) // TODO: enforce it only if a trigger was released
+        .automatic() // on stop fire and eject animation completed
+
+        .in(this).change(WeaponState.PAUSED).to(WeaponState.FIRING)
+        .when(hasAmmo
+                .and(sprinting.negate())
+                .and(readyToShootAccordingToFireMode)
+                .and(readyToShootAccordingToFireRate)
+                )
+        .withAction(this::fire)
+        .manual() // on fire, requires fire button to be down
+        
+        /// Applies 
+        .in(this).change(WeaponState.PAUSED).to(WeaponState.FIRING)
+        .when(hasAmmo.and(sprinting.negate())
+                .and(oneClickBurstEnabled)
+                .and(readyToShootAccordingToFireMode)
+                .and((readyToShootAccordingToFireRate))
+                )
+        .withAction(this::fire)
+        .automatic() // on update
+        
+        .in(this).change(WeaponState.PAUSED).to(WeaponState.READY)
+        .when(ejectSpentRoundRequired.negate()
+                .and(oneClickBurstEnabled)
+                .and(readyToShootAccordingToFireMode.negate().or(hasAmmo.negate()))
+                .and(seriesResetAllowed)
+                .and(postBurstTimeoutExpired)
+                )
+        .withAction(PlayerWeaponInstance::resetCurrentSeries)
+        .automatic() // on update
+        
+        .in(this).change(WeaponState.PAUSED).to(WeaponState.READY)
+        .when(ejectSpentRoundRequired.negate().and(oneClickBurstEnabled.negate()))
+        .withAction(PlayerWeaponInstance::resetCurrentSeries)
+        .manual() // on stop
+
+        ;
+    }
+
+    void onFireButtonDown(EntityPlayer player) {
+        PlayerWeaponInstance weaponInstance = modContext.getPlayerItemInstanceRegistry().getMainHandItemInstance(player, PlayerWeaponInstance.class);
+        if(weaponInstance != null) {
+        	
+            stateManager.changeStateFromAnyOf(this, weaponInstance, allowedFireOrEjectFromStates, WeaponState.FIRING, WeaponState.EJECTING, WeaponState.ALERT);
+        }
+    }
+
+    void onFireButtonRelease(EntityPlayer player) {
+        PlayerWeaponInstance weaponInstance = modContext.getPlayerItemInstanceRegistry().getMainHandItemInstance(player, PlayerWeaponInstance.class);
+        if(weaponInstance != null) {
+            weaponInstance.setSeriesResetAllowed(true);
+            stateManager.changeState(this, weaponInstance, WeaponState.EJECT_REQUIRED, WeaponState.READY);
+        }
+    }
+
+    void onUpdate(EntityPlayer player) {
+        PlayerWeaponInstance weaponInstance = modContext.getPlayerItemInstanceRegistry().getMainHandItemInstance(player, PlayerWeaponInstance.class);
+        if(weaponInstance != null) {
+            stateManager.changeStateFromAnyOf(this, weaponInstance, allowedUpdateFromStates); // triggers "auto" state transitions
+        }
+    }
+
+    private void cannotFire(PlayerWeaponInstance weaponInstance) {
+        if (weaponInstance.getAmmo() == 0 || Tags.getAmmo(weaponInstance.getItemStack()) == 0) {
+            String message;
+
+            if (weaponInstance.getWeapon().getAmmoCapacity() == 0 && modContext.getAttachmentAspect().getActiveAttachment(weaponInstance, AttachmentCategory.MAGAZINE) == null)
+                message = I18n.format("gui.noMagazine");
+            else
+                message = I18n.format("gui.noAmmo");
+
+            if (weaponInstance.getPlayer() instanceof EntityPlayer)
+                ((EntityPlayer) weaponInstance.getPlayer()).sendStatusMessage(new TextComponentString(message), true);
+
+            if(weaponInstance.getPlayer() instanceof EntityPlayer)
+                weaponInstance.getPlayer().playSound(modContext.getNoAmmoSound(), 1, 1);
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void playShootSound(PositionedSoundRecord psr) {
+    	MC.getSoundHandler().playSound(psr);
+    }
+    
+    
+    private void fire(PlayerWeaponInstance weaponInstance) {
+    	
+    	
+    
+    	
+        EntityLivingBase player = weaponInstance.getPlayer();
+        Weapon weapon = (Weapon) weaponInstance.getItem();
+        Random random = player.getRNG();
+
+        CHANNEL.sendToServer(new TryFireMessage(oneClickBurstEnabled.test(weaponInstance) && weaponInstance.getSeriesShotCount() ==  0, weaponInstance.isAimed()));
+
+        
+    	
+        boolean silencerOn = modContext.getAttachmentAspect().isSilencerOn(weaponInstance);
+
+
+
+        SoundEvent shootSound = null;
+        /*
+         * If oneClickBurstEnabled and it's a first shot and burst sound is defined, then play a burst sound
+         */
+        if(oneClickBurstEnabled.test(weaponInstance)) {
+
+            SoundEvent burstShootSound = null;
+            if(silencerOn) {
+                burstShootSound = weapon.getSilencedBurstShootSound();
+            }
+            if(burstShootSound == null) {
+                burstShootSound = weapon.getBurstShootSound();
+            }
+            if(burstShootSound != null) {
+                if(weaponInstance.getSeriesShotCount() == 0) {
+                    // Play burst sound only on start of the series
+                    shootSound = burstShootSound;
+                }
+            } else {
+                shootSound = silencerOn ? weapon.getSilencedShootSound() : weapon.getShootSound();
+            }
+        } else {
+            shootSound = silencerOn ? weapon.getSilencedShootSound() : weapon.getShootSound();
+        }
+        
+        if(shootSound != null) {
+        	/*
+        	try {
+        		JSoundEngine.getInstance().playSound();
+        	} catch(Exception e) {
+        		e.printStackTrace();
+        	}*/
+        	
+        	// Should prevent sound from being one sided
+        
+        	if(!FMLCommonHandler.instance().getSide().isServer()) {
+        		
+        		//
+        		PositionedSoundRecord psr = new PositionedSoundRecord(shootSound, SoundCategory.PLAYERS, silencerOn ? weapon.getSilencedShootSoundVolume() * 0.4f : weapon.getShootSoundVolume() * 0.4f, 1.0F, MC.player.getPosition().up(5));
+            	playShootSound(psr);
+        		//MC.getSoundHandler().playSound(psr);
+        	}
+        	
+        	
+        	
+        	
+        	//MC.getSoundHandler().playSound(new PositionedSoundRecord(shootSound.getSound(), SoundCategory.PLAYERS,silencerOn ? weapon.getSilencedShootSoundVolume() : weapon.getShootSoundVolume(), 1f, MC.player.getPosition()));
+            /*
+        	player.playSound(shootSound, silencerOn ? weapon.getSilencedShootSoundVolume() : weapon.getShootSoundVolume(), 1);
+                    */
+        }
+        
+        int currentAmmo = weaponInstance.getAmmo();
+        if(currentAmmo == 1 && weapon.getEndOfShootSound() != null && !FMLCommonHandler.instance().getSide().isServer()) {
+        	PositionedSoundRecord psr = new PositionedSoundRecord(weapon.getEndOfShootSound(), SoundCategory.PLAYERS, 1.0F, 1.0F, MC.player.getPosition().up(5));
+        	playShootSound(psr);
+        	//MC.getSoundHandler().playSound(psr);
+        }
+
+        if(currentAmmo == 1)
+        	 weaponInstance.setSlideLock(true);
+
+        float recoilAmount = weaponInstance.getRecoil();
+        recoilAmount *= BalancePackManager.getGlobalRecoilMultiplier();
+        recoilAmount *= BalancePackManager.getGroupRecoilMultiplier(weapon.getConfigurationGroup());
+
+        com.paneedah.weaponlib.stats.AttachmentStatsManager.EffectiveWeaponStats effStats =
+                com.paneedah.weaponlib.stats.AttachmentStatsManager.getEffectiveStats(weaponInstance);
+        recoilAmount *= (float) effStats.recoilMultiplier;
+        
+        player.rotationPitch = player.rotationPitch - (recoilAmount * 0.7f * (float) ModernConfigManager.globalRecoilMultiplierY);
+        float rotationYawFactor = -1.0f + random.nextFloat() * 2.0f;
+        float yawDelta = recoilAmount * rotationYawFactor * 0.4f * (float) ModernConfigManager.globalRecoilMultiplierX;
+
+        player.rotationYaw = player.rotationYaw + yawDelta;
+		
+        ClientValueRepo.recoilWoundY += (recoilAmount * 0.7f * (float) ModernConfigManager.globalRecoilMultiplierY);
+        ClientValueRepo.recoilWoundX -= yawDelta;
+
+        
+
+        if(ModernConfigManager.enableMuzzleEffects && weapon.builder.flashIntensity > 0) {
+            modContext.getEffectManager().spawnFlashParticle(player, weapon.builder.flashIntensity, weapon.builder.flashScale.get(),
+                    weaponInstance.isAimed() ? FLASH_X_OFFSET_ZOOMED : -0.1f + weapon.builder.flashOffsetX.get(),
+                    weaponInstance.isAimed() ? -1.55f : -1.7f + weapon.builder.flashOffsetY.get(), weapon.builder.flashTexture);
+        }
+        
+       
+        //ClientValueRepo.gunPow.prevPosition = ClientValueRepo.gunPow.position;
+        ClientValueRepo.fireWeapon(weaponInstance);
+
+        if(weapon.isSmokeEnabled()) {
+            modContext.getEffectManager().spawnSmokeParticle(player, -0.1f + weapon.builder.smokeOffsetX.get(), -1.7f + weapon.builder.smokeOffsetY.get()+0.3f);
+        }
+
+        if(weapon.isShellCasingEjectEnabled())  {
+        	Vec3d pos = player.getPositionEyes(1.0f);
+        	boolean isThirdPerson = MC.gameSettings.thirdPersonView != 0;
+        	boolean isAiming = weaponInstance.isAimed() || player.isSneaking();
+        	Vec3d offset = com.paneedah.weaponlib.render.shells.ShellPositionManager.getShellOffset(weapon, isThirdPerson, isAiming);
+        	float fovExtra = (!isThirdPerson && MC.gameSettings.fovSetting >= 70f) ? -(MC.gameSettings.fovSetting/200f) * 0.3f : 0f;
+        	Vec3d weaponDir = new Vec3d(offset.x, offset.y, offset.z + fovExtra).rotatePitch((float) Math.toRadians(-player.rotationPitch)).rotateYaw((float) Math.toRadians(-player.rotationYaw));
+        	
+        	Vec3d velocity = new Vec3d(-0.3, 0.1, 0.0);
+    		velocity = velocity.rotateYaw((float) Math.toRadians(-player.rotationYaw));
+    		Shell shell = new Shell(weapon.getShellType(), pos.add(weaponDir), new Vec3d(-90, 0, 180 + player.rotationYaw), velocity);
+            ClientEventHandler.SHELL_MANAGER.enqueueShell(shell);
+        }
+        
+        int seriesShotCount = weaponInstance.getSeriesShotCount();
+        if(seriesShotCount == 0) {
+            weaponInstance.setSeriesResetAllowed(false);
+        }
+
+        weaponInstance.setSeriesShotCount(seriesShotCount + 1);
+        if(currentAmmo == 1 || weaponInstance.getSeriesShotCount() == weaponInstance.getMaxShots()) {
+            weaponInstance.setLastBurstEndTimestamp(System.currentTimeMillis());
+        }
+        weaponInstance.setLastFireTimestamp(System.currentTimeMillis());
+        weaponInstance.setAmmo(currentAmmo - 1);
+    }
+
+    public static boolean isRifleOrSniper(Weapon weapon) {
+        if (weapon == null) return false;
+        com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup group = weapon.getConfigurationGroup();
+        return group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.RIFLE
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.RIFLES
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.ASSAULT_RIFLE
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.BATTLE_RIFLE
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.SNIPER_RIFLE
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.LONG_RANGE_RIFLES
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.DMR
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.CARBINE
+            || group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.LONG_GUN;
+    }
+
+    private void ejectSpentRound(PlayerWeaponInstance weaponInstance) {
+        EntityLivingBase player = weaponInstance.getPlayer();
+        player.playSound(weaponInstance.getWeapon().getEjectSpentRoundSound(), 1, 1);
+    }
+
+    //(weapon, player) 
+    public void serverFire(EntityLivingBase player, boolean isBurst, boolean isAimed) {
+        serverFire(player, player.getHeldItemMainhand(), null, isBurst, isAimed, 1.0f);
+    }
+    
+    public void serverFire(EntityLivingBase player, ItemStack itemStack, BiFunction<Weapon, EntityLivingBase, ? extends WeaponSpawnEntity> spawnEntityWith, boolean isBurst, boolean isAimed, float damageMultiplier) {
+        if(!(itemStack.getItem() instanceof Weapon)) {
+            return;
+        }
+        
+        TargetPoint tp = new TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 100);
+        CHANNEL.sendToAllAround(new MuzzleFlashMessage(player.getEntityId()), tp);
+        
+
+        Weapon weapon = (Weapon) itemStack.getItem();
+        
+        int currentServerAmmo = Tags.getAmmo(itemStack);
+        
+        if(currentServerAmmo <= 0) {
+            LOG.error("No server ammo");
+            return;
+        }
+        
+        Tags.setAmmo(itemStack, --currentServerAmmo);
+        
+        if(spawnEntityWith == null) {
+            spawnEntityWith = weapon.builder.spawnEntityWith;
+        }
+        
+        //System.out.println(isAimed);
+      
+        /*
+        int itemIndex = 0;
+        EntityPlayer realPlayer = (EntityPlayer) player;
+        for(int i = 0; i < realPlayer.inventory.getSizeInventory(); ++i) {
+        	if(ItemStack.areItemStacksEqual(realPlayer.inventory.getStackInSlot(i), itemStack)) {
+        		itemIndex = i;
+        	}
+        }
+        
+        
+        
+        PlayerWeaponInstance pwi = new PlayerWeaponInstance(itemIndex, player, itemStack);
+        System.out.println(pwi.isAimed());
+            	*/
+        
+        
+        
+        PlayerWeaponInstance pwi = null;
+        if (player instanceof EntityPlayer) {
+            pwi = modContext.getPlayerItemInstanceRegistry().getMainHandItemInstance(player, PlayerWeaponInstance.class);
+        }
+
+        com.paneedah.weaponlib.stats.AttachmentStatsManager.EffectiveWeaponStats effStats =
+                com.paneedah.weaponlib.stats.AttachmentStatsManager.getEffectiveStats(pwi);
+
+        for(int i = 0; i < weapon.builder.pellets; i++) {
+        	double damage = weapon.getSpawnEntityDamage(), hipFireSpread = 2.6;
+            if(BalancePackManager.hasActiveBalancePack()) {
+            	if(BalancePackManager.shouldChangeWeaponDamage(weapon)) damage = BalancePackManager.getNewWeaponDamage(weapon);
+            	damage *= BalancePackManager.getGroupDamageMultiplier(weapon.getConfigurationGroup());
+            	damage *= BalancePackManager.getGlobalDamageMultiplier();
+                hipFireSpread = BalancePackManager.getGlobalHipFireSpread();
+                hipFireSpread *= BalancePackManager.getGroupHipFireSpread(weapon.getConfigurationGroup());
+            }
+        	
+            damage *= damageMultiplier;
+            
+           // System.out.println(weapon.getName() + " | " + spawnEntityRocketParticles);
+
+           float baseInaccuracy = BalancePackManager.getInaccuracy(weapon);
+           float currentInaccuracy = isAimed ? (baseInaccuracy * (float) ModernConfigManager.globalSpreadMultiplierAim * (float) effStats.aimSpreadMultiplier) 
+                                             : (baseInaccuracy + (float) hipFireSpread) * (float) ModernConfigManager.globalSpreadMultiplierHip * (float) effStats.hipSpreadMultiplier;
+           
+           WeaponSpawnEntity bullet = new WeaponSpawnEntity(weapon, player.world, player, weapon.getSpawnEntityVelocity(),
+                   weapon.getSpawnEntityGravityVelocity(), currentInaccuracy, (float) damage, weapon.getSpawnEntityExplosionRadius(),
+                   weapon.isDestroyingBlocks(), weapon.hasRocketParticles(), weapon.getParticleAgeCoefficient(), weapon.getSmokeParticleAgeCoefficient(),
+                   weapon.getExplosionScaleCoefficient(), weapon.getSmokeParticleScaleCoefficient(),
+                   0, 
+                   0);
+
+            bullet.setPositionAndDirection(isAimed);
+            if (!bullet.isDead) {
+                player.world.spawnEntity(bullet);
+            }
+          // return bullet;
+/*            WeaponSpawnEntity spawnEntity = spawnEntityWith.apply(weapon, player);
+            if(player != null)
+                player.world.spawnEntity(spawnEntity);*/
+
+        }
+
+        PlayerWeaponInstance playerWeaponInstance = Tags.getInstance(itemStack, PlayerWeaponInstance.class);
+
+        if(playerWeaponInstance != null) {
+            boolean isAiming = player.isSneaking();
+            Vec3d offset = com.paneedah.weaponlib.render.shells.ShellPositionManager.getShellOffset(playerWeaponInstance.getWeapon(), true, isAiming);
+            Vec3d pos = new Vec3d(player.posX, player.posY + player.getEyeHeight(), player.posZ);
+        	Vec3d weaponDir = new Vec3d(offset.x, offset.y, offset.z).rotatePitch((float) Math.toRadians(-player.rotationPitch)).rotateYaw((float) Math.toRadians(-player.rotationYaw));
+        	
+        	Vec3d velocity = new Vec3d(-0.3, 0.1, 0.0);
+    		velocity = velocity.rotateYaw((float) Math.toRadians(-player.rotationYaw));
+        	CHANNEL.sendToAllAround(new ShellMessageClient(player.getEntityId(), playerWeaponInstance.getWeapon().getShellType(), new Vector3D(pos.add(weaponDir)), new Vector3D(velocity)), tp);
+        }
+
+
+
+
+
+
+        int[] attachmentIds = Tags.getAttachmentIds(itemStack);
+        boolean silencerOn = false;
+        if (attachmentIds != null && attachmentIds.length > AttachmentCategory.SILENCER.ordinal()) {
+            int silencerId = attachmentIds[AttachmentCategory.SILENCER.ordinal()];
+            if (silencerId > 0) {
+                silencerOn = true;
+            }
+        }
+        if (!silencerOn && playerWeaponInstance != null) {
+            silencerOn = modContext.getAttachmentAspect().isSilencerOn(playerWeaponInstance);
+        }
+
+        SoundEvent shootSound = null;
+
+        if(isBurst && weapon.builder.isOneClickBurstAllowed) {
+
+            SoundEvent burstShootSound = null;
+            if(silencerOn) {
+                burstShootSound = weapon.getSilencedBurstShootSound();
+            }
+            if(burstShootSound == null) {
+                burstShootSound = weapon.getBurstShootSound();
+            }
+            if(burstShootSound != null) {
+                shootSound = burstShootSound;
+            } else {
+                shootSound = silencerOn ? weapon.getSilencedShootSound() : weapon.getShootSound();
+            }
+        } else {
+            shootSound = silencerOn ? weapon.getSilencedShootSound() : weapon.getShootSound();
+        }
+
+        float volume = silencerOn ? weapon.getSilencedShootSoundVolume() : weapon.getShootSoundVolume();
+        // В Minecraft при volume > 1.0f звук воспроизводится в радиусе 16 * volume блоков.
+        // Если volume равен 1.0, звук слышен во всем радиусе 16 блоков без ослабления.
+        // Ограничиваем громкость для других игроков до 0.85f (или 0.5f с глушителем), чтобы звук затухал с расстоянием.
+        volume = Math.min(volume, silencerOn ? 0.5f : 0.85f);
+
+        player.world.playSound(player instanceof EntityPlayer ? (EntityPlayer) player : null, player.posX, player.posY, player.posZ, shootSound, player.getSoundCategory(), volume, 1.0f);
+
+    }
+
+}

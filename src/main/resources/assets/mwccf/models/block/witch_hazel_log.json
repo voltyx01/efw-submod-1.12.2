@@ -1,0 +1,1 @@
+{ "parent": "block/cube_column", "textures": { "end": "mwccf:blocks/witch_hazel/log_top", "side": "mwccf:blocks/witch_hazel/log" } }

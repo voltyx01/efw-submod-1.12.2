@@ -1,0 +1,25 @@
+{
+  "group": "mwccf",
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:cloth"
+    },
+    {
+      "item": "mwccf:cloth"
+    },
+    {
+      "item": "mwccf:cloth"
+    },
+    {
+      "item": "mwccf:cloth"
+    },
+    {
+      "item": "minecraft:string"
+    }
+  ],
+  "result": {
+    "item": "mwccf:bandage",
+    "count": 1
+  }
+}

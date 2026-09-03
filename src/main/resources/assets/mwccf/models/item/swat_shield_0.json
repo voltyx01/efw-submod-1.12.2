@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/swat_shield_0",
+  "textures": {
+    "0": "mwccf:blocks/swat_shield",
+    "particle": "mwccf:items/cloth_balaclava"
+  }
+}

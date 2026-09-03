@@ -1,0 +1,6 @@
+{
+    "parent": "mwccf:block/lamp_base",
+    "textures": {
+        "texture": "mwccf:blocks/lamp02"
+    }
+}

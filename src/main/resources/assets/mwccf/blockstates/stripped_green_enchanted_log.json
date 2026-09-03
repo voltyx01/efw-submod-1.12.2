@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "axis=y":    { "model": "mwccf:stripped_green_enchanted_log" },
+        "axis=z":    { "model": "mwccf:stripped_green_enchanted_log", "x": 90 },
+        "axis=x":    { "model": "mwccf:stripped_green_enchanted_log", "x": 90, "y": 90 },
+        "axis=none": { "model": "mwccf:stripped_green_enchanted_log" }
+    }
+}

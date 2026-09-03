@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mwccf:items/cm6m_gas_mask"
+  }
+}

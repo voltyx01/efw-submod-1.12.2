@@ -1,0 +1,38 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "efw.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ParagliderCrawlingFixMixin",
+    "BackpacksMixin",
+    "ContainerBackpackMixin",
+    "MixinDimensionManager",
+    "MixinAbstractWorldGenerator",
+    "XaeroWorldMapSyncedPlayerTrackerMixin",
+    "XaeroMinimapSyncedPlayerTrackerMixin"
+  ],
+  "client": [
+    "BackpackClientMixin",
+    "MixinItemAttachment",
+    "CrosshairDraw",
+    "WeaponMixin",
+    "WeaponHandling",
+    "AquaAcrobaticsParagliderMixin",
+    "MWCSmokeOffsetMixin",
+    "MixinWeaponRenderer",
+    "MixinScopePerspective",
+    "MixinBoPFogEventHandler",
+    "XaeroModuleSessionMixin",
+    "XaeroMinimapRendererMixin",
+    "XaeroRadarStateUpdaterMixin",
+    "XaeroControlsHandlerMixin",
+    "XaeroGuiMapMixin",
+    "MixinCustomGui",
+    "MixinModificationGUI"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "refmap": "efw.mixins.refmap.json"
+}

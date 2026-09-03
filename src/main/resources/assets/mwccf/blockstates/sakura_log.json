@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "axis=y":    { "model": "mwccf:sakura_log" },
+        "axis=z":    { "model": "mwccf:sakura_log", "x": 90 },
+        "axis=x":    { "model": "mwccf:sakura_log", "x": 90, "y": 90 },
+        "axis=none": { "model": "mwccf:sakura_log" }
+    }
+}

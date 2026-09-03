@@ -1,0 +1,1 @@
+{ "parent": "block/upper_slab", "textures": { "bottom": "mwccf:blocks/fir/planks", "top": "mwccf:blocks/fir/planks", "side": "mwccf:blocks/fir/planks" } }

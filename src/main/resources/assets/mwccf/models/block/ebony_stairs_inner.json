@@ -1,0 +1,1 @@
+{ "parent": "block/inner_stairs", "textures": { "bottom": "mwccf:blocks/ebony/planks", "top": "mwccf:blocks/ebony/planks", "side": "mwccf:blocks/ebony/planks" } }

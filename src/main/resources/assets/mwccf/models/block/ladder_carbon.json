@@ -1,0 +1,6 @@
+{
+    "parent": "mwccf:block/ladder_base",
+    "textures": {
+        "texture": "mwccf:blocks/metal_ladder_carbon"
+    }
+}

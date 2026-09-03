@@ -1,0 +1,6 @@
+{
+	"parent": "block/block",
+	"textures": {
+        "particle": "mwccf:blocks/drill_rod"
+    }
+}

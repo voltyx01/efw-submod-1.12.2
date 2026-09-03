@@ -1,0 +1,58 @@
+config.extragore.client=Extra Gore
+config.extragore.blood_particles=Blood Particles
+
+config.extragore.blood_particles.ceiling=Ceiling
+config.extragore.blood_particles.ceiling.stick=Stick
+config.extragore.blood_particles.ceiling.block_list_mode=Block List Mode
+config.extragore.blood_particles.ceiling.block_list=Block List
+
+config.extragore.blood_particles.fade=Fade
+config.extragore.blood_particles.fade.start_fade=Start Fade
+
+config.extragore.blood_particles.health_scale=Health Scaling
+config.extragore.blood_particles.health_scale.enable_size_reduction=Enable Size Reduction
+config.extragore.blood_particles.health_scale.start_health_fraction=Start Health Fraction
+config.extragore.blood_particles.health_scale.end_health_fraction=End Health Fraction
+config.extragore.blood_particles.health_scale.size_at_start=Size At Start
+config.extragore.blood_particles.health_scale.size_at_low=Size At Low
+
+config.extragore.blood_particles.damage_sources=Damage Sources
+config.extragore.blood_particles.damage_sources.fire=Fire
+config.extragore.blood_particles.damage_sources.drowning=Drowning
+config.extragore.blood_particles.damage_sources.suffocation=Suffocation
+config.extragore.blood_particles.damage_sources.cactus=Cactus
+config.extragore.blood_particles.damage_sources.effects=Effects
+config.extragore.blood_particles.damage_sources.fall=Fall
+config.extragore.blood_particles.damage_sources.lightning=Lightning
+config.extragore.blood_particles.damage_sources.void=Void
+
+config.extragore.blood_particles.ground=Ground
+config.extragore.blood_particles.ground.amalgamation=Amalgamation
+config.extragore.blood_particles.ground.spread_min=Spread Min
+config.extragore.blood_particles.ground.spread_max=Spread Max
+
+config.extragore.blood_particles.wall=Wall
+config.extragore.blood_particles.wall.drip=Drip
+config.extragore.blood_particles.wall.block_list_mode=Block List Mode
+config.extragore.blood_particles.wall.block_list=Block List
+config.extragore.blood_particles.wall.stretch_min=Stretch Min
+config.extragore.blood_particles.wall.stretch_max=Stretch Max
+config.extragore.blood_particles.wall.slide_speed=Slide Speed
+
+config.extragore.blood_particles.hot_blocks=Hot Blocks
+config.extragore.blood_particles.hot_blocks.hot_blocks=Hot Blocks
+config.extragore.blood_particles.hot_blocks.block_list=Block List
+
+config.extragore.blood_particles.ceiling.tooltip=Settings for blood behavior on ceilings.
+config.extragore.blood_particles.fade.tooltip=Settings for blood fading over time.
+config.extragore.blood_particles.health_scale.tooltip=Settings for health based blood size scaling on hit.
+config.extragore.blood_particles.damage_sources.tooltip=Settings for which damage sources can spawn blood on hit.
+config.extragore.blood_particles.ground.tooltip=Settings for blood behavior on the ground.
+config.extragore.blood_particles.wall.tooltip=Settings for blood behavior on walls.
+config.extragore.blood_particles.hot_blocks.tooltip=Settings for blocks which are considered hot blocks.
+
+config.extragore.blood_particles.hit_dispersion=Hit Dispersion
+config.extragore.blood_particles.hit_dispersion.cone_range=Cone Range
+config.extragore.blood_particles.hit_dispersion.y_cone_range=Y Cone Range
+config.extragore.blood_particles.hit_dispersion.force=Force
+config.extragore.blood_particles.hit_dispersion.tooltip=Settings for directional hit spray dispersion and force.

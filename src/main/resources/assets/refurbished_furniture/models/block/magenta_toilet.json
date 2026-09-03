@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/toilet",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/magenta_toilet",
+    "particle": "refurbished_furniture:blocks/magenta_toilet"
+  }
+}

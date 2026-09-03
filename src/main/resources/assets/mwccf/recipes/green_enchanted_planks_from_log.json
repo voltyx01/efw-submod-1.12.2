@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:green_enchanted_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:green_enchanted_planks",
+    "count": 4
+  }
+}

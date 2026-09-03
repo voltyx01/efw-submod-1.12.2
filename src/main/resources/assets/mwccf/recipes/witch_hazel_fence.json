@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P/P",
+    "P/P"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:witch_hazel_planks"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mwccf:witch_hazel_fence",
+    "count": 3
+  }
+}

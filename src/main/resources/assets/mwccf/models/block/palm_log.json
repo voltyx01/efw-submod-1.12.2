@@ -1,0 +1,1 @@
+{ "parent": "block/cube_column", "textures": { "end": "mwccf:blocks/palm/log_top", "side": "mwccf:blocks/palm/log" } }

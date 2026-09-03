@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/stove_closed",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/dark_stove",
+    "particle": "refurbished_furniture:blocks/dark_stove"
+  }
+}

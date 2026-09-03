@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:kitchen_storage_cabinet_closed_hinge_left" },
+    "facing=north": { "model": "refurbished_furniture:kitchen_storage_cabinet_closed_hinge_left" },
+    "facing=south": { "model": "refurbished_furniture:kitchen_storage_cabinet_closed_hinge_left", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:kitchen_storage_cabinet_closed_hinge_left", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:kitchen_storage_cabinet_closed_hinge_left", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:kitchen_storage_cabinet_closed_hinge_left" }
+  }
+}

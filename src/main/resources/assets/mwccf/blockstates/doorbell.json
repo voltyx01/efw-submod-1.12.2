@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:doorbell" },
+    "facing=north": { "model": "refurbished_furniture:doorbell" },
+    "facing=south": { "model": "refurbished_furniture:doorbell", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:doorbell", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:doorbell", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:doorbell" }
+  }
+}

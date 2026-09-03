@@ -1,0 +1,16 @@
+{
+  "group": "mwccf",
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:string"
+    },
+    {
+      "item": "minecraft:string"
+    }
+  ],
+  "result": {
+    "item": "mwccf:cloth",
+    "count": 1
+  }
+}

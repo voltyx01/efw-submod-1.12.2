@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "type=grey": {
+      "model": "mwccf:nethermetal_grey"
+    },
+    "type=panel": {
+      "model": "mwccf:nethermetal_panel"
+    },
+    "type=grey_dark": {
+      "model": "mwccf:nethermetal_grey_dark"
+    },
+    "type=grate2": {
+      "model": "mwccf:nethermetal_grate2"
+    },
+    "type=grate1": {
+      "model": "mwccf:nethermetal_grate1"
+    },
+    "type=grey_tiles": {
+      "model": "mwccf:nethermetal_grey_tiles"
+    },
+	"type=border_red": {
+      "model": "mwccf:nethermetal_border_red"
+    },
+	"type=plate_black": {
+      "model": "mwccf:nethermetal_plate_black"
+    },
+	"type=plate_red": {
+      "model": "mwccf:nethermetal_plate_red"
+    },
+	"type=border_lava": {
+      "model": "mwccf:nethermetal_border_lava"
+    }
+  }
+}

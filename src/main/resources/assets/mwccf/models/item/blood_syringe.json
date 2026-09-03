@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/blood_syring",
+  "textures": {
+    "0": "mwccf:blocks/blood_syringe",
+    "particle": "mwccf:items/blood_syringe"
+  }
+}

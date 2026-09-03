@@ -1,0 +1,1 @@
+{ "parent": "block/half_slab", "textures": { "bottom": "mwccf:blocks/maple/planks", "top": "mwccf:blocks/maple/planks", "side": "mwccf:blocks/maple/planks" } }

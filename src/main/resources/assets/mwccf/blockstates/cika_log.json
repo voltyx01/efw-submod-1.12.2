@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "axis=y":    { "model": "mwccf:cika_log" },
+        "axis=z":    { "model": "mwccf:cika_log", "x": 90 },
+        "axis=x":    { "model": "mwccf:cika_log", "x": 90, "y": 90 },
+        "axis=none": { "model": "mwccf:cika_log" }
+    }
+}

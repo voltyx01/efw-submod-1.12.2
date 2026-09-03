@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+	"textures": {
+		"particle": "mwccf:blocks/interiormarker_side",
+		"north": "mwccf:blocks/interiormarker_front",
+		"south": "mwccf:blocks/interiormarker_side",
+		"east": "mwccf:blocks/interiormarker_side",
+		"west": "mwccf:blocks/interiormarker_side",
+		"up": "mwccf:blocks/interiormarker_side",
+		"down": "mwccf:blocks/interiormarker_side"
+	}
+}

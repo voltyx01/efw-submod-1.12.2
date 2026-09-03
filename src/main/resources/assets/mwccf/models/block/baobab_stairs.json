@@ -1,0 +1,1 @@
+{ "parent": "block/stairs", "textures": { "bottom": "mwccf:blocks/baobab/planks", "top": "mwccf:blocks/baobab/planks", "side": "mwccf:blocks/baobab/planks" } }

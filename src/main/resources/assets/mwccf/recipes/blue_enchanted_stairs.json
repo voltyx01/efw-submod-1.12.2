@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P  ",
+    "PP ",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:blue_enchanted_planks"
+    }
+  },
+  "result": {
+    "item": "mwccf:blue_enchanted_stairs",
+    "count": 4
+  }
+}

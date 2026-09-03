@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:gray_sofa" },
+    "facing=north": { "model": "refurbished_furniture:gray_sofa" },
+    "facing=south": { "model": "refurbished_furniture:gray_sofa", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:gray_sofa", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:gray_sofa", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:gray_sofa" }
+  }
+}

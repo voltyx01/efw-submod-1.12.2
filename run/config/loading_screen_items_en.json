@@ -1,0 +1,14 @@
+[
+  {
+    "item": "minecraft:iron_sword",
+    "meta": 0,
+    "description": "A steel blade found among the ruins.",
+    "lore": "Its master didn\u0027t survive. You are different."
+  },
+  {
+    "item": "minecraft:golden_apple",
+    "meta": 0,
+    "description": "A rarity even before the catastrophe.",
+    "lore": "They say this was worth a fortune in the old world."
+  }
+]

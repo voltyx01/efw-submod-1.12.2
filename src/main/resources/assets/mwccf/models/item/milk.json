@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/milk",
+  "textures": {
+    "0": "mwccf:blocks/milk",
+    "particle": "mwccf:items/milk"
+  }
+}

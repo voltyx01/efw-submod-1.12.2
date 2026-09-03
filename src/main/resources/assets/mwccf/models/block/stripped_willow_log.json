@@ -1,0 +1,1 @@
+{ "parent": "block/cube_column", "textures": { "end": "mwccf:blocks/willow/stripped_log_top", "side": "mwccf:blocks/willow/stripped_log" } }

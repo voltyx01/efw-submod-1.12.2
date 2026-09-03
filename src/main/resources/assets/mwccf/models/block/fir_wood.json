@@ -1,0 +1,1 @@
+{ "parent": "block/cube_column", "textures": { "end": "mwccf:blocks/fir/log", "side": "mwccf:blocks/fir/log" } }

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P/P",
+    "P/P"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:baobab_planks"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mwccf:baobab_fence",
+    "count": 3
+  }
+}

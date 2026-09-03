@@ -1,0 +1,16 @@
+{
+  "group": "efw",
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:string"
+    },
+    {
+      "item": "minecraft:string"
+    }
+  ],
+  "result": {
+    "item": "efw:cloth",
+    "count": 1
+  }
+}

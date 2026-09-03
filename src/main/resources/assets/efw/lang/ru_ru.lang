@@ -1,0 +1,16 @@
+item.note.name=Записка
+item.c_diary.name=Дневник Собирателя
+itemGroup.efw_tab=Записки и Дневник
+item.machete.name=Мачете
+item.modern_axe.name=Современный топор
+item.med_kit.name=Аптечка
+item.bandage.name=Бинт
+item.cloth.name=Кусок ткани
+item.dpor.name=Оскверненная страница Откровения
+tooltip.mwccf.dpor.consumable=Используется для повышения уровня порока.
+tooltip.mwccf.dpor.inspect=Когда пал Седьмой Ангел, земля содрогнулась, и вылезли твари из колодца бездны, подобные коням, готовым к войне... Имя им — Смерть и Тление.
+item.manual_melee.name=Руководство по холодному оружию
+item.manual_firearms.name=Руководство по огнестрельному оружию
+item.manual_meds.name=Руководство по медикаментам
+item.manual_lockpick.name=Руководство по взлому
+item.manual_tools.name=Руководство по инструментам

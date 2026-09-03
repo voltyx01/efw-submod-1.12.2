@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:orange_spruce_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:orange_spruce_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:orange_spruce_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:orange_spruce_leaves" },
+        "normal": { "model": "mwccf:orange_spruce_leaves" }
+    }
+}

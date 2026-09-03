@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "snowy=false": { "model": "mwccf:overgrown_stone" },
+    "snowy=true": { "model": "mwccf:overgrown_stone_snow" }
+  }
+}

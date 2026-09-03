@@ -1,0 +1,6 @@
+{
+	"parent": "block/block",
+	"textures": {
+        "particle": "mwccf:blocks/fabricator_housing"
+    }
+}

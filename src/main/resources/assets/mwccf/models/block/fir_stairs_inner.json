@@ -1,0 +1,1 @@
+{ "parent": "block/inner_stairs", "textures": { "bottom": "mwccf:blocks/fir/planks", "top": "mwccf:blocks/fir/planks", "side": "mwccf:blocks/fir/planks" } }

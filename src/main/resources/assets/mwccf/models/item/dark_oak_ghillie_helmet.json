@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mwccf:items/dark_oak_ghillie_helmet"
+  }
+}

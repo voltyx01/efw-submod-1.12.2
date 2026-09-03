@@ -1,0 +1,12 @@
+{
+    "variants": {
+        "type=container_red": { "model": "mwccf:container_red" },
+		"type=container_green": { "model": "mwccf:container_green" },
+		"type=container_blue": { "model": "mwccf:container_blue" },
+		"type=container_orange": { "model": "mwccf:container_orange" },
+		"type=panel_large_border": { "model": "mwccf:panel_large_border" },
+		"type=steelframe_blue": { "model": "mwccf:steelframe_blue" },
+		"type=steelframe_dark": { "model": "mwccf:steelframe_dark" },
+		"type=steelframe_scaffold": { "model": "mwccf:steelframe_scaffold" }
+    }
+}

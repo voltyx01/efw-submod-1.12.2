@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "type=hole": {
+      "model": "mwccf:hole"
+    },
+	"type=soldier_spawn": {
+      "model": "mwccf:soldier_spawn",
+	  "y": 0
+    }
+  }
+}

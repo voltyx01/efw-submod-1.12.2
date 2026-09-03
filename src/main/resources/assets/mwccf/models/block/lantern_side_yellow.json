@@ -1,0 +1,8 @@
+{
+    "parent": "mwccf:block/lantern_side_base",
+    "textures": {
+        "side": "mwccf:blocks/lantern01_side",
+		"particle": "mwccf:blocks/lantern01_side",
+		"top": "mwccf:blocks/lantern01_top"
+    }
+}

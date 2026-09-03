@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/survival_medkit",
+  "textures": {
+    "0": "mwccf:blocks/survival_medkit",
+    "particle": "mwccf:items/medkit_survival"
+  }
+}

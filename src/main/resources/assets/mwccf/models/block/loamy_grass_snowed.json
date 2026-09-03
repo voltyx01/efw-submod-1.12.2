@@ -1,0 +1,10 @@
+{
+    "parent": "block/grass",
+    "textures": {
+        "particle": "mwccf:blocks/loamy_dirt",
+        "bottom": "mwccf:blocks/loamy_dirt",
+        "top": "minecraft:blocks/snow",
+        "side": "mwccf:blocks/loamy_grass_snowed_side",
+        "overlay": "mwccf:blocks/loamy_grass_snowed_side"
+    }
+}

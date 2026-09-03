@@ -1,0 +1,82 @@
+{
+	"forge_marker": 1,
+	"defaults": {
+		"model": "mwccf:military_crate"
+	},
+    "variants": {
+		"type": {
+			"ammo":{
+				"textures": {
+					"top": "mwccf:blocks/crate_top_dark",
+					"side": "mwccf:blocks/military_crate_side",
+					"bottom": "mwccf:blocks/military_crate_bottom",
+					"particle": "mwccf:blocks/military_crate_bottom"
+				}
+			},
+			"gun":{
+				"textures": {
+					"top": "mwccf:blocks/crate_top_dark",
+					"side": "mwccf:blocks/military_crate_gun",
+					"bottom": "mwccf:blocks/military_crate_bottom",
+					"particle": "mwccf:blocks/military_crate_bottom"
+				}
+			},
+			"armor": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top",
+					"side": "mwccf:blocks/armor_crate_side",
+					"bottom": "minecraft:blocks/planks_oak",
+					"particle": "minecraft:blocks/planks_oak"
+				}
+			},
+			"medical": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top_red",
+					"side": "mwccf:blocks/medical_crate_side",
+					"bottom": "minecraft:blocks/planks_birch",
+					"particle": "minecraft:blocks/planks_birch"
+				}
+			},
+			"explosive": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top_red",
+					"side": "mwccf:blocks/explosive_crate",
+					"bottom": "minecraft:blocks/planks_spruce",
+					"particle": "minecraft:blocks/planks_spruce"
+				}
+			},
+			"generic_oak": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top",
+					"side": "minecraft:blocks/planks_oak",
+					"bottom": "minecraft:blocks/planks_oak",
+					"particle": "minecraft:blocks/planks_oak"
+				}
+			},
+			"generic_jungle": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top_dark",
+					"side": "minecraft:blocks/planks_jungle",
+					"bottom": "minecraft:blocks/planks_jungle",
+					"particle": "minecraft:blocks/planks_jungle"
+				}
+			},
+			"generic_birch": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top_blue",
+					"side": "minecraft:blocks/planks_birch",
+					"bottom": "minecraft:blocks/planks_birch",
+					"particle": "minecraft:blocks/planks_birch"
+				}
+			},
+			"generic_spruce": {
+				"textures": {
+					"top": "mwccf:blocks/crate_top_red",
+					"side": "minecraft:blocks/planks_spruce",
+					"bottom": "minecraft:blocks/planks_spruce",
+					"particle": "minecraft:blocks/planks_spruce"
+				}
+			}
+		}
+	}
+}

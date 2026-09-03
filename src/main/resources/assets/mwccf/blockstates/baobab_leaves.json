@@ -1,0 +1,9 @@
+{
+    "variants": {
+        "check_decay=true,decayable=true": { "model": "mwccf:baobab_leaves" },
+        "check_decay=true,decayable=false": { "model": "mwccf:baobab_leaves" },
+        "check_decay=false,decayable=true": { "model": "mwccf:baobab_leaves" },
+        "check_decay=false,decayable=false": { "model": "mwccf:baobab_leaves" },
+        "normal": { "model": "mwccf:baobab_leaves" }
+    }
+}

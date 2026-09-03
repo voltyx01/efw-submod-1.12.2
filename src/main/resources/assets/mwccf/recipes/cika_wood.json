@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LL",
+    "LL"
+  ],
+  "key": {
+    "L": {
+      "item": "mwccf:cika_log"
+    }
+  },
+  "result": {
+    "item": "mwccf:cika_wood",
+    "count": 3
+  }
+}

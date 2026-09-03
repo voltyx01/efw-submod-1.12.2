@@ -1,0 +1,45 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.model - Converted - Converted - Converted - Converted",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "bracelet",
+					"parent": "bipedLeftArm",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [3.5, 15, 1], "size": [0.5, 2, 1], "uv": [21, 3]},
+						{"origin": [3.25, 14, -1.2], "size": [0.75, 4, 0.2], "uv": [29, 19]},
+						{"origin": [3.25, 14, 1], "size": [0.75, 4, 0.2], "uv": [30, 6]},
+						{"origin": [3.25, 18, -1.05], "size": [0.75, 0.2, 2.1], "uv": [22, 4]},
+						{"origin": [3.25, 13.8, -1.05], "size": [0.75, 0.2, 2.1], "uv": [22, 4]},
+						{"origin": [3.5, 15, -2], "size": [0.5, 2, 1], "uv": [21, 3]},
+						{"origin": [4, 15, -2.5], "size": [4, 2, 0.5], "uv": [17, 2]},
+						{"origin": [4, 15, 2], "size": [4, 2, 0.5], "uv": [18, 2]},
+						{"origin": [4.06, 15, 1], "size": [0.7, 2, 0.35], "pivot": [3, 15, 1], "rotation": [0, -45, 0], "uv": [23, 3]},
+						{"origin": [8.06, 15, -3.35], "size": [0.7, 2, 0.35], "pivot": [7, 15, -3], "rotation": [0, -45, 0], "uv": [23, 3]},
+						{"origin": [4.06, 15, -1.35], "size": [0.7, 2, 0.35], "pivot": [3, 15, -1], "rotation": [0, 45, 0], "uv": [23, 3]},
+						{"origin": [8.06, 15, 3], "size": [0.7, 2, 0.35], "pivot": [7, 15, 3], "rotation": [0, 45, 0], "uv": [23, 3]},
+						{"origin": [8, 15, -2], "size": [0.5, 2, 4], "uv": [18, -2]}
+					]
+				},
+				{
+					"name": "screen",
+					"parent": "bracelet",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [3.35, 14, -1], "size": [0.65, 4, 2], "uv": [0, 0]}
+					]
+				}
+			]
+		}
+	]
+}

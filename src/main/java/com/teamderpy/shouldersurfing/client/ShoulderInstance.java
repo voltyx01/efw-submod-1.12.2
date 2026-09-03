@@ -1,0 +1,173 @@
+package com.teamderpy.shouldersurfing.client;
+
+import com.teamderpy.shouldersurfing.config.Config;
+import com.teamderpy.shouldersurfing.config.Perspective;
+
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+@SideOnly(Side.CLIENT)
+public class ShoulderInstance
+{
+	private static final ShoulderInstance INSTANCE = new ShoulderInstance();
+	private boolean doShoulderSurfing;
+	private boolean doSwitchPerspective;
+	private boolean isAiming;
+	private double offsetX = Config.CLIENT.getOffsetX();
+	private double offsetY = Config.CLIENT.getOffsetY();
+	private double offsetZ = Config.CLIENT.getOffsetZ();
+	private double lastOffsetX = Config.CLIENT.getOffsetX();
+	private double lastOffsetY = Config.CLIENT.getOffsetY();
+	private double lastOffsetZ = Config.CLIENT.getOffsetZ();
+	private double targetOffsetX = Config.CLIENT.getOffsetX();
+	private double targetOffsetY = Config.CLIENT.getOffsetY();
+	private double targetOffsetZ = Config.CLIENT.getOffsetZ();
+	private int thirdPersonView = Config.CLIENT.getDefaultPerspective().getPointOfView();
+	// Углы самой камеры
+
+	private ShoulderInstance()
+	{
+		super();
+	}
+	
+	public void tick()
+	{
+		if(this.thirdPersonView != Minecraft.getMinecraft().gameSettings.thirdPersonView)
+		{
+			boolean wasSS = this.doShoulderSurfing;
+			this.doShoulderSurfing = Config.CLIENT.replaceDefaultPerspective() && Minecraft.getMinecraft().gameSettings.thirdPersonView == 1;
+			this.thirdPersonView = Minecraft.getMinecraft().gameSettings.thirdPersonView;
+			if(!wasSS && this.doShoulderSurfing)
+			{
+				this.resetOffsetsForSmoothEntry();
+			}
+		}
+		
+		if(!Perspective.FIRST_PERSON.equals(Perspective.current()))
+		{
+			this.doSwitchPerspective = false;
+		}
+		
+		this.isAiming = ShoulderHelper.isHoldingAdaptiveItem();
+		
+		if(this.isAiming && Config.CLIENT.getCrosshairType().doSwitchPerspective() && this.doShoulderSurfing)
+		{
+			this.changePerspective(Perspective.FIRST_PERSON);
+			this.doSwitchPerspective = true;
+		}
+		else if(!this.isAiming && Perspective.FIRST_PERSON.equals(Perspective.current()) && this.doSwitchPerspective)
+		{
+			this.changePerspective(Perspective.SHOULDER_SURFING);
+		}
+		
+		this.targetOffsetX = Config.CLIENT.getOffsetX();
+		this.targetOffsetY = Config.CLIENT.getOffsetY();
+		this.targetOffsetZ = Config.CLIENT.getOffsetZ();
+		
+		this.lastOffsetX = this.offsetX;
+		this.lastOffsetY = this.offsetY;
+		this.lastOffsetZ = this.offsetZ;
+		
+		this.offsetX = this.lastOffsetX + (this.targetOffsetX - this.lastOffsetX) * Config.CLIENT.getCameraTransitionSpeedMultiplier();		
+		this.offsetY = this.lastOffsetY + (this.targetOffsetY - this.lastOffsetY) * Config.CLIENT.getCameraTransitionSpeedMultiplier();
+		this.offsetZ = this.lastOffsetZ + (this.targetOffsetZ - this.lastOffsetZ) * Config.CLIENT.getCameraTransitionSpeedMultiplier();
+	}
+	
+	public void resetOffsetsForSmoothEntry()
+	{
+		this.offsetX = 0.0;
+		this.offsetY = 0.0;
+		this.offsetZ = 0.0;
+		this.lastOffsetX = 0.0;
+		this.lastOffsetY = 0.0;
+		this.lastOffsetZ = 0.0;
+		
+		this.targetOffsetX = Config.CLIENT.getOffsetX();
+		this.targetOffsetY = Config.CLIENT.getOffsetY();
+		this.targetOffsetZ = Config.CLIENT.getOffsetZ();
+		
+		if(Minecraft.getMinecraft().player != null)
+		{
+			ShoulderRenderer.getInstance().cameraYaw = Minecraft.getMinecraft().player.rotationYaw + 180.0F;
+			ShoulderRenderer.getInstance().cameraPitch = Minecraft.getMinecraft().player.rotationPitch;
+		}
+	}
+	
+	public void changePerspective(Perspective perspective)
+	{
+		boolean wasSS = this.doShoulderSurfing;
+		Minecraft.getMinecraft().gameSettings.thirdPersonView = perspective.getPointOfView();
+		this.thirdPersonView = perspective.getPointOfView();
+		this.doShoulderSurfing = Perspective.SHOULDER_SURFING.equals(perspective);
+		if(!wasSS && this.doShoulderSurfing)
+		{
+			this.resetOffsetsForSmoothEntry();
+		}
+	}
+	
+	public boolean doShoulderSurfing()
+	{
+		return this.doShoulderSurfing;
+	}
+	
+	public void setShoulderSurfing(boolean doShoulderSurfing)
+	{
+		this.doShoulderSurfing = doShoulderSurfing;
+	}
+	
+	public boolean isAiming()
+	{
+		return this.isAiming;
+	}
+	
+	public double getOffsetX()
+	{
+		return this.offsetX;
+	}
+	
+	public double getOffsetXOld()
+	{
+		return this.lastOffsetX;
+	}
+	
+	public double getOffsetY()
+	{
+		return this.offsetY;
+	}
+	
+	public double getOffsetYOld()
+	{
+		return this.lastOffsetY;
+	}
+	
+	public double getOffsetZ()
+	{
+		return this.offsetZ;
+	}
+	
+	public double getOffsetZOld()
+	{
+		return this.lastOffsetZ;
+	}
+	
+	public void setTargetOffsetX(double targetOffsetX)
+	{
+		this.targetOffsetX = targetOffsetX;
+	}
+	
+	public void setTargetOffsetY(double targetOffsetY)
+	{
+		this.targetOffsetY = targetOffsetY;
+	}
+	
+	public void setTargetOffsetZ(double targetOffsetZ)
+	{
+		this.targetOffsetZ = targetOffsetZ;
+	}
+	
+	public static ShoulderInstance getInstance()
+	{
+		return INSTANCE;
+	}
+}

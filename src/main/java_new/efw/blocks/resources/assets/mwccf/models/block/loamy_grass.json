@@ -1,0 +1,1 @@
+{ "parent": "block/grass", "textures": { "particle": "mwccf:blocks/loamy_dirt", "bottom": "mwccf:blocks/loamy_dirt", "top": "mwccf:blocks/loamy_grass_top", "side": "mwccf:blocks/loamy_grass_side", "overlay": "mwccf:blocks/loamy_grass_side_overlay" } }

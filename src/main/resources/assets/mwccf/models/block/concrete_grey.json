@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "mwccf:blocks/concrete_grey"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "itemsound": {
+    "sounds": [ { "name": "efw:itemsound" } ]
+  },
+  "notes": {
+    "sounds": [ { "name": "efw:notes" } ]
+  },
+  "diaryopen": {
+    "sounds": [ { "name": "efw:diaryopen" } ]
+  },
+  "bandage": {
+    "sounds": [ { "name": "efw:bandage" } ]
+  },
+  "med": {
+    "sounds": [ { "name": "efw:bandage" } ]
+  }
+}

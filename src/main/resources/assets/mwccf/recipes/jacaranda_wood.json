@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LL",
+    "LL"
+  ],
+  "key": {
+    "L": {
+      "item": "mwccf:jacaranda_log"
+    }
+  },
+  "result": {
+    "item": "mwccf:jacaranda_wood",
+    "count": 3
+  }
+}

@@ -1,0 +1,1 @@
+{ "parent": "block/cube_column", "textures": { "end": "mwccf:blocks/jacaranda/stripped_log_top", "side": "mwccf:blocks/jacaranda/stripped_log" } }

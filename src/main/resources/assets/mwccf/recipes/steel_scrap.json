@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "iii",
+    "iCC",
+    "CC "
+  ],
+  "key": {
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "type": "forge:ore_dict",
+      "ore": "coal"
+    }
+  },
+  "result": {
+    "item": "mwccf:steel_scrap",
+    "count": 1
+  }
+}

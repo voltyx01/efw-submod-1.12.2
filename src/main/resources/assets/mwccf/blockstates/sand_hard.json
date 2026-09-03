@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "type=bugnest_sand": {
+      "model": "mwccf:bugnest_sand"
+    }
+  }
+}

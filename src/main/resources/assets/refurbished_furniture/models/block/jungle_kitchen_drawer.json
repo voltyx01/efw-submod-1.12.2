@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/kitchen_drawer_closed",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/jungle_kitchen_drawer",
+    "particle": "refurbished_furniture:blocks/jungle_kitchen_drawer"
+  }
+}

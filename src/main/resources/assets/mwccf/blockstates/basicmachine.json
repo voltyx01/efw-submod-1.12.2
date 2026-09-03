@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "machinetype=ammo_press": { "model": "mwccf:basicmachine" },
+        "machinetype=metal_press": { "model": "mwccf:basicmachine" },
+		"machinetype=chem_lab": { "model": "mwccf:basicmachine" },
+		"machinetype=turret": { "model": "mwccf:basicmachine" },
+		"machinetype=dungeon_scanner": { "model": "mwccf:dungeon_scanner" },
+		"machinetype=dungeon_generator":{ "model": "mwccf:dungeon_generator" }
+    }
+}

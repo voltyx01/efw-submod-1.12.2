@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:ebony_log"
+    }
+  ],
+  "result": {
+    "item": "mwccf:ebony_planks",
+    "count": 4
+  }
+}

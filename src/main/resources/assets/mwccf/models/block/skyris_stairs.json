@@ -1,0 +1,1 @@
+{ "parent": "block/stairs", "textures": { "bottom": "mwccf:blocks/skyris/planks", "top": "mwccf:blocks/skyris/planks", "side": "mwccf:blocks/skyris/planks" } }

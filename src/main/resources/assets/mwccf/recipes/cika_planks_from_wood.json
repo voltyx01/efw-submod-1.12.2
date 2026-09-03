@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:cika_wood"
+    }
+  ],
+  "result": {
+    "item": "mwccf:cika_planks",
+    "count": 4
+  }
+}

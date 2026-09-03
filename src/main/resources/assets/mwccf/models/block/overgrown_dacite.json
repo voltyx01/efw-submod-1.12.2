@@ -1,0 +1,1 @@
+{ "parent": "block/grass", "textures": { "particle": "blocks/grass_top", "bottom": "mwccf:blocks/overgrown_dacite_bottom", "top": "blocks/grass_top", "side": "mwccf:blocks/overgrown_dacite_side", "overlay": "mwccf:blocks/overgrown_dacite_side_overlay" } }

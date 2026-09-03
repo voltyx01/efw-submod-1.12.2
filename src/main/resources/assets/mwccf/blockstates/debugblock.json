@@ -1,0 +1,25 @@
+{
+  "variants": {
+    "type=antiairmarker": {
+      "model": "mwccf:antiairmarker"
+    },
+    "type=interiormarker_north": {
+      "model": "mwccf:interiormarker"
+    },
+    "type=interiormarker_south": {
+      "model": "mwccf:interiormarker",
+	  "y": 180
+    },
+    "type=interiormarker_west": {
+      "model": "mwccf:interiormarker",
+	  "y": 270
+    },
+    "type=airmarker": {
+      "model": "mwccf:airmarker"
+    },
+    "type=interiormarker_east": {
+      "model": "mwccf:interiormarker",
+	  "y": 90
+    }
+  }
+}

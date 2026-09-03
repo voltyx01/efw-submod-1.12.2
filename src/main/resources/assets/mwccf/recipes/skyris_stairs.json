@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P  ",
+    "PP ",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "mwccf:skyris_planks"
+    }
+  },
+  "result": {
+    "item": "mwccf:skyris_stairs",
+    "count": 4
+  }
+}

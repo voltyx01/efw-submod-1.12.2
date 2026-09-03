@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "type=neontubes4_rotated": {
+      "model": "mwccf:neontubes4_rotated"
+    },
+    "type=neontubes2_rotated": {
+      "model": "mwccf:neontubes2_rotated"
+    },
+    "type=neontubes4": {
+      "model": "mwccf:neontubes4"
+    },
+    "type=neonsquare_white": {
+      "model": "mwccf:neonsquare_white"
+    },
+    "type=neontubes2": {
+      "model": "mwccf:neontubes2"
+    }
+  }
+}

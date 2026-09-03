@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "defaults": {
+    "color": "FF0000",
+    "style": "LIGHT",
+    "amalgamation": "BOTH",
+    "brightness": "WORLD",
+    "count": 45,
+    "dripChance": 0.4,
+    "viscosity": 0.35,
+    "scale": {
+      "min": 0.4,
+      "max": 1.6
+    },
+    "life": {
+      "min": 150,
+      "max": 300
+    }
+  },
+  "groups": {
+    "undead_heavy": {
+      "color": "C9C9C9",
+      "style": "HEAVY",
+      "brightness": "WORLD",
+      "scale": {
+        "min": 0.6,
+        "max": 1.1
+      },
+      "life": {
+        "min": 200,
+        "max": 300
+      },
+      "entities": [
+        "minecraft:skeleton",
+        "minecraft:wither_skeleton",
+        "minecraft:skeleton_horse",
+        "minecraft:wither"
+      ]
+    },
+    "slime": {
+      "color": "B0FF91",
+      "style": "SLIMY",
+      "amalgamation": "GROUND",
+      "brightness": "WORLD",
+      "count": 40,
+      "scale": {
+        "min": 0.6,
+        "max": 1.4
+      },
+      "life": {
+        "min": 150,
+        "max": 200
+      },
+      "entities": [
+        "minecraft:slime"
+      ]
+    },
+    "magma_cube": {
+      "color": "A82C07",
+      "style": "SLIMY",
+      "amalgamation": "GROUND",
+      "brightness": "FULLBRIGHT",
+      "count": 40,
+      "scale": {
+        "min": 0.6,
+        "max": 1.4
+      },
+      "life": {
+        "min": 150,
+        "max": 200
+      },
+      "entities": [
+        "minecraft:magma_cube"
+      ]
+    },
+    "blaze": {
+      "color": "EDB90C",
+      "style": "HEAVY",
+      "brightness": "FULLBRIGHT",
+      "scale": {
+        "min": 0.2,
+        "max": 1.4
+      },
+      "life": {
+        "min": 200,
+        "max": 300
+      },
+      "entities": [
+        "minecraft:blaze"
+      ]
+    },
+    "poison": {
+      "color": "46CC23",
+      "style": "LIGHT",
+      "amalgamation": "LIQUID",
+      "brightness": "FULLBRIGHT",
+      "dripChance": 0,
+      "viscosity": 0,
+      "entities": [
+        "minecraft:spider",
+        "minecraft:cave_spider",
+        "minecraft:witch"
+      ]
+    },
+    "iron": {
+      "color": "BABABA",
+      "style": "HEAVY",
+      "brightness": "WORLD",
+      "scale": {
+        "min": 0.2,
+        "max": 1.4
+      },
+      "life": {
+        "min": 200,
+        "max": 300
+      },
+      "entities": [
+        "minecraft:villager_golem"
+      ]
+    },
+    "magic": {
+      "color": "903FD1",
+      "style": "MAGIC",
+      "brightness": "FULLBRIGHT",
+      "count": 60,
+      "scale": {
+        "min": 0.4,
+        "max": 1.0
+      },
+      "life": {
+        "min": 200,
+        "max": 300
+      },
+      "entities": [
+        "minecraft:enderman",
+        "minecraft:endermite",
+        "minecraft:silverfish",
+        "minecraft:ender_dragon"
+      ]
+    },
+    "water_creatures": {
+      "color": "085A96",
+      "style": "LIGHT",
+      "brightness": "WORLD",
+      "count": 25,
+      "life": {
+        "min": 100,
+        "max": 200
+      },
+      "entities": [
+        "minecraft:squid",
+        "minecraft:guardian",
+        "minecraft:elder_guardian"
+      ]
+    }
+  }
+}

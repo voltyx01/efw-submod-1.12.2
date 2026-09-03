@@ -1,0 +1,321 @@
+package com.voltyx.mwccf.client.model.survivalinstinct;
+
+import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.model.ModelRenderer;
+import net.minecraft.entity.Entity;
+
+public class Modelrockie extends ModelBiped {
+
+    public ModelRenderer head;
+    public ModelRenderer head_r1;
+    public ModelRenderer head_r2;
+    public ModelRenderer head_r3;
+    public ModelRenderer head_r4;
+    public ModelRenderer head_r5;
+    public ModelRenderer body;
+    public ModelRenderer body_r1;
+    public ModelRenderer body_r2;
+    public ModelRenderer body_r3;
+    public ModelRenderer body_r4;
+    public ModelRenderer body_r5;
+    public ModelRenderer body_r6;
+    public ModelRenderer left_arm;
+    public ModelRenderer right_arm;
+    public ModelRenderer left_shoe;
+    public ModelRenderer right_shoe;
+    public ModelRenderer right_leg;
+    public ModelRenderer left_leg;
+
+    public Modelrockie() {
+        this.textureWidth = 128;
+        this.textureHeight = 128;
+
+        this.bipedHead = new ModelRenderer(this);
+        this.bipedHead.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.bipedHeadwear = new ModelRenderer(this);
+        this.bipedHeadwear.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.bipedBody = new ModelRenderer(this);
+        this.bipedBody.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.bipedRightArm = new ModelRenderer(this);
+        this.bipedRightArm.setRotationPoint(-5.0F, 2.0F, 0.0F);
+        this.bipedLeftArm = new ModelRenderer(this);
+        this.bipedLeftArm.setRotationPoint(5.0F, 2.0F, 0.0F);
+        this.bipedRightLeg = new ModelRenderer(this);
+        this.bipedRightLeg.setRotationPoint(-1.9F, 12.0F, 0.0F);
+        this.bipedLeftLeg = new ModelRenderer(this);
+        this.bipedLeftLeg.setRotationPoint(1.9F, 12.0F, 0.0F);
+        this.head = new ModelRenderer(this);
+        this.head.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(0, 92).addBox(-4.0F, -8.0F, -4.0F, (int)8.0, (int)8.0, (int)8.0, 0.01F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(0, 0).addBox(-5.0F, -9.0F, -5.0F, (int)10.0, (int)5.0, (int)10.0, -0.2F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(40, 23).addBox(-3.0F, -7.0F, 4.0F, (int)6.0, (int)3.0, (int)2.0, -0.2F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(16, 41).addBox(-2.0F, -6.0F, 4.0F, (int)4.0, (int)1.0, (int)2.0, 0.1F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(16, 44).addBox(2.0F, -7.0F, 4.0F, (int)1.0, (int)2.0, (int)2.0, 0.05F);
+        this.head.mirror = true;
+        this.head.setTextureOffset(16, 44).addBox(-3.0F, -7.0F, 4.0F, (int)1.0, (int)2.0, (int)2.0, 0.05F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(0, 38).addBox(-4.0F, -9.0F, -5.0F, (int)3.0, (int)4.0, (int)10.0, -0.1F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(62, 51).addBox(-5.0F, -7.0F, -3.0F, (int)1.0, (int)2.0, (int)8.0, 0.1F);
+        this.head.mirror = true;
+        this.head.setTextureOffset(62, 51).addBox(4.0F, -7.0F, -3.0F, (int)1.0, (int)2.0, (int)8.0, 0.1F);
+        this.head.mirror = true;
+        this.head.setTextureOffset(0, 38).addBox(1.0F, -9.0F, -5.0F, (int)3.0, (int)4.0, (int)10.0, -0.1F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(56, 5).addBox(-5.0F, -9.0F, -1.0F, (int)10.0, (int)3.0, (int)2.0, 0.3F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(54, 0).addBox(-5.0F, -6.0F, -1.0F, (int)10.0, (int)2.0, (int)2.0, 0.7F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(0, 27).addBox(-5.0F, -5.0F, -5.0F, (int)10.0, (int)1.0, (int)10.0, 0.05F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(0, 15).addBox(-5.0F, -5.0F, -5.0F, (int)10.0, (int)2.0, (int)10.0, -0.4F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(30, 0).addBox(-5.0F, -4.4F, 1.0F, (int)10.0, (int)3.0, (int)4.0, -0.2F);
+        this.head.mirror = false;
+        this.head.setTextureOffset(0, 15).addBox(-6.0F, -4.4F, -2.0F, (int)1.0, (int)3.0, (int)4.0, 0.2F);
+        this.head.mirror = true;
+        this.head.setTextureOffset(0, 15).addBox(5.0F, -4.4F, -2.0F, (int)1.0, (int)3.0, (int)4.0, 0.2F);
+        this.bipedHead.addChild(this.head);
+
+        this.head_r1 = new ModelRenderer(this);
+        this.head_r1.setRotationPoint(5.8F, -1.9F, 0.0F);
+        setRotationAngle(this.head_r1, 0.0F, 0.0F, 0.9599F);
+        this.head_r1.mirror = true;
+        this.head_r1.setTextureOffset(25, 57).addBox(-1.5F, -1.5F, -2.0F, (int)2.0, (int)2.0, (int)4.0, 0.05F);
+        this.head.addChild(this.head_r1);
+
+        this.head_r2 = new ModelRenderer(this);
+        this.head_r2.setRotationPoint(-5.8F, -1.9F, 0.0F);
+        setRotationAngle(this.head_r2, 0.0F, 0.0F, -0.9599F);
+        this.head_r2.mirror = false;
+        this.head_r2.setTextureOffset(25, 57).addBox(-0.5F, -1.5F, -2.0F, (int)2.0, (int)2.0, (int)4.0, 0.05F);
+        this.head.addChild(this.head_r2);
+
+        this.head_r3 = new ModelRenderer(this);
+        this.head_r3.setRotationPoint(0.0F, -9.1612F, -5.441F);
+        setRotationAngle(this.head_r3, -1.0472F, 0.0F, 0.0F);
+        this.head_r3.mirror = true;
+        this.head_r3.setTextureOffset(93, 42).addBox(1.0F, -0.1109F, -0.2599F, (int)1.0, (int)1.0, (int)2.0, 0.05F);
+        this.head_r3.mirror = false;
+        this.head_r3.setTextureOffset(93, 42).addBox(-2.0F, -0.1109F, -0.2599F, (int)1.0, (int)1.0, (int)2.0, 0.05F);
+        this.head.addChild(this.head_r3);
+
+        this.head_r4 = new ModelRenderer(this);
+        this.head_r4.setRotationPoint(0.0F, -9.1612F, -5.441F);
+        setRotationAngle(this.head_r4, -1.7017F, 0.0F, 0.0F);
+        this.head_r4.mirror = true;
+        this.head_r4.setTextureOffset(104, 57).addBox(1.0F, -0.6606F, -0.1716F, (int)1.0, (int)2.0, (int)1.0, 0.15F);
+        this.head_r4.mirror = true;
+        this.head_r4.setTextureOffset(106, 66).addBox(-3.0F, 1.1134F, -2.0951F, (int)2.0, (int)1.0, (int)2.0, 0.05F);
+        this.head_r4.mirror = false;
+        this.head_r4.setTextureOffset(106, 66).addBox(1.0F, 1.1134F, -2.0951F, (int)2.0, (int)1.0, (int)2.0, 0.05F);
+        this.head_r4.mirror = true;
+        this.head_r4.setTextureOffset(106, 66).addBox(-3.0F, -1.1224F, -2.0587F, (int)2.0, (int)1.0, (int)2.0, 0.05F);
+        this.head_r4.mirror = false;
+        this.head_r4.setTextureOffset(106, 66).addBox(1.0F, -1.1224F, -2.0587F, (int)2.0, (int)1.0, (int)2.0, 0.05F);
+        this.head_r4.mirror = true;
+        this.head_r4.setTextureOffset(107, 58).addBox(1.0F, -2.1224F, -2.0587F, (int)2.0, (int)5.0, (int)2.0, -0.2F);
+        this.head_r4.mirror = false;
+        this.head_r4.setTextureOffset(107, 58).addBox(-3.0F, -2.1224F, -2.0587F, (int)2.0, (int)5.0, (int)2.0, -0.2F);
+        this.head_r4.mirror = false;
+        this.head_r4.setTextureOffset(104, 57).addBox(-2.0F, -0.6606F, -0.1716F, (int)1.0, (int)2.0, (int)1.0, 0.15F);
+        this.head_r4.mirror = false;
+        this.head_r4.setTextureOffset(104, 54).addBox(-2.0F, -0.6606F, -0.1716F, (int)4.0, (int)2.0, (int)1.0, 0.05F);
+        this.head.addChild(this.head_r4);
+
+        this.head_r5 = new ModelRenderer(this);
+        this.head_r5.setRotationPoint(0.0F, -9.1612F, -5.441F);
+        setRotationAngle(this.head_r5, -0.7418F, 0.0F, 0.0F);
+        this.head_r5.mirror = false;
+        this.head_r5.setTextureOffset(0, 7).addBox(-2.0F, -0.0369F, 1.5803F, (int)4.0, (int)2.0, (int)1.0, 0.2F);
+        this.head.addChild(this.head_r5);
+
+        this.body = new ModelRenderer(this);
+        this.body.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(26, 43).addBox(-4.0F, 0.0F, -2.0F, (int)8.0, (int)12.0, (int)4.0, 0.1F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(64, 10).addBox(-4.0F, 2.0F, 2.0F, (int)8.0, (int)9.0, (int)1.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(12, 75).addBox(-4.0F, -0.8F, -3.0F, (int)3.0, (int)2.0, (int)6.0, -0.3F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(72, 78).addBox(-5.0F, 3.2F, -3.0F, (int)2.0, (int)2.0, (int)6.0, -0.4F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(72, 78).addBox(-5.0F, 7.2F, -3.0F, (int)2.0, (int)2.0, (int)6.0, -0.4F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(32, 59).addBox(-4.0F, -0.8F, -3.0F, (int)3.0, (int)4.0, (int)6.0, -0.65F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(66, 39).addBox(-4.0F, 2.0F, -3.0F, (int)8.0, (int)9.0, (int)1.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(80, 4).addBox(-3.0F, 3.0F, -3.4F, (int)6.0, (int)1.0, (int)2.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(80, 4).addBox(-3.0F, 5.0F, -3.4F, (int)6.0, (int)1.0, (int)2.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(80, 4).addBox(-3.0F, 7.0F, -3.4F, (int)6.0, (int)1.0, (int)2.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(80, 4).addBox(-3.0F, 9.0F, -3.4F, (int)6.0, (int)1.0, (int)2.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(47, 44).addBox(-2.0F, 10.0F, -4.0F, (int)1.0, (int)1.0, (int)1.0, 0.12F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(47, 35).addBox(1.0F, 10.0F, -4.0F, (int)1.0, (int)1.0, (int)1.0, 0.12F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(1, 28).addBox(-2.5F, 7.0F, -4.0F, (int)2.0, (int)4.0, (int)1.0, 0.05F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(63, 80).addBox(-2.5F, 7.0F, -4.0F, (int)2.0, (int)3.0, (int)1.0, 0.3F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(63, 80).addBox(0.5F, 7.0F, -4.0F, (int)2.0, (int)3.0, (int)1.0, 0.3F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(31, 8).addBox(-2.5F, 8.0F, -4.0F, (int)2.0, (int)1.0, (int)1.0, 0.2F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(57, 11).addBox(-2.5F, 7.0F, -4.0F, (int)2.0, (int)3.0, (int)1.0, 0.1F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(45, 60).addBox(0.5F, 7.0F, -4.0F, (int)2.0, (int)3.0, (int)1.0, 0.1F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(31, 8).addBox(0.5F, 8.0F, -4.0F, (int)2.0, (int)1.0, (int)1.0, 0.2F);
+        this.body.mirror = false;
+        this.body.setTextureOffset(30, 27).addBox(0.5F, 7.0F, -3.0F, (int)2.0, (int)4.0, (int)2.0, 0.05F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(1, 28).addBox(0.5F, 7.0F, -4.0F, (int)2.0, (int)4.0, (int)1.0, 0.05F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(12, 75).addBox(1.0F, -0.8F, -3.0F, (int)3.0, (int)2.0, (int)6.0, -0.3F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(32, 59).addBox(1.0F, -0.8F, -3.0F, (int)3.0, (int)4.0, (int)6.0, -0.65F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(72, 78).addBox(3.0F, 7.2F, -3.0F, (int)2.0, (int)2.0, (int)6.0, -0.4F);
+        this.body.mirror = true;
+        this.body.setTextureOffset(72, 78).addBox(3.0F, 3.2F, -3.0F, (int)2.0, (int)2.0, (int)6.0, -0.4F);
+        this.bipedBody.addChild(this.body);
+
+        this.body_r1 = new ModelRenderer(this);
+        this.body_r1.setRotationPoint(4.0F, 9.5F, -3.5F);
+        setRotationAngle(this.body_r1, 0.0F, -0.3491F, 0.0F);
+        this.body_r1.mirror = true;
+        this.body_r1.setTextureOffset(47, 29).addBox(-1.0F, -2.5F, -0.5F, (int)2.0, (int)4.0, (int)1.0, 0.05F);
+        this.body_r1.mirror = false;
+        this.body_r1.setTextureOffset(31, 34).addBox(-1.0F, -1.5F, -0.5F, (int)2.0, (int)1.0, (int)1.0, 0.2F);
+        this.body_r1.mirror = false;
+        this.body_r1.setTextureOffset(69, 21).addBox(-1.0F, -2.5F, -0.5F, (int)2.0, (int)3.0, (int)1.0, 0.1F);
+        this.body_r1.mirror = false;
+        this.body_r1.setTextureOffset(23, 45).addBox(-0.5F, 0.5F, -0.5F, (int)1.0, (int)1.0, (int)1.0, 0.12F);
+        this.body_r1.mirror = false;
+        this.body_r1.setTextureOffset(83, 9).addBox(-1.0F, -2.5F, -0.5F, (int)2.0, (int)3.0, (int)1.0, 0.3F);
+        this.body.addChild(this.body_r1);
+
+        this.body_r2 = new ModelRenderer(this);
+        this.body_r2.setRotationPoint(0.0F, 0.0F, 4.0F);
+        setRotationAngle(this.body_r2, -0.0436F, 0.0F, 0.0F);
+        this.body_r2.mirror = true;
+        this.body_r2.setTextureOffset(61, 111).addBox(-3.3F, 0.0F, 0.5F, (int)0.0, (int)4.0, (int)1.0, 0.05F);
+        this.body_r2.mirror = false;
+        this.body_r2.setTextureOffset(61, 111).addBox(3.3F, 0.0F, 0.5F, (int)0.0, (int)4.0, (int)1.0, 0.05F);
+        this.body.addChild(this.body_r2);
+
+        this.body_r3 = new ModelRenderer(this);
+        this.body_r3.setRotationPoint(0.0F, 2.0F, 5.0F);
+        setRotationAngle(this.body_r3, -0.0436F, 0.0F, 0.0F);
+        this.body_r3.mirror = true;
+        this.body_r3.setTextureOffset(58, 109).addBox(-5.0F, 0.0F, -2.0F, (int)3.0, (int)4.0, (int)3.0, -0.4F);
+        this.body_r3.mirror = false;
+        this.body_r3.setTextureOffset(58, 109).addBox(2.0F, 0.0F, -2.0F, (int)3.0, (int)4.0, (int)3.0, -0.4F);
+        this.body.addChild(this.body_r3);
+
+        this.body_r4 = new ModelRenderer(this);
+        this.body_r4.setRotationPoint(-4.0F, 9.5F, -3.5F);
+        setRotationAngle(this.body_r4, 0.0F, 0.3491F, 0.0F);
+        this.body_r4.mirror = false;
+        this.body_r4.setTextureOffset(17, 54).addBox(-1.0F, -2.5F, -0.5F, (int)2.0, (int)3.0, (int)1.0, 0.1F);
+        this.body_r4.mirror = true;
+        this.body_r4.setTextureOffset(31, 34).addBox(-1.0F, -1.5F, -0.5F, (int)2.0, (int)1.0, (int)1.0, 0.2F);
+        this.body_r4.mirror = false;
+        this.body_r4.setTextureOffset(51, 36).addBox(-0.5F, 0.5F, -0.5F, (int)1.0, (int)1.0, (int)1.0, 0.12F);
+        this.body_r4.mirror = true;
+        this.body_r4.setTextureOffset(83, 9).addBox(-1.0F, -2.5F, -0.5F, (int)2.0, (int)3.0, (int)1.0, 0.3F);
+        this.body_r4.mirror = false;
+        this.body_r4.setTextureOffset(47, 29).addBox(-1.0F, -2.5F, -0.5F, (int)2.0, (int)4.0, (int)1.0, 0.05F);
+        this.body.addChild(this.body_r4);
+
+        this.body_r5 = new ModelRenderer(this);
+        this.body_r5.setRotationPoint(-3.0F, 12.5F, 2.5F);
+        setRotationAngle(this.body_r5, -0.1745F, 0.0F, 0.0F);
+        this.body_r5.mirror = false;
+        this.body_r5.setTextureOffset(96, 13).addBox(1.0F, -1.5F, -0.5F, (int)1.0, (int)3.0, (int)2.0, 0.2F);
+        this.body_r5.mirror = false;
+        this.body_r5.setTextureOffset(96, 13).addBox(4.0F, -1.5F, -0.5F, (int)1.0, (int)3.0, (int)2.0, 0.2F);
+        this.body_r5.mirror = false;
+        this.body_r5.setTextureOffset(97, 6).addBox(0.0F, -2.5F, -0.5F, (int)6.0, (int)3.0, (int)2.0, 0.3F);
+        this.body_r5.mirror = false;
+        this.body_r5.setTextureOffset(101, 16).addBox(0.0F, -2.5F, -0.5F, (int)6.0, (int)4.0, (int)2.0, 0.05F);
+        this.body.addChild(this.body_r5);
+
+        this.body_r6 = new ModelRenderer(this);
+        this.body_r6.setRotationPoint(0.0F, 5.0F, 5.0F);
+        setRotationAngle(this.body_r6, -0.0436F, 0.0F, 0.0F);
+        this.body_r6.mirror = false;
+        this.body_r6.setTextureOffset(40, 115).addBox(-3.0F, -4.0F, 0.0F, (int)6.0, (int)3.0, (int)2.0, -0.2F);
+        this.body_r6.mirror = false;
+        this.body_r6.setTextureOffset(40, 108).addBox(-3.0F, 0.0F, 0.0F, (int)6.0, (int)5.0, (int)2.0, -0.2F);
+        this.body_r6.mirror = true;
+        this.body_r6.setTextureOffset(58, 100).addBox(-5.0F, 0.0F, -3.0F, (int)3.0, (int)4.0, (int)4.0, -0.2F);
+        this.body_r6.mirror = false;
+        this.body_r6.setTextureOffset(58, 100).addBox(2.0F, 0.0F, -3.0F, (int)3.0, (int)4.0, (int)4.0, -0.2F);
+        this.body_r6.mirror = false;
+        this.body_r6.setTextureOffset(38, 94).addBox(-3.0F, -5.0F, -3.0F, (int)6.0, (int)10.0, (int)4.0, 0.05F);
+        this.body.addChild(this.body_r6);
+
+        this.left_arm = new ModelRenderer(this);
+        this.left_arm.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.left_arm.mirror = false;
+        this.left_arm.setTextureOffset(0, 112).addBox(-1.0F, -2.0F, -2.0F, (int)4.0, (int)12.0, (int)4.0, 0.1F);
+        this.bipedLeftArm.addChild(this.left_arm);
+
+        this.right_arm = new ModelRenderer(this);
+        this.right_arm.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.right_arm.mirror = true;
+        this.right_arm.setTextureOffset(0, 112).addBox(-3.0F, -2.0F, -2.0F, (int)4.0, (int)12.0, (int)4.0, 0.1F);
+        this.bipedRightArm.addChild(this.right_arm);
+
+        this.left_shoe = new ModelRenderer(this);
+        this.left_shoe.setRotationPoint(0.10000000000000009F, 0.0F, 0.0F);
+        this.left_shoe.mirror = false;
+        this.left_shoe.setTextureOffset(0, 53).addBox(-2.0F, 0.0F, -2.0F, (int)4.0, (int)12.0, (int)4.0, 0.6F);
+        this.bipedLeftLeg.addChild(this.left_shoe);
+
+        this.right_shoe = new ModelRenderer(this);
+        this.right_shoe.setRotationPoint(-0.10000000000000009F, 0.0F, 0.0F);
+        this.right_shoe.mirror = true;
+        this.right_shoe.setTextureOffset(0, 53).addBox(-2.0F, 0.0F, -2.0F, (int)4.0, (int)12.0, (int)4.0, 0.6F);
+        this.bipedRightLeg.addChild(this.right_shoe);
+
+        this.right_leg = new ModelRenderer(this);
+        this.right_leg.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.right_leg.mirror = false;
+        this.right_leg.setTextureOffset(83, 105).addBox(-2.0F, 0.0F, -2.0F, (int)4.0, (int)10.0, (int)4.0, 0.3F);
+        this.right_leg.mirror = false;
+        this.right_leg.setTextureOffset(107, 80).addBox(-4.0F, 1.0F, -1.0F, (int)3.0, (int)6.0, (int)2.0, 0.05F);
+        this.right_leg.mirror = false;
+        this.right_leg.setTextureOffset(101, 90).addBox(-3.0F, 1.0F, -3.0F, (int)6.0, (int)3.0, (int)6.0, -0.5F);
+        this.right_leg.mirror = false;
+        this.right_leg.setTextureOffset(101, 99).addBox(-2.0F, -1.0F, -3.0F, (int)3.0, (int)7.0, (int)6.0, -0.6F);
+        this.right_leg.mirror = false;
+        this.right_leg.setTextureOffset(83, 96).addBox(-3.0F, 4.0F, -3.0F, (int)6.0, (int)3.0, (int)6.0, -0.5F);
+        this.bipedRightLeg.addChild(this.right_leg);
+
+        this.left_leg = new ModelRenderer(this);
+        this.left_leg.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.left_leg.mirror = true;
+        this.left_leg.setTextureOffset(83, 105).addBox(-2.0F, 0.0F, -2.0F, (int)4.0, (int)10.0, (int)4.0, 0.3F);
+        this.bipedLeftLeg.addChild(this.left_leg);
+
+    }
+
+    public void setRotationAngle(ModelRenderer modelRenderer, float x, float y, float z) {
+        modelRenderer.rotateAngleX = x;
+        modelRenderer.rotateAngleY = y;
+        modelRenderer.rotateAngleZ = z;
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:ceiling_fan_blade" },
+    "facing=north": { "model": "refurbished_furniture:ceiling_fan_blade" },
+    "facing=south": { "model": "refurbished_furniture:ceiling_fan_blade", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:ceiling_fan_blade", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:ceiling_fan_blade", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:ceiling_fan_blade" }
+  }
+}

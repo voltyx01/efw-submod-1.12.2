@@ -1,0 +1,11 @@
+{
+  "item.dpor.name": "Defiled Page of Revelation",
+  "tooltip.mwccf.dpor.consumable": "§7Consumed to raise your level of vice",
+  "tooltip.mwccf.dpor.inspect": "Golden letters are branded directly into thick, jet-black skin that still pulses faintly in your hands. The text is blinding in its holiness, yet the scroll itself reeks of death.",
+
+  "item.manual_melee.name": "Manual: Melee Weapons",
+  "item.manual_firearms.name": "Manual: Firearms",
+  "item.manual_meds.name": "Manual: Medications",
+  "item.manual_lockpick.name": "Manual: Lockpicking",
+  "item.manual_tools.name": "Manual: Tools"
+}

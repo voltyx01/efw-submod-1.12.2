@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:oak_chair" },
+    "facing=north": { "model": "refurbished_furniture:oak_chair" },
+    "facing=south": { "model": "refurbished_furniture:oak_chair", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:oak_chair", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:oak_chair", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:oak_chair" }
+  }
+}

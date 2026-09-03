@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/apple_juice",
+  "textures": {
+    "1": "mwccf:blocks/apple_juice",
+    "particle": "mwccf:items/apple_juice"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:blue_enchanted_wood"
+    }
+  ],
+  "result": {
+    "item": "mwccf:blue_enchanted_planks",
+    "count": 4
+  }
+}

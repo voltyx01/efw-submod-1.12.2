@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:trampoline_all_with_leg_northeast_southwest" },
+    "facing=north": { "model": "refurbished_furniture:trampoline_all_with_leg_northeast_southwest" },
+    "facing=south": { "model": "refurbished_furniture:trampoline_all_with_leg_northeast_southwest", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:trampoline_all_with_leg_northeast_southwest", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:trampoline_all_with_leg_northeast_southwest", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:trampoline_all_with_leg_northeast_southwest" }
+  }
+}

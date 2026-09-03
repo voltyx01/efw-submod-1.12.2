@@ -1,0 +1,7 @@
+{
+  "parent": "survival_instinct:custom/tequila",
+  "textures": {
+    "4": "mwccf:blocks/tequila",
+    "particle": "mwccf:items/tequila"
+  }
+}
