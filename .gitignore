@@ -80,7 +80,7 @@ sins_ui_spec.md
 # Loose configs/meta in root
 mixins.nothirium.json
 registry_map.json
-META-INF/
+/META-INF/
 
 # MCreator generator files
 mcreator.gradle
