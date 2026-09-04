@@ -61,15 +61,15 @@ run/usernamecache.json
 /*.java
 
 # Working draft / asset folders in root
-backpack/
-backpack_core/
-bracelet/
-braceletnew/
-dashassetnew/
-headlightasset/
-pmap/
-pmg/
-syr/
+/backpack/
+/backpack_core/
+/bracelet/
+/braceletnew/
+/dashassetnew/
+/headlightasset/
+/pmap/
+/pmg/
+/syr/
 
 # Reference documentation / scratch md in root
 ATTACHMENTS_LIST.md
@@ -90,15 +90,15 @@ mwccf.mcreator
 # Decompiled, Reference & Open Source mods
 # ================================
 # TACZ and 1.20.1 animation research
-anim1.20.1/
-assets_1.20.1/
-flashlight_mod/
-newbiomes/
-newbrac/
-flower/
-desc/
-books/
-opt/
+/anim1.20.1/
+/assets_1.20.1/
+/flashlight_mod/
+/newbiomes/
+/newbrac/
+/flower/
+/desc/
+/books/
+/opt/
 
 # Decompilation folders & clones
 decomp/
