@@ -113,6 +113,7 @@ public class GuiSevenScreen extends GuiScreen {
 
     // Petal & Wave Ingame Debug Maker Parameters
     private int debugPetalSelect = 0;   // 0..11 petal
+    private int debugQueueSlotSelect = 0; // 0..11 queue slot (skill 1..12)
     private float debugWaveProgress = 0f; // 0.0 .. 1.0 manual scrub
     private boolean debugManualWave = false; // whether to manually control waveProgress
     private float debugDistStart = 0.0f; // custom wave start dist (0.0=base)
@@ -120,6 +121,7 @@ public class GuiSevenScreen extends GuiScreen {
 
     private static final String[] FLOWER_PARAM_NAMES = {
             "Лепесток [0..11]",
+            "Слот очереди [1..12]",
             "Подсветка (ВКЛ/ВЫКЛ)",
             "Направление волны",
             "Старт волны (distStart)",
@@ -1603,25 +1605,32 @@ public class GuiSevenScreen extends GuiScreen {
                 String name = (p != null) ? (p.isBig ? "Большой " : "Малый ") + debugPetalSelect : String.valueOf(debugPetalSelect);
                 return name;
             }
-            case 1: return (BedrockFlowerRenderer.debugHighlightPetal == debugPetalSelect) ? TextFormatting.GREEN + "ВКЛ" : TextFormatting.RED + "ВЫКЛ";
-            case 2: {
+            case 1: {
+                int qLen = BedrockFlowerRenderer.PETAL_BURN_QUEUE.length;
+                int petal = BedrockFlowerRenderer.PETAL_BURN_QUEUE[debugQueueSlotSelect % qLen];
+                BedrockFlowerRenderer.Petal p = flowerModel.getPetal(petal);
+                String name = (p != null) ? (p.isBig ? "Большой " : "Малый ") + petal : String.valueOf(petal);
+                return (debugQueueSlotSelect + 1) + " -> Лепесток " + name;
+            }
+            case 2: return (BedrockFlowerRenderer.debugHighlightPetal == debugPetalSelect) ? TextFormatting.GREEN + "ВКЛ" : TextFormatting.RED + "ВЫКЛ";
+            case 3: {
                 BedrockFlowerRenderer.Petal p = flowerModel.getPetal(debugPetalSelect);
                 return (p != null && p.flipDirection) ? "От кончика к центру" : "От центра к краю";
             }
-            case 3: return String.format("%.2f", debugDistStart);
-            case 4: return String.format("%.2f", debugDistEnd);
-            case 5: return String.format("%.3f", BedrockFlowerRenderer.waveFireWidth);
-            case 6: return String.format("%.3f", BedrockFlowerRenderer.waveAshWidth);
-            case 7: return String.format("%.2f", BedrockFlowerRenderer.waveSpeed);
-            case 8: return String.format("%.1f°", BedrockFlowerRenderer.waveAngle);
-            case 9: return debugManualWave ? String.format("%.2f (Ручной)", debugWaveProgress) : "Авто (по таймеру)";
-            case 10: return BedrockFlowerRenderer.showTexelDistDebug ? TextFormatting.GREEN + "ВКЛ (Зеленый->Красный)" : TextFormatting.RED + "ВЫКЛ";
-            case 11: return String.valueOf(flowerPosX);
-            case 12: return String.valueOf(flowerPosY);
-            case 13: return String.format("%.1f", flowerScreenScale);
-            case 14: return String.format("%.1f", flowerYaw);
-            case 15: return String.format("%.1f", flowerPitch);
-            case 16: return String.format("%.1f", flowerRoll);
+            case 4: return String.format("%.2f", debugDistStart);
+            case 5: return String.format("%.2f", debugDistEnd);
+            case 6: return String.format("%.3f", BedrockFlowerRenderer.waveFireWidth);
+            case 7: return String.format("%.3f", BedrockFlowerRenderer.waveAshWidth);
+            case 8: return String.format("%.2f", BedrockFlowerRenderer.waveSpeed);
+            case 9: return String.format("%.1f°", BedrockFlowerRenderer.waveAngle);
+            case 10: return debugManualWave ? String.format("%.2f (Ручной)", debugWaveProgress) : "Авто (по таймеру)";
+            case 11: return BedrockFlowerRenderer.showTexelDistDebug ? TextFormatting.GREEN + "ВКЛ (Зеленый->Красный)" : TextFormatting.RED + "ВЫКЛ";
+            case 12: return String.valueOf(flowerPosX);
+            case 13: return String.valueOf(flowerPosY);
+            case 14: return String.format("%.1f", flowerScreenScale);
+            case 15: return String.format("%.1f", flowerYaw);
+            case 16: return String.format("%.1f", flowerPitch);
+            case 17: return String.format("%.1f", flowerRoll);
             default: return "?";
         }
     }
@@ -1629,22 +1638,23 @@ public class GuiSevenScreen extends GuiScreen {
     private static float flowerBaseStep(int index) {
         switch (index) {
             case 0: return 1f;    // Petal ID
-            case 1: return 1f;    // Highlight toggle
-            case 2: return 1f;    // Direction toggle
-            case 3: return 0.05f; // distStart
-            case 4: return 0.05f; // distEnd
-            case 5: return 0.005f;// waveFireWidth
-            case 6: return 0.01f; // waveAshWidth
-            case 7: return 0.05f; // waveSpeed
-            case 8: return 5f;    // waveAngle (degrees)
-            case 9: return 0.05f; // debugWaveProgress
-            case 10: return 1f;   // showTexelDistDebug toggle
-            case 11: return 1f;   // posX
-            case 12: return 1f;   // posY
-            case 13: return 2f;   // screenScale
-            case 14: return 5f;   // yaw
-            case 15: return 5f;   // pitch
-            case 16: return 5f;   // roll
+            case 1: return 1f;    // Queue slot (skill 1..12)
+            case 2: return 1f;    // Highlight toggle
+            case 3: return 1f;    // Direction toggle
+            case 4: return 0.05f; // distStart
+            case 5: return 0.05f; // distEnd
+            case 6: return 0.005f;// waveFireWidth
+            case 7: return 0.01f; // waveAshWidth
+            case 8: return 0.05f; // waveSpeed
+            case 9: return 5f;    // waveAngle (degrees)
+            case 10: return 0.05f; // debugWaveProgress
+            case 11: return 1f;   // showTexelDistDebug toggle
+            case 12: return 1f;   // posX
+            case 13: return 1f;   // posY
+            case 14: return 2f;   // screenScale
+            case 15: return 5f;   // yaw
+            case 16: return 5f;   // pitch
+            case 17: return 5f;   // roll
             default: return 1f;
         }
     }
@@ -1660,6 +1670,16 @@ public class GuiSevenScreen extends GuiScreen {
                 break;
             }
             case 1: {
+                int qLen = BedrockFlowerRenderer.PETAL_BURN_QUEUE.length;
+                if (qLen > 0) {
+                    debugQueueSlotSelect = (int) ((debugQueueSlotSelect + (int) Math.signum(delta) + qLen) % qLen);
+                    int targetPetal = BedrockFlowerRenderer.PETAL_BURN_QUEUE[debugQueueSlotSelect];
+                    debugPetalSelect = targetPetal;
+                    BedrockFlowerRenderer.debugHighlightPetal = targetPetal;
+                }
+                break;
+            }
+            case 2: {
                 if (BedrockFlowerRenderer.debugHighlightPetal == debugPetalSelect) {
                     BedrockFlowerRenderer.debugHighlightPetal = -1;
                 } else {
@@ -1667,18 +1687,18 @@ public class GuiSevenScreen extends GuiScreen {
                 }
                 break;
             }
-            case 2: {
+            case 3: {
                 BedrockFlowerRenderer.Petal p = flowerModel.getPetal(debugPetalSelect);
                 if (p != null) p.flipDirection = !p.flipDirection;
                 break;
             }
-            case 3: debugDistStart = Math.max(0.0f, Math.min(1.0f, debugDistStart + delta)); break;
-            case 4: debugDistEnd = Math.max(0.0f, Math.min(1.0f, debugDistEnd + delta)); break;
-            case 5: BedrockFlowerRenderer.waveFireWidth = Math.max(0.01f, Math.min(0.25f, BedrockFlowerRenderer.waveFireWidth + delta)); break;
-            case 6: BedrockFlowerRenderer.waveAshWidth = Math.max(0.02f, Math.min(0.40f, BedrockFlowerRenderer.waveAshWidth + delta)); break;
-            case 7: BedrockFlowerRenderer.waveSpeed = Math.max(0.05f, Math.min(3.0f, BedrockFlowerRenderer.waveSpeed + delta)); break;
-            case 8: BedrockFlowerRenderer.waveAngle = Math.max(-75.0f, Math.min(75.0f, BedrockFlowerRenderer.waveAngle + delta)); break;
-            case 9: {
+            case 4: debugDistStart = Math.max(0.0f, Math.min(1.0f, debugDistStart + delta)); break;
+            case 5: debugDistEnd = Math.max(0.0f, Math.min(1.0f, debugDistEnd + delta)); break;
+            case 6: BedrockFlowerRenderer.waveFireWidth = Math.max(0.01f, Math.min(0.25f, BedrockFlowerRenderer.waveFireWidth + delta)); break;
+            case 7: BedrockFlowerRenderer.waveAshWidth = Math.max(0.02f, Math.min(0.40f, BedrockFlowerRenderer.waveAshWidth + delta)); break;
+            case 8: BedrockFlowerRenderer.waveSpeed = Math.max(0.05f, Math.min(3.0f, BedrockFlowerRenderer.waveSpeed + delta)); break;
+            case 9: BedrockFlowerRenderer.waveAngle = Math.max(-75.0f, Math.min(75.0f, BedrockFlowerRenderer.waveAngle + delta)); break;
+            case 10: {
                 debugManualWave = true;
                 debugWaveProgress = Math.max(0.0f, Math.min(1.0f, debugWaveProgress + delta));
                 BedrockFlowerRenderer.Petal p = flowerModel.getPetal(debugPetalSelect);
@@ -1688,19 +1708,28 @@ public class GuiSevenScreen extends GuiScreen {
                 }
                 break;
             }
-            case 10: BedrockFlowerRenderer.showTexelDistDebug = !BedrockFlowerRenderer.showTexelDistDebug; break;
-            case 11: flowerPosX += (int) delta; break;
-            case 12: flowerPosY += (int) delta; break;
-            case 13: flowerScreenScale = Math.max(1f, flowerScreenScale + delta); break;
-            case 14: flowerYaw += delta; break;
-            case 15: flowerPitch += delta; break;
-            case 16: flowerRoll += delta; break;
+            case 11: BedrockFlowerRenderer.showTexelDistDebug = !BedrockFlowerRenderer.showTexelDistDebug; break;
+            case 12: flowerPosX += (int) delta; break;
+            case 13: flowerPosY += (int) delta; break;
+            case 14: flowerScreenScale = Math.max(1f, flowerScreenScale + delta); break;
+            case 15: flowerYaw += delta; break;
+            case 16: flowerPitch += delta; break;
+            case 17: flowerRoll += delta; break;
         }
     }
 
     private void flowerPrintValuesToLog() {
+        StringBuilder queueSb = new StringBuilder("[");
+        for (int i = 0; i < BedrockFlowerRenderer.PETAL_BURN_QUEUE.length; i++) {
+            if (i > 0) queueSb.append(", ");
+            queueSb.append(BedrockFlowerRenderer.PETAL_BURN_QUEUE[i]);
+        }
+        queueSb.append("]");
+
         String msg = "FLOWER SMOLDER CONFIG VALUES:\n"
+                + "  PETAL_BURN_QUEUE = " + queueSb.toString() + ";\n"
                 + "  Selected Petal = " + debugPetalSelect + ";\n"
+                + "  Selected Queue Slot = " + (debugQueueSlotSelect + 1) + ";\n"
                 + "  distStart = " + debugDistStart + "f;\n"
                 + "  distEnd = " + debugDistEnd + "f;\n"
                 + "  waveFireWidth = " + BedrockFlowerRenderer.waveFireWidth + "f;\n"

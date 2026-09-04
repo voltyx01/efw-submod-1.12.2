@@ -59,6 +59,9 @@ public class BedrockFlowerRenderer {
     private final Random rand = new Random();
     private float glowTime = 0f;
 
+    // Custom petal burn sequence queue for skills (1..13)
+    public static final int[] PETAL_BURN_QUEUE = new int[]{5, 7, 4, 8, 3, 9, 10, 0, 11, 1, 6, 2, 7};
+
     // Mapping: which petal was ignited by which skill (0..12)
     private final int[] skillToPetal = new int[13];
     private boolean petalsInitialized = false;
@@ -938,24 +941,19 @@ public class BedrockFlowerRenderer {
 
         initPetals();
 
-        // Check for newly unlocked skills and assign them to burn random available petals
+        // Check for newly unlocked skills and assign them to burn petals in exact queue order
         if (skillUnlocked != null) {
             for (int sId = 1; sId < skillUnlocked.length && sId < 13; sId++) {
                 if (skillUnlocked[sId]) {
                     if (skillToPetal[sId] == -1) {
-                        // Find an unburned petal
-                        List<Petal> available = new ArrayList<>();
-                        for (Petal p : petals) {
-                            if (!p.burning && p.burnProgress <= 0f) {
-                                available.add(p);
-                            }
-                        }
-                        if (!available.isEmpty()) {
-                            Petal chosen = available.get(rand.nextInt(available.size()));
-                            chosen.burning = true;
-                            skillToPetal[sId] = chosen.id;
-                        } else {
-                            skillToPetal[sId] = rand.nextInt(petals.size());
+                        int queueIdx = sId - 1;
+                        int petalId = (queueIdx >= 0 && queueIdx < PETAL_BURN_QUEUE.length) 
+                                ? PETAL_BURN_QUEUE[queueIdx] 
+                                : (sId % petals.size());
+                        Petal targetPetal = getPetal(petalId);
+                        if (targetPetal != null) {
+                            targetPetal.burning = true;
+                            skillToPetal[sId] = targetPetal.id;
                         }
                     }
                 }
