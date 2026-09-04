@@ -49,12 +49,12 @@ run/usernamecache.json
 # ================================
 # Scratch scripts & temporary files in root
 # ================================
-*.py
-*.ps1
-*.txt
-*.html
-*.bbmodel
-*.png
+/*.py
+/*.ps1
+/*.txt
+/*.html
+/*.bbmodel
+/*.png
 !gradlew*
 
 # Single loose java files in root (test / decomp remnants)

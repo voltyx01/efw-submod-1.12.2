@@ -1,0 +1,435 @@
+Ran command: `python -c "
+# Revert ModernConfigManager.java
+path_config = r'src\main\java\com\paneedah\weaponlib\config\ModernConfigManager.java'
+content_cfg = open(path_config, 'r', encoding='utf-8').read()
+
+target_cfg = '''	@ConfigSync(category = CATEGORY_RENDERING, comment = \"Enables reticle shaders\")
+	public static boolean enableReticleShaders = true;
+	
+	@ConfigSync(category = CATEGORY_RENDERING, comment = \"Enables scope vignette\")
+	public static boolean enableScopeVignette = true;'''
+
+replacement_cfg = '''	@ConfigSync(category = CATEGORY_RENDERING, comment = \"Enables reticle shaders\")
+	public static boolean enableReticleShaders = true;'''
+
+content_cfg_norm = content_cfg.replace('\\r\\n', '\\n')
+target_cfg_norm = target_cfg.replace('\\r\\n', '\\n').replace('\\t', '    ')
+replacement_cfg_norm = replacement_cfg.replace('\\r\\n', '\\n').replace('\\t', '    ')
+
+content_cfg_spaces = content_cfg_norm.replace('\\t', '    ')
+if target_cfg_spaces := target_cfg_norm in content_cfg_spaces:
+    content_cfg = content_cfg_spaces.replace(target_cfg_norm, replacement_cfg_norm).replace('    ', '\\t')
+    print('Reverted ModernConfigManager.java')
+else:
+    # Try direct replacement
+    target_cfg_raw = target_cfg.replace('\\r\\n', '\\n')
+    replacement_cfg_raw = replacement_cfg.replace('\\r\\n', '\\n')
+    if target_cfg_raw in content_cfg_norm:
+        content_cfg = content_cfg_norm.replace(target_cfg_raw, replacement_cfg_raw)
+        print('Reverted ModernConfigManager.java (raw)')
+    else:
+        print('Failed to revert ModernConfigManager.java')
+
+with open(path_config, 'w', encoding='utf-8') as f:
+    f.write(content_cfg)
+
+# Revert PlayerWeaponInstance.java
+path_instance = r'src\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java'
+content_inst = open(path_instance, 'r', encoding='utf-8').read()
+
+target_inst = 'getShaderSource(DynamicShaderPhase phase) {\n        if(isAimed() && phase == DynamicShaderPhase.POST_WORLD_OPTICAL_SCOPE_RENDER) {\n            ItemScope scope = getScope();\n            if(scope.isOptical())\n                return scope.hasNightVision() && nightVisionOn ? NIGHT_VISION_SOURCE : (ModernConfigManager.enableScopeVignette ? VIGNETTE_SOURCE : null);\n        }'
+replacement_inst = 'getShaderSource(DynamicShaderPhase phase) {\n        if(isAimed() && phase == DynamicShaderPhase.POST_WORLD_OPTICAL_SCOPE_RENDER) {\n            ItemScope scope = getScope();\n            if(scope.isOptical())\n                return scope.hasNightVision() && nightVisionOn ? NIGHT_VISION_SOURCE : VIGNETTE_SOURCE;\n        }'
+
+content_inst_norm = content_inst.replace('\\r\\n', '\\n').replace('\\t', '    ')
+target_inst_norm = target_inst.replace('\\r\\n', '\\n').replace('\\t', '    ')
+replacement_inst_norm = replacement_inst.replace('\\r\\n', '\\n').replace('\\t', '    ')
+
+if target_inst_norm in content_inst_norm:
+    content_inst = content_inst_norm.replace(target_inst_norm, replacement_inst_norm).replace('    ', '\\t')
+    print('Reverted PlayerWeaponInstance.java')
+else:
+    # Try without tab conversion
+    target_inst_raw = target_inst.replace('\\r\\n', '\\n')
+    replacement_inst_raw = replacement_inst.replace('\\r\\n', '\\n')
+    if target_inst_raw in content_inst.replace('\\r\\n', '\\n'):
+        content_inst = content_inst.replace('\\r\\n', '\\n').replace(target_inst_raw, replacement_inst_raw)
+        print('Reverted PlayerWeaponInstance.java (raw)')
+    else:
+        print('Failed to revert PlayerWeaponInstance.java')
+
+with open(path_instance, 'w', encoding='utf-8') as f:
+    f.write(content_inst)
+"`
+Edited revert_vignette.py
+Ran command: `python "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\scratch\revert_vignette.py"`
+Ran command: `python -c "
+path = r'src\main\java\com\paneedah\weaponlib\WeaponKeyInputHandler.java'
+content = open(path, 'r', encoding='utf-8').read()
+lines = content.splitlines()
+for i, l in enumerate(lines):
+    if 'reload' in l.lower():
+        print(f'{i+1}: {l}')
+"`
+Viewed WeaponKeyInputHandler.java:1-375
+Ran command: `python -c "
+import os
+for root, dirs, files in os.walk('src'):
+    for f in files:
+        if f.endswith('.java'):
+            p = os.path.join(root, f)
+            content = open(p, 'r', encoding='utf-8', errors='ignore').read()
+            if 'reloadMainHeldItemForPlayer' in content:
+                print(p)
+"`
+Ran command: `python -c "
+path = r'src\main\java\com\paneedah\weaponlib\Weapon.java'
+content = open(path, 'r', encoding='utf-8').read()
+lines = content.splitlines()
+for i, l in enumerate(lines):
+    if 'reloadMainHeldItemForPlayer' in l:
+        print(f'{i+1}: {l}')
+"`
+Ran command: `git status`
+Viewed walkthrough.md:1-26
+Viewed implementation_plan.md:1-28
+Listed directory Documents
+Ran command: `git status`
+Ran command: `Get-ChildItem -Recurse -File | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-1) } | Select-Object FullName, LastWriteTime`
+Used tool: manage_task
+Used tool: manage_task
+Ran command: `Get-ChildItem -Path src -Recurse -File | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-1) } | Select-Object FullName, LastWriteTime`
+Ran command: `fc /N "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java"`
+Ran command: `cmd.exe /c fc /N "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java"`
+Ran command: `cmd.exe /c fc /N "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java"`
+Ran command: `Get-Content "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Tail 20`
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern '"type":"USER_INPUT"' | Select-Object -ExpandProperty Line`
+Searched for "enableReticleShaders"
+Viewed Attachments.java:150-300
+Searched for "enableReticleShaders"
+Searched for "enableReticleShaders"
+Searched for "vignette"
+Viewed revert_vignette.py:1-68
+Ran command: `Get-ChildItem -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src" -Recurse -File | ForEach-Object {
+    $relativePath = $_.FullName.Substring("c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src".Length)
+    $otherPath = "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src" + $relativePath
+    if (Test-Path $otherPath) {
+        $hash1 = Get-FileHash $_.FullName
+        $hash2 = Get-FileHash $otherPath
+        if ($hash1.Hash -ne $hash2.Hash) {
+            [PSCustomObject]@{
+                File = $relativePath
+                ModifiedTime2 = $_.LastWriteTime
+                ModifiedTime1 = (Get-Item $otherPath).LastWriteTime
+            }
+        }
+    } else {
+        [PSCustomObject]@{
+            File = $relativePath
+            Status = "Missing in Copy 1"
+        }
+    }
+} | Format-Table -AutoSize`
+Used tool: manage_task
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:30:22Z sender=688f25c4-3791-4034-827e-f03912042741/task-1056 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1056" was completed with result:
+Timer expired: Wait for file comparison task to complete
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:30:23Z sender=688f25c4-3791-4034-827e-f03912042741/task-1052 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1052" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				
+File                                                                                    ModifiedTime2         ModifiedTime1        
+----                                                                                    -------------         -------------        
+\main\java\com\paneedah\mwc\weapons\Attachments.java                                    13.06.2026 18:00:30   10.06.2026 21:04:14  
+\main\java\com\paneedah\weaponlib\compatibility\ShellRenderer.java                      13.06.2026 15:52:16   10.06.2026 21:04:14  
+\main\java\com\paneedah\weaponlib\config\ModernConfigManager.java                       13.06.2026 18:23:17   10.06.2026 21:04:14  
+\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java                             13.06.2026 18:23:17   10.06.2026 21:04:14  
+\main\java\com\paneedah\weaponlib\WeaponFireAspect.java                                 13.06.2026 16:32:00   10.06.2026 21:04:14  
+\main\java\com\paneedah\weaponlib\WeaponRenderer.java                                    13.06.2026 18:18:24   10.06.2026 21:04:14  
+\main\java\com\paneedah\weaponlib\render\InstancedShellObject.java                      13.06.2026 15:52:16   10.06.2026 21:04:14  
+\main\resources\assets\mwc\shaders\instanced.frag                                       13.06.2026 15:52:16   10.06.2026 21:04:14  
+\main\resources\assets\mwc\shaders\shells.frag                                          13.06.2026 15:52:16   10.06.2026 21:04:14  
+\main\resources\assets\mwc\shaders\shells.vert                                          13.06.2026 15:52:16   10.06.2026 21:04:14  
+                                                                                                                           
+                                                                                                                           
+
+
+0 files were missing in destination.
+10 files were different in content.
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1052.log
+</SYSTEM_MESSAGE>
+
+Ran command: `Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\mwc\weapons\Attachments.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\mwc\weapons\Attachments.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\compatibility\ShellRenderer.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\compatibility\ShellRenderer.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\config\ModernConfigManager.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\config\ModernConfigManager.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\WeaponFireAspect.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponFireAspect.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\java\com\paneedah\weaponlib\render\InstancedShellObject.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\render\InstancedShellObject.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\resources\assets\mwc\shaders\instanced.frag" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\resources\assets\mwc\shaders\instanced.frag" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\resources\assets\mwc\shaders\shells.frag" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\resources\assets\mwc\shaders\shells.frag" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия\src\main\resources\assets\mwc\shaders\shells.vert" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\resources\assets\mwc\shaders\shells.vert" -Force
+`
+Searched for "reloadKey"
+Viewed WeaponKeyInputHandler.java:170-220
+Searched for "reloadMainHeldItemForPlayer"
+Viewed Weapon.java:901-1700
+Viewed WeaponReloadAspect.java:1-250
+Searched for "void reloadMainHeldItem"
+Searched for "reloadMainHeldItem"
+Searched for "reload"
+Viewed WeaponReloadAspect.java:250-500
+Viewed WeaponReloadAspect.java:500-650
+Searched for "COMPOUND_REQUESTED"
+Searched for "setIsAwaitingCompoundInstructions"
+Viewed WeaponReloadAspect.java:790-848
+Searched for "furtherLoadInstructionsReceived"
+Searched for "compoundInstructionsReceived"
+Searched for "permitManager"
+Searched for "295"
+Viewed WeaponReloadAspect.java:115-125
+Edited WeaponReloadAspect.java
+Ran command: `.\gradlew compileJava`
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:31:44Z sender=688f25c4-3791-4034-827e-f03912042741/task-1103 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1103" was completed with result:
+Timer expired: Wait for compilation to complete
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:31:59Z sender=688f25c4-3791-4034-827e-f03912042741/task-1101 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1101" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				Configuration on demand is an incubating feature.
+:compileJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+BUILD SUCCESSFUL in 44s
+1 actionable task: 1 executed
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1101.log
+</SYSTEM_MESSAGE>
+
+Ran command: `.\gradlew build --no-build-cache`
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:32:31Z sender=688f25c4-3791-4034-827e-f03912042741/task-1109 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1109" was completed with result:
+Timer expired: Wait for JAR build to complete
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:32:38Z sender=688f25c4-3791-4034-827e-f03912042741/task-1107 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1107" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				Configuration on demand is an incubating feature.
+:compileJava UP-TO-DATE
+:compileApiJava UP-TO-DATE
+:processResources UP-TO-DATE
+:classes UP-TO-DATE
+:deobfCompileDummyTask UP-TO-DATE
+:deobfProvidedDummyTask UP-TO-DATE
+:jar
+:reobfJar
+:signJar SKIPPED
+:build
+
+BUILD SUCCESSFUL in 50s
+5 actionable tasks: 2 executed, 3 up-to-date
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1107.log
+</SYSTEM_MESSAGE>
+
+Listed directory libs
+Listed directory Instances
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern '"type":"VIEW_FILE"' | Select-Object -ExpandProperty Line | Select-Object -First 10`
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern '"wasAimedBeforeReload"' | Select-Object -ExpandProperty Line | Select-Object -First 3`
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern '"TargetFile":".*PlayerWeaponInstance.java"' | Select-Object -ExpandProperty Line`
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern 'PlayerWeaponInstance' | Select-Object -ExpandProperty Line -First 5`
+Searched for "wasAimedBeforeReload"
+Searched for "wasAimedBeforeReload"
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern "wasAimed|PendingDraw|isLoweringActive" | Select-Object -ExpandProperty Line -First 10`
+Ran command: `git status`
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern '"type":"REPLACE_FILE_CONTENT"|"type":"MULTI_REPLACE_FILE_CONTENT"|"type":"WRITE_TO_FILE"' | Select-Object -ExpandProperty Line`
+Listed directory logs
+Ran command: `Select-String -Path "C:\Users\reizv\.gemini\antigravity-ide\brain\688f25c4-3791-4034-827e-f03912042741\.system_generated\logs\transcript.jsonl" -Pattern "WeaponRenderer.java" | Select-Object -ExpandProperty Line -First 10`
+Viewed PlayerWeaponInstance.java:1-100
+Viewed PlayerWeaponInstance.java:100-200
+Viewed PlayerWeaponInstance.java:75-85
+Edited PlayerWeaponInstance.java
+Viewed ClientEventHandler.java:235-260
+Ran command: `Get-Item "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" | Select-Object LastWriteTime, Length`
+Ran command: `Get-Item "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java" | Select-Object LastWriteTime, Length`
+Ran command: `Get-Item "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\ClientEventHandler.java", "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\WeaponReloadAspect.java" | Select-Object Name, LastWriteTime, Length`
+Ran command: `Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\mwc\weapons\Attachments.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\mwc\weapons\Attachments.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\compatibility\ShellRenderer.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\compatibility\ShellRenderer.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\config\ModernConfigManager.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\config\ModernConfigManager.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\PlayerWeaponInstance.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\WeaponFireAspect.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponFireAspect.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\WeaponRenderer.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\java\com\paneedah\weaponlib\render\InstancedShellObject.java" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\java\com\paneedah\weaponlib\render\InstancedShellObject.java" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\resources\assets\mwc\shaders\instanced.frag" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\resources\assets\mwc\shaders\instanced.frag" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\resources\assets\mwc\shaders\shells.frag" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\resources\assets\mwc\shaders\shells.frag" -Force
+Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9\src\main\resources\assets\mwc\shaders\shells.vert" -Destination "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\src\main\resources\assets\mwc\shaders\shells.vert" -Force
+`
+Edited WeaponReloadAspect.java
+Viewed WeaponReloadAspect.java:118-122
+Ran command: `.\gradlew compileJava`
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:35:13Z sender=688f25c4-3791-4034-827e-f03912042741/task-1167 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1167" was completed with result:
+Timer expired: Wait for compileJava to finish
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:35:36Z sender=688f25c4-3791-4034-827e-f03912042741/task-1165 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1165" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				Configuration on demand is an incubating feature.
+:compileJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+BUILD SUCCESSFUL in 57s
+1 actionable task: 1 executed
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1165.log
+</SYSTEM_MESSAGE>
+
+Ran command: `.\gradlew build --no-build-cache`
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:35:59Z sender=688f25c4-3791-4034-827e-f03912042741/task-1173 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1173" was completed with result:
+Timer expired: Wait for final build to complete
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:36:12Z sender=688f25c4-3791-4034-827e-f03912042741/task-1171 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1171" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				Configuration on demand is an incubating feature.
+:compileJava UP-TO-DATE
+:compileApiJava UP-TO-DATE
+:processResources UP-TO-DATE
+:classes UP-TO-DATE
+:deobfCompileDummyTask UP-TO-DATE
+:deobfProvidedDummyTask UP-TO-DATE
+:jar
+:reobfJar
+:signJar SKIPPED
+:build
+
+BUILD SUCCESSFUL in 56s
+5 actionable tasks: 2 executed, 3 up-to-date
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1171.log
+</SYSTEM_MESSAGE>
+
+Viewed PlayerWeaponInstance.java:75-85
+Searched for "wasAimedBeforeReload"
+Edited PlayerWeaponInstance.java
+Ran command: `.\gradlew compileJava`
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:36:49Z sender=688f25c4-3791-4034-827e-f03912042741/task-1187 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1187" was completed with result:
+Timer expired: Wait for compileJava to complete
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:37:10Z sender=688f25c4-3791-4034-827e-f03912042741/task-1185 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1185" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				Configuration on demand is an incubating feature.
+:compileJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+BUILD SUCCESSFUL in 50s
+1 actionable task: 1 executed
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1185.log
+</SYSTEM_MESSAGE>
+
+Ran command: `.\gradlew build --no-build-cache`
+Used tool: schedule
+
+---
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:37:36Z sender=688f25c4-3791-4034-827e-f03912042741/task-1193 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1193" was completed with result:
+Timer expired: Wait for jar build to complete
+</SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-13T15:37:37Z sender=688f25c4-3791-4034-827e-f03912042741/task-1191 priority=MESSAGE_PRIORITY_LOW content=Task id "688f25c4-3791-4034-827e-f03912042741/task-1191" was completed with result:
+Step completed successfully.
+			The following output was generated.
+				Output:
+				Configuration on demand is an incubating feature.
+:compileJava UP-TO-DATE
+:compileApiJava UP-TO-DATE
+:processResources UP-TO-DATE
+:classes UP-TO-DATE
+:deobfCompileDummyTask UP-TO-DATE
+:deobfProvidedDummyTask UP-TO-DATE
+:jar
+:reobfJar
+:signJar SKIPPED
+:build
+
+BUILD SUCCESSFUL in 47s
+5 actionable tasks: 2 executed, 3 up-to-date
+
+
+Log: file:///C:/Users/reizv/.gemini/antigravity-ide/brain/688f25c4-3791-4034-827e-f03912042741/.system_generated/tasks/task-1191.log
+</SYSTEM_MESSAGE>
+
+Ran command: `Copy-Item -Path "c:\Users\reizv\Documents\Modern-Warfare-Cubed-0.1.9 — копия (2)\build\libs\Modern-Warfare-Cubed-0.1.9.jar" -Destination "C:\Users\reizv\curseforge\minecraft\Instances\_____\mods\Modern-Warfare-Cubed-0.1.9.jar" -Force`
+
+Я отменил все сделанные сегодня изменения (прицелы, виньетки, прозрачность гильз и т.д.), восстановив файлы до исходного состояния, и исправил проблему с задержкой перезарядки/зарядки:
+
+1. **Отмена изменений**:
+   - Восстановлены оригинальные файлы из папки проекта `Modern-Warfare-Cubed-0.1.9` (включая прицелы, конфиг-менеджер, шейдеры гильз и т.д.) в вашу рабочую директорию `Modern-Warfare-Cubed-0.1.9 — копия (2)`.
+   - В [PlayerWeaponInstance.java](file:///c:/Users/reizv/Documents/Modern-Warfare-Cubed-0.1.9 — копия (2)/src/main/java/com/paneedah/weaponlib/PlayerWeaponInstance.java) возвращено поле `wasAimedBeforeReload` для исправления ошибок компиляции с вашим кодом.
+
+2. **Исправление задержки перезарядки (клавиша R)**:
+   - В [WeaponReloadAspect.java](file:///c:/Users/reizv/Documents/Modern-Warfare-Cubed-0.1.9 — копия (2)/src/main/java/com/paneedah/weaponlib/WeaponReloadAspect.java) уменьшена искусственная задержка ожидания дополнительных команд (`awaitFurtherLoadInstructionCompleted`) с **295 мс** до **10 мс**. Из-за этого перезарядка и досылание патронов теперь начинаются мгновенно после нажатия клавиши `R`.
+
+3. **Сборка**:
+   - Проект успешно скомпилирован.
+   - Готовый мод `Modern-Warfare-Cubed-0.1.9.jar` собран и скопирован в вашу папку модов CurseForge (`Instances/_____/mods`).
+
+Все изменения успешно отменены, исправлена задержка перезарядки, и обновленный мод скопирован в папку CurseForge. Можете приступать к проверке в игре!
