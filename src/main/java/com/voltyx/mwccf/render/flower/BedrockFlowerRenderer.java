@@ -26,7 +26,7 @@ public class BedrockFlowerRenderer {
     public static final ResourceLocation MODEL_GEO = new ResourceLocation("mwccf", "geo/flower.geo.json");
     public static final ResourceLocation MODEL_ANIM = new ResourceLocation("mwccf", "animations/flower.animation.json");
     public static final ResourceLocation MODEL_TEX = new ResourceLocation("mwccf", "textures/entity/flower.png");
-    public static final ResourceLocation PARTICLES_TEX = new ResourceLocation("mwccf", "textures/particles/particles.png");
+    public static final ResourceLocation PARTICLES_TEX = new ResourceLocation("mwccf", "textures/particle/particles.png");
 
     private float textureWidth = 32f;
     private float textureHeight = 32f;
@@ -55,8 +55,9 @@ public class BedrockFlowerRenderer {
     public static boolean showTexelDistDebug = false; // colorize petal by distance (base=green, tip=red)
 
     private final List<Petal> petals = new ArrayList<>();
-    private final List<FlowerParticle> particles = new ArrayList<>();
+    private final List<Spark3D> sparks3D = new ArrayList<>();
     private final Random rand = new Random();
+    private final float[] dynamicPixels = new float[32 * 32 * 4];
     private float glowTime = 0f;
 
     // Custom petal burn sequence queue for skills (1..13)
@@ -302,115 +303,71 @@ public class BedrockFlowerRenderer {
         return null;
     }
 
-    public static class FlowerParticle {
-        public float x, y;
-        public float vx, vy;
-        public float size;
+    public static class Spark3D {
+        public float x, y, z;
+        public float vx, vy, vz;
+        public float length;
         public float age, maxAge;
-        public float rot, rotSpeed;
-        public float phase, phaseSpeed;
-        public boolean isSpark; // true = tiny bright fire spark, false = regular ash particle
+        public float r, g, b;
 
-        /** Regular ash/ember particle spawned from petal screen location */
-        public FlowerParticle(float x, float y, Random rand) {
-            this.x = x + (rand.nextFloat() - 0.5f) * 6.0f;
-            this.y = y + (rand.nextFloat() - 0.5f) * 6.0f;
-            this.vx = 2.0f + rand.nextFloat() * 6.0f;       // drift right towards dossier
-            this.vy = -(16.0f + rand.nextFloat() * 22.0f);   // float UP
-            this.size = 2.5f + rand.nextFloat() * 2.5f;
-            this.age = 0f;
-            this.maxAge = 1.5f + rand.nextFloat() * 1.2f;    // 1.5s .. 2.7s lifespan
-            this.rot = rand.nextFloat() * 360f;
-            this.rotSpeed = (rand.nextFloat() - 0.5f) * 120f;
-            this.phase = rand.nextFloat() * 6.28f;
-            this.phaseSpeed = 1.8f + rand.nextFloat() * 2.2f;
-            this.isSpark = false;
-        }
+        public Spark3D(float x, float y, float z, Random rand) {
+            this.x = x + (rand.nextFloat() - 0.5f) * 0.2f;
+            this.y = y + (rand.nextFloat() - 0.5f) * 0.2f;
+            this.z = z + (rand.nextFloat() - 0.5f) * 0.2f;
 
-        /**
-         * Tiny bright fire spark: shoots directly from the burning wave front.
-         * Fast, small, sharply orange, short-lived — creates a lively sparking effect.
-         */
-        public FlowerParticle(float x, float y, Random rand, boolean spark) {
-            this.isSpark = spark;
-            this.x = x + (rand.nextFloat() - 0.5f) * 3.0f;
-            this.y = y + (rand.nextFloat() - 0.5f) * 3.0f;
-            // Sparks shoot mostly upward with slight horizontal spread
-            float angle = (float) (Math.PI * 1.5f + (rand.nextFloat() - 0.5f) * Math.PI * 0.7f);
-            float speed = 18.0f + rand.nextFloat() * 28.0f;
-            this.vx = (float) Math.cos(angle) * speed * 0.5f;
-            this.vy = (float) Math.sin(angle) * speed;
-            this.size = 0.9f + rand.nextFloat() * 1.4f;     // tiny sparks
+            // Shoot upwards and slightly outwards
+            float theta = rand.nextFloat() * (float) (Math.PI * 2.0);
+            float speedOut = 0.8f + rand.nextFloat() * 1.8f;
+            this.vx = (float) Math.cos(theta) * speedOut;
+            this.vz = (float) Math.sin(theta) * speedOut;
+            this.vy = 2.5f + rand.nextFloat() * 4.0f; // fly up
+
+            this.length = 0.4f + rand.nextFloat() * 0.6f;
             this.age = 0f;
-            this.maxAge = 0.25f + rand.nextFloat() * 0.35f; // very short: 0.25s .. 0.60s
-            this.rot = rand.nextFloat() * 360f;
-            this.rotSpeed = (rand.nextFloat() - 0.5f) * 360f;
-            this.phase = rand.nextFloat() * 6.28f;
-            this.phaseSpeed = 4.0f + rand.nextFloat() * 4.0f;
+            this.maxAge = 0.35f + rand.nextFloat() * 0.45f; // short vibrant life (0.35 - 0.80s)
         }
 
         public boolean update(float deltaSec) {
             age += deltaSec;
             if (age >= maxAge) return false;
 
-            phase += phaseSpeed * deltaSec;
-            float sway = (float) Math.sin(phase) * (isSpark ? 2.0f : 5.0f);
-
-            x += (vx + sway) * deltaSec;
+            x += vx * deltaSec;
             y += vy * deltaSec;
-            rot += rotSpeed * deltaSec;
+            z += vz * deltaSec;
 
-            // Gravity: sparks decelerate fast, ash drifts gently
-            vy += (isSpark ? 28.0f : 2.0f) * deltaSec;
-            if (!isSpark) vx *= (1.0f - 0.4f * deltaSec); // ash drag
+            // Gravity & air drag
+            vy -= 4.0f * deltaSec;
+            vx *= (1.0f - 0.8f * deltaSec);
+            vz *= (1.0f - 0.8f * deltaSec);
             return true;
         }
 
-        public int[] getRGB(float t) {
-            int r, g, b;
-            if (isSpark) {
-                // Sparks: stay bright orange/yellow-white the entire life, fade out sharply
-                float hotness = 1.0f - t * 0.7f; // still hot at end
-                r = 255;
-                g = (int) Math.min(255, 180 * hotness + 60);
-                b = (int) Math.min(255, 30 * hotness);
-            } else if (t < 0.35f) {
-                // Bright fiery glowing orange/gold spark
-                float p = t / 0.35f;
-                r = 255;
-                g = (int) (175 - 75 * p); // 175 -> 100
-                b = (int) (35 - 20 * p);  // 35 -> 15
-            } else if (t < 0.70f) {
-                // Cooling from glowing red to warm grey
-                float p = (t - 0.35f) / 0.35f;
-                r = (int) (255 - 135 * p); // 255 -> 120
-                g = (int) (100 + 15 * p);  // 100 -> 115
-                b = (int) (15 + 95 * p);   // 15 -> 110
+        public void getColor(float[] out) {
+            float t = age / maxAge;
+            float alpha = t < 0.2f ? (t / 0.2f) : (1.0f - (t - 0.2f) / 0.8f);
+            out[3] = Math.max(0.0f, Math.min(1.0f, alpha));
+
+            if (t < 0.25f) {
+                // Hot white-yellow core
+                float p = t / 0.25f;
+                out[0] = 1.0f;
+                out[1] = 0.95f - 0.2f * p;
+                out[2] = 0.8f - 0.6f * p;
+            } else if (t < 0.65f) {
+                // Fiery vibrant orange
+                float p = (t - 0.25f) / 0.40f;
+                out[0] = 1.0f;
+                out[1] = 0.75f - 0.45f * p;
+                out[2] = 0.1f * (1.0f - p);
             } else {
-                // Cold ash grey
-                r = 115;
-                g = 115;
-                b = 115;
+                // Cooling dark embers / ash
+                float p = (t - 0.65f) / 0.35f;
+                out[0] = 0.9f - 0.5f * p;
+                out[1] = 0.25f - 0.15f * p;
+                out[2] = 0.05f + 0.1f * p;
             }
-            return new int[]{r, g, b};
         }
 
-        public float getAlpha(float t) {
-            if (isSpark) {
-                // Flash in quickly, hold, then vanish
-                if (t < 0.08f) return t / 0.08f;
-                return Math.max(0f, 1.0f - (t - 0.08f) / 0.92f);
-            }
-            if (t < 0.12f) {
-                return (t / 0.12f) * 0.95f;
-            } else if (t < 0.60f) {
-                return 0.95f - (t - 0.12f) / 0.48f * 0.25f; // 0.95 -> 0.70
-            } else {
-                float p = (t - 0.60f) / 0.40f;
-                return Math.max(0f, 0.70f * (1.0f - p)); // 0.70 -> 0.0
-            }
-        }
-    }
 
     public void load() {
         if (loaded) return;
@@ -879,10 +836,14 @@ public class BedrockFlowerRenderer {
     }
 
     public void update(float deltaSec, float speed) {
-        update(deltaSec, speed, null);
+        update(deltaSec, speed, null, 91.83f, 313.80f, 1.0f);
     }
 
     public void update(float deltaSec, float speed, boolean[] skillUnlocked) {
+        update(deltaSec, speed, skillUnlocked, 91.83f, 313.80f, 1.0f);
+    }
+
+    public void update(float deltaSec, float speed, boolean[] skillUnlocked, float centerX, float centerY, float scaleNorm) {
         load();
 
         if (animPlaying) {
@@ -966,36 +927,22 @@ public class BedrockFlowerRenderer {
                 float prevProg = petal.burnProgress;
                 petal.burnProgress += deltaSec * waveSpeed;
 
-                // Spawn flying sparks and ash along the burning front
-                if (petal.burnProgress < 1.18f) {
-                    // Estimate screen position of the burn wave front
-                    float waveX = petal.screenX + (rand.nextFloat() - 0.5f) * 12.0f;
-                    float waveY = petal.screenY - (petal.burnProgress * 18.0f) + (rand.nextFloat() - 0.5f) * 6.0f;
-
-                    // Ash particle: slow, large, drifts upward (low rate)
-                    if (rand.nextFloat() < 0.35f && particles.size() < 80) {
-                        particles.add(new FlowerParticle(waveX, waveY, rand));
-                    }
-                    // Sparks: tiny bright orange, shoot from the wave front (higher rate for lively fire)
-                    if (rand.nextFloat() < 0.75f && particles.size() < 150) {
-                        particles.add(new FlowerParticle(waveX, waveY, rand, true));
-                    }
-                } else {
+                if (petal.burnProgress >= 1.18f) {
                     petal.burning = false;
-                    petal.burnProgress = 1.20f; // completely charred through and beyond the tip
+                    petal.burnProgress = 1.20f;
                 }
             }
 
-            // Smoothly blend sway intensity into and out of burning state (no sudden snap)
+            // Smoothly blend sway intensity into and out of burning state
             float targetBlend = petal.burning ? 1.0f : 0.0f;
-            float blendSpeed = petal.burning ? 4.0f : 1.6f; // rapid build-up, gentle smooth fade-out
+            float blendSpeed = petal.burning ? 4.0f : 1.6f;
             petal.burnSwayBlend += (targetBlend - petal.burnSwayBlend) * Math.min(1.0f, deltaSec * blendSpeed);
         }
 
-        // Update active ash/spark particles
-        for (Iterator<FlowerParticle> it = particles.iterator(); it.hasNext(); ) {
-            FlowerParticle p = it.next();
-            if (!p.update(deltaSec)) {
+        // Update active 3D sparks
+        for (Iterator<Spark3D> it = sparks3D.iterator(); it.hasNext(); ) {
+            Spark3D s = it.next();
+            if (!s.update(deltaSec)) {
                 it.remove();
             }
         }
@@ -1179,93 +1126,57 @@ public class BedrockFlowerRenderer {
     }
 
     public void renderParticles(Minecraft mc, float fadeAlpha) {
-        if (particles.isEmpty() || fadeAlpha <= 0.01f) return;
+        if (sparks3D.isEmpty() || fadeAlpha <= 0.01f) return;
 
         GlStateManager.pushMatrix();
         GlStateManager.pushAttrib();
-        GlStateManager.enableTexture2D();
+        GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
         GlStateManager.enableAlpha();
         GlStateManager.alphaFunc(GL11.GL_GREATER, 0.003921569F);
-        GlStateManager.disableDepth();
-        GlStateManager.depthMask(false);
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE); // additive glow
         GlStateManager.disableLighting();
-
-        mc.getTextureManager().bindTexture(PARTICLES_TEX);
-
-        // Ash particle sub-texture 0 in 16x16 grid: u: 0..0.0625, v: 0..0.0625
-        double u1 = 0.0;
-        double v1 = 0.0;
-        double u2 = 0.0625;
-        double v2 = 0.0625;
+        GlStateManager.disableCull();
+        GlStateManager.depthMask(false);
+        GL11.glLineWidth(2.2f);
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
+        buffer.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
 
-        // === PASS 1: Ash particles — normal alpha blending ===
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+        float[] col = new float[4];
+        for (Spark3D s : sparks3D) {
+            s.getColor(col);
+            float a = col[3] * fadeAlpha;
+            if (a <= 0.01f) continue;
 
-        for (FlowerParticle p : particles) {
-            if (p.isSpark) continue; // sparks rendered in pass 2
-            float progress = p.age / p.maxAge;
-            float s = p.size;
-            float curAlpha = p.getAlpha(progress) * fadeAlpha;
-            if (curAlpha <= 0.01f) continue;
+            int iaHead = (int) (a * 255.0f);
+            int irHead = (int) (col[0] * 255.0f);
+            int igHead = (int) (col[1] * 255.0f);
+            int ibHead = (int) (col[2] * 255.0f);
 
-            int[] rgb = p.getRGB(progress);
-            int a = (int) (curAlpha * 255.0f);
+            // Tail is stretched backwards along velocity and cooler color (orange/ash)
+            float speed = (float) Math.sqrt(s.vx * s.vx + s.vy * s.vy + s.vz * s.vz);
+            float tailScale = (speed > 0.001f) ? (s.length * 0.08f) : 0.02f;
+            float tailX = s.x - s.vx * tailScale;
+            float tailY = s.y - s.vy * tailScale;
+            float tailZ = s.z - s.vz * tailScale;
 
-            float rad = (float) Math.toRadians(p.rot);
-            float cos = (float) Math.cos(rad) * s;
-            float sin = (float) Math.sin(rad) * s;
+            int iaTail = (int) (a * 0.45f * 255.0f);
+            int irTail = (int) (Math.max(0f, col[0] - 0.2f) * 255.0f);
+            int igTail = (int) (Math.max(0f, col[1] - 0.3f) * 255.0f);
+            int ibTail = (int) (col[2] * 255.0f);
 
-            float x0 = p.x - cos + sin;  float y0 = p.y - sin - cos;
-            float x1 = p.x + cos + sin;  float y1 = p.y + sin - cos;
-            float x2 = p.x + cos - sin;  float y2 = p.y + sin + cos;
-            float x3 = p.x - cos - sin;  float y3 = p.y - sin + cos;
-
-            buffer.pos(x0, y0, 0.0D).tex(u1, v2).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-            buffer.pos(x1, y1, 0.0D).tex(u2, v2).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-            buffer.pos(x2, y2, 0.0D).tex(u2, v1).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-            buffer.pos(x3, y3, 0.0D).tex(u1, v1).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-        }
-        tessellator.draw();
-
-        // === PASS 2: Fire sparks — additive blending for hot glowing look ===
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-
-        for (FlowerParticle p : particles) {
-            if (!p.isSpark) continue;
-            float progress = p.age / p.maxAge;
-            float s = p.size;
-            float curAlpha = p.getAlpha(progress) * fadeAlpha;
-            if (curAlpha <= 0.01f) continue;
-
-            int[] rgb = p.getRGB(progress);
-            int a = (int) (curAlpha * 255.0f);
-
-            float rad = (float) Math.toRadians(p.rot);
-            float cos = (float) Math.cos(rad) * s;
-            float sin = (float) Math.sin(rad) * s;
-
-            float x0 = p.x - cos + sin;  float y0 = p.y - sin - cos;
-            float x1 = p.x + cos + sin;  float y1 = p.y + sin - cos;
-            float x2 = p.x + cos - sin;  float y2 = p.y + sin + cos;
-            float x3 = p.x - cos - sin;  float y3 = p.y - sin + cos;
-
-            buffer.pos(x0, y0, 0.0D).tex(u1, v2).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-            buffer.pos(x1, y1, 0.0D).tex(u2, v2).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-            buffer.pos(x2, y2, 0.0D).tex(u2, v1).color(rgb[0], rgb[1], rgb[2], a).endVertex();
-            buffer.pos(x3, y3, 0.0D).tex(u1, v1).color(rgb[0], rgb[1], rgb[2], a).endVertex();
+            // Tail vertex
+            buffer.pos(tailX, tailY, tailZ).color(irTail, igTail, ibTail, iaTail).endVertex();
+            // Head vertex (bright tip)
+            buffer.pos(s.x, s.y, s.z).color(irHead, igHead, ibHead, iaHead).endVertex();
         }
         tessellator.draw();
 
         GlStateManager.popAttrib();
         GlStateManager.depthMask(true);
+        GlStateManager.enableTexture2D();
         GlStateManager.enableDepth();
         GlStateManager.popMatrix();
     }
@@ -1484,7 +1395,6 @@ public class BedrockFlowerRenderer {
 
                         } else if (Math.abs(diff) <= currentWaveHalf && fireFade > 0.01f) {
                             // --- BURNING FRONT ---
-                            // Leading front line (dense, 1-2 pixels)
                             boolean isLeadingEdge = (diff > -currentWaveHalf * 0.35f);
                             float sparkNoise = isLeadingEdge ? 0.0f : (noise * 0.40f);
 
@@ -1493,6 +1403,13 @@ public class BedrockFlowerRenderer {
                             r = 1.0f;
                             g = Math.min(1.0f, Math.max(0.22f, (0.52f + sparkNoise) * flicker));
                             b = Math.max(0.02f, 0.08f * flicker);
+
+                            // Spawn spark directly from the burning wave front voxel!
+                            if (sparks3D.size() < 250 && rand.nextFloat() < 0.08f) {
+                                float midX = (px0 + px1) * 0.5f;
+                                float midZ = (pz0 + pz1) * 0.5f;
+                                sparks3D.add(new Spark3D(midX, y0 + 0.02f, midZ, rand));
+                            }
 
                         } else if (diff <= 0f || prog >= 1.0f) {
                             // Ash when fire completely fades out or wave has finished
@@ -1600,6 +1517,13 @@ public class BedrockFlowerRenderer {
                             r = 1.0f;
                             g = Math.min(1.0f, Math.max(0.22f, (0.52f + sparkNoise) * flicker));
                             b = Math.max(0.02f, 0.08f * flicker);
+
+                            // Spawn spark directly from vertical burning wave front voxel!
+                            if (sparks3D.size() < 250 && rand.nextFloat() < 0.08f) {
+                                float midX = (px0 + px1) * 0.5f;
+                                float midY = (py0 + py1) * 0.5f;
+                                sparks3D.add(new Spark3D(midX, midY, z0 + 0.02f, rand));
+                            }
 
                         } else if (diff <= 0f || prog >= 1.0f) {
                             alpha = 0.96f;

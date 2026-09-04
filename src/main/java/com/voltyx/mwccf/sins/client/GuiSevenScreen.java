@@ -44,7 +44,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public class GuiSevenScreen extends GuiScreen {
-    // === Фиксированный виртуальный холст под эталонную настройку (2560x1369, GUI Scale = Авто) ===
+    // ===1 Фиксированный виртуальный холст под эталонную настройку (2560x1369, GUI Scale = Авто) ===
     private static final float VIRTUAL_W = 512f;
     private static final float VIRTUAL_H = 274f;
     private boolean lastPanelClipValid = false;
@@ -872,11 +872,6 @@ public class GuiSevenScreen extends GuiScreen {
             drawClassSelectFlow(vMouseX, vMouseY, deltaSec, partialTicks);
         } else if (this.currentState == STATE_MAIN_HUD) {
             drawMainHudScreen(vMouseX, vMouseY, partialTicks, 0.0f, 0.0f);
-            // Render flower spark/ash particles in virtual 2D space (same as dustManager)
-            if (currentTab == TAB_SKILLS && flowerSlideAnim > 0.15f) {
-                float partFadeAlpha = Math.min(1.0f, (flowerSlideAnim - 0.15f) / 0.35f);
-                flowerModel.renderParticles(mc, partFadeAlpha);
-            }
         } else if (this.currentState == STATE_LEVEL_UP) {
             drawLevelUpFlow(vMouseX, vMouseY, partialTicks);
         }
@@ -1276,8 +1271,16 @@ public class GuiSevenScreen extends GuiScreen {
             skillTreeInitialized = true;
         }
 
-        // Update flower animation, smoldering burn spots, and ember/ash particles
-        flowerModel.update(deltaSec, flowerAnimSpeed, skillUnlocked);
+        // Smooth slide-in offset from bottom
+        float slideOffsetY = (1.0f - easeOutCubic(slideProgress)) * 160f;
+
+        float curX = (float) flowerPosX + flowerOffsetX;
+        float curY = (float) flowerPosY + flowerOffsetY + slideOffsetY;
+        float curZ = 20f + flowerOffsetZ; // Lower Z than player model
+        float scaleNorm = flowerScreenScale / 300.0f;
+
+        // Update flower animation, smoldering burn spots, and ember/ash particles with real screen coordinates
+        flowerModel.update(deltaSec, flowerAnimSpeed, skillUnlocked, curX, curY - 20.0f * scaleNorm, scaleNorm);
         if (debugManualWave) {
             BedrockFlowerRenderer.Petal p = flowerModel.getPetal(debugPetalSelect);
             if (p != null) {
@@ -1303,13 +1306,6 @@ public class GuiSevenScreen extends GuiScreen {
                     GlStateManager.DestFactor.ZERO);
             GlStateManager.color(1.0F, 1.0F, 1.0F, fadeAlpha);
 
-            // Smooth slide-in offset from bottom
-            float slideOffsetY = (1.0f - easeOutCubic(slideProgress)) * 160f;
-
-            float curX = (float) flowerPosX + flowerOffsetX;
-            float curY = (float) flowerPosY + flowerOffsetY + slideOffsetY;
-            float curZ = 20f + flowerOffsetZ; // Lower Z than player model
-
             GlStateManager.translate(curX, curY, curZ);
             GlStateManager.scale(flowerScreenScale, -flowerScreenScale, flowerScreenScale); // -Y for Minecraft 3D GUI orientation
 
@@ -1324,11 +1320,13 @@ public class GuiSevenScreen extends GuiScreen {
             flowerModel.render(1.0f / 16.0f);
 
             RenderHelper.disableStandardItemLighting();
+
+            // Render 3D sparks directly inside the flower model's 3D coordinate space!
+            flowerModel.renderParticles(mc, fadeAlpha);
         } finally {
             GlStateManager.popMatrix();
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
-
     }
 
     private void drawSkillsTab(int mouseX, int mouseY) {
