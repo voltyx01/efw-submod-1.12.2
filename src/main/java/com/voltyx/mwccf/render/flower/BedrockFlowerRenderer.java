@@ -26,7 +26,8 @@ public class BedrockFlowerRenderer {
     public static final ResourceLocation MODEL_GEO = new ResourceLocation("mwccf", "geo/flower.geo.json");
     public static final ResourceLocation MODEL_ANIM = new ResourceLocation("mwccf", "animations/flower.animation.json");
     public static final ResourceLocation MODEL_TEX = new ResourceLocation("mwccf", "textures/entity/flower.png");
-    public static final ResourceLocation PARTICLES_TEX = new ResourceLocation("mwccf", "textures/particle/particles.png");
+    public static final ResourceLocation PARTICLES_TEX = new ResourceLocation("mwccf",
+            "textures/particle/particles.png");
 
     private float textureWidth = 32f;
     private float textureHeight = 32f;
@@ -48,10 +49,11 @@ public class BedrockFlowerRenderer {
 
     // === Petal procedural smolder wave system ===
     public static int debugHighlightPetal = 0; // 0..11 highlighted by default for instant visual clarity
-    public static float waveFireWidth = 0.045f;  // thickness of orange burning wave
-    public static float waveAshWidth = 0.16f;   // gradient of grey ash ahead
-    public static float waveSpeed = 1.0f;       // speed of wave progress
-    public static float waveAngle = 20.0f;      // wave angle in degrees relative to petal base (0 = straight, +deg = diagonal)
+    public static float waveFireWidth = 0.045f; // thickness of orange burning wave
+    public static float waveAshWidth = 0.16f; // gradient of grey ash ahead
+    public static float waveSpeed = 1.0f; // speed of wave progress
+    public static float waveAngle = 20.0f; // wave angle in degrees relative to petal base (0 = straight, +deg =
+                                           // diagonal)
     public static boolean showTexelDistDebug = false; // colorize petal by distance (base=green, tip=red)
 
     private final List<Petal> petals = new ArrayList<>();
@@ -60,15 +62,43 @@ public class BedrockFlowerRenderer {
     private final float[] dynamicPixels = new float[32 * 32 * 4];
     private float glowTime = 0f;
 
+    // Transformation matrix stack for tracking bone and cube hierarchy in model space
+    private final ModelMatrix[] matrixStack = new ModelMatrix[16];
+    private final ModelMatrix cubeMatrix = new ModelMatrix();
+    {
+        for (int i = 0; i < matrixStack.length; i++) {
+            matrixStack[i] = new ModelMatrix();
+        }
+    }
+
+    // 3D obstacle quads for small petals (used to occlude/despawn sparks physically under them)
+    public static class PetalObstacle {
+        public final float[] v0 = new float[3];
+        public final float[] v1 = new float[3];
+        public final float[] v2 = new float[3];
+        public final float[] v3 = new float[3];
+        public int petalId = -1;
+        public boolean valid = false;
+    }
+
+    private final PetalObstacle[] smallPetalObstacles = new PetalObstacle[16];
+    private int smallPetalObstacleCount = 0;
+    {
+        for (int i = 0; i < smallPetalObstacles.length; i++) {
+            smallPetalObstacles[i] = new PetalObstacle();
+        }
+    }
+
     // Custom petal burn sequence queue for skills (1..13)
-    public static final int[] PETAL_BURN_QUEUE = new int[]{5, 7, 4, 8, 3, 9, 10, 0, 11, 1, 6, 2, 7};
+    public static final int[] PETAL_BURN_QUEUE = new int[] { 5, 7, 4, 8, 3, 9, 10, 0, 11, 1, 6, 2, 7 };
 
     // Mapping: which petal was ignited by which skill (0..12)
     private final int[] skillToPetal = new int[13];
     private boolean petalsInitialized = false;
 
     private void initPetals() {
-        if (!petals.isEmpty()) return;
+        if (!petals.isEmpty())
+            return;
         Arrays.fill(skillToPetal, -1);
 
         // --- 6 BIG PETALS (tepalsbig) ---
@@ -91,8 +121,10 @@ public class BedrockFlowerRenderer {
     }
 
     /**
-     * Automatically extracts texels for each petal directly from the parsed model geometry cubes.
-     * This guarantees 100% exact match with the 3D model vertices, eliminating all UV offset bugs.
+     * Automatically extracts texels for each petal directly from the parsed model
+     * geometry cubes.
+     * This guarantees 100% exact match with the 3D model vertices, eliminating all
+     * UV offset bugs.
      */
     private void buildPetalTexelsFromModel() {
         for (Petal petal : petals) {
@@ -102,9 +134,11 @@ public class BedrockFlowerRenderer {
             for (int bIdx = 0; bIdx < totalBones; bIdx++) {
                 String bName = petal.boneNames.get(bIdx);
                 Bone bone = bonesByName.get(bName);
-                if (bone == null) continue;
+                if (bone == null)
+                    continue;
 
-                // Normalized segment position along the petal length (0.0 = base bone, 1.0 = tip bone)
+                // Normalized segment position along the petal length (0.0 = base bone, 1.0 =
+                // tip bone)
                 float segStart = (float) bIdx / totalBones;
                 float segEnd = (float) (bIdx + 1) / totalBones;
 
@@ -117,8 +151,8 @@ public class BedrockFlowerRenderer {
 
                     if (h <= 0.001f) {
                         // Top quad in renderCube uses:
-                        //   u: (baseU + d) -> (baseU + d + w) [length along petal X]
-                        //   v: baseV -> (baseV + d) [width across petal Z]
+                        // u: (baseU + d) -> (baseU + d + w) [length along petal X]
+                        // v: baseV -> (baseV + d) [width across petal Z]
                         int uMin = (int) (baseU + d);
                         int uMax = (int) (baseU + d + w);
                         int vMin = baseV;
@@ -134,8 +168,8 @@ public class BedrockFlowerRenderer {
                         }
                     } else if (d <= 0.001f) {
                         // Front quad in renderCube uses:
-                        //   u: baseU -> (baseU + w) [width across petal X]
-                        //   v: baseV -> (baseV + h) [length along petal Y]
+                        // u: baseU -> (baseU + w) [width across petal X]
+                        // v: baseV -> (baseV + h) [length along petal Y]
                         int uMin = baseU;
                         int uMax = (int) (baseU + w);
                         int vMin = baseV;
@@ -166,8 +200,10 @@ public class BedrockFlowerRenderer {
         }
     }
 
-    // Deterministic hash -> [0,1), used to give each texel its own fixed "personality"
-    // (color jitter, breathing phase/speed, flare timing) without needing a Random per pixel.
+    // Deterministic hash -> [0,1), used to give each texel its own fixed
+    // "personality"
+    // (color jitter, breathing phase/speed, flare timing) without needing a Random
+    // per pixel.
     private static float hash01(int a, int b, int c, int salt) {
         int h = a * 374761393 + b * 668265263 + c * 2147483647 + salt * 0x85ebca6b;
         h = (h ^ (h >>> 13)) * 1274126177;
@@ -183,17 +219,18 @@ public class BedrockFlowerRenderer {
         public final int u;
         public final int v;
 
-        // Deterministic per-texel organic variance derived from a hash of (u, v, spotSeed).
+        // Deterministic per-texel organic variance derived from a hash of (u, v,
+        // spotSeed).
         // This is what breaks the "one flat grey color" look: every texel gets its own
         // charcoal tint, its own breathing rhythm, and its own flare schedule.
         public final float charJitterR, charJitterG, charJitterB; // static charcoal color variance
-        public final float emberHueShift;   // -1..1, shifts a flare warmer/cooler for variety
-        public final float ambientPhase;    // 0..2PI, breathing phase offset
-        public final float ambientFreq;     // breathing speed multiplier
-        public final float ambientAmp;      // breathing amplitude (baseline glow under flares)
+        public final float emberHueShift; // -1..1, shifts a flare warmer/cooler for variety
+        public final float ambientPhase; // 0..2PI, breathing phase offset
+        public final float ambientFreq; // breathing speed multiplier
+        public final float ambientAmp; // breathing amplitude (baseline glow under flares)
 
-        public float flareTimer;            // countdown to this texel's next flare
-        public float flareProgress = -1f;   // -1 = not flaring right now, else 0..1 while flaring
+        public float flareTimer; // countdown to this texel's next flare
+        public float flareProgress = -1f; // -1 = not flaring right now, else 0..1 while flaring
         public float flareDuration = 1f;
         public float flareIntensity = 1f;
         public boolean flareParticleSpawned = false;
@@ -259,7 +296,8 @@ public class BedrockFlowerRenderer {
             this.screenX = sx;
             this.screenY = sy;
             if (bones != null) {
-                for (String b : bones) boneNames.add(b);
+                for (String b : bones)
+                    boneNames.add(b);
             }
         }
 
@@ -273,7 +311,8 @@ public class BedrockFlowerRenderer {
 
         public void addTexel(int u, int v, float dist) {
             for (PetalTexel t : texels) {
-                if (t.u == u && t.v == v) return;
+                if (t.u == u && t.v == v)
+                    return;
             }
             texels.add(new PetalTexel(u, v, dist, id * 31 + 17));
         }
@@ -284,11 +323,12 @@ public class BedrockFlowerRenderer {
 
         public void addBox(int minU, int minV, int w, int h, float distStart, float distEnd, boolean reverseUV) {
             for (int y = minV; y < minV + h; y++) {
-                float vNorm = (h <= 1) ? 0.5f : (float)(y - minV) / (h - 1);
+                float vNorm = (h <= 1) ? 0.5f : (float) (y - minV) / (h - 1);
                 for (int x = minU; x < minU + w; x++) {
-                    float uNorm = (w <= 1) ? 0.5f : (float)(x - minU) / (w - 1);
+                    float uNorm = (w <= 1) ? 0.5f : (float) (x - minU) / (w - 1);
                     float factor = Math.max(uNorm, vNorm);
-                    if (reverseUV) factor = 1.0f - factor;
+                    if (reverseUV)
+                        factor = 1.0f - factor;
                     float d = distStart + (distEnd - distStart) * factor;
                     addTexel(x, y, d);
                 }
@@ -298,7 +338,8 @@ public class BedrockFlowerRenderer {
 
     public Petal getPetalForBone(String boneName) {
         for (Petal p : petals) {
-            if (p.containsBone(boneName)) return p;
+            if (p.containsBone(boneName))
+                return p;
         }
         return null;
     }
@@ -309,34 +350,41 @@ public class BedrockFlowerRenderer {
         public float length;
         public float age, maxAge;
         public float r, g, b;
+        public int sourcePetalId = -1;
 
-        public Spark3D(float x, float y, float z, Random rand) {
-            this.x = x + (rand.nextFloat() - 0.5f) * 0.2f;
-            this.y = y + (rand.nextFloat() - 0.5f) * 0.2f;
-            this.z = z + (rand.nextFloat() - 0.5f) * 0.2f;
+        public Spark3D(float x, float y, float z, Random rand, int sourcePetalId) {
+            this.x = x + (rand.nextFloat() - 0.5f) * 0.015f;
+            this.y = y + (rand.nextFloat() - 0.5f) * 0.015f;
+            this.z = z + (rand.nextFloat() - 0.5f) * 0.015f;
+            this.sourcePetalId = sourcePetalId;
 
             // Shoot upwards and slightly outwards
             float theta = rand.nextFloat() * (float) (Math.PI * 2.0);
-            float speedOut = 0.8f + rand.nextFloat() * 1.8f;
+            float speedOut = 0.20f + rand.nextFloat() * 0.45f;
             this.vx = (float) Math.cos(theta) * speedOut;
             this.vz = (float) Math.sin(theta) * speedOut;
-            this.vy = 2.5f + rand.nextFloat() * 4.0f; // fly up
+            this.vy = 0.85f + rand.nextFloat() * 1.35f; // fly up from petal
 
-            this.length = 0.4f + rand.nextFloat() * 0.6f;
+            this.length = 0.25f + rand.nextFloat() * 0.35f;
             this.age = 0f;
-            this.maxAge = 0.35f + rand.nextFloat() * 0.45f; // short vibrant life (0.35 - 0.80s)
+            this.maxAge = 0.35f + rand.nextFloat() * 0.40f; // vibrant life (0.35 - 0.75s)
+        }
+
+        public Spark3D(float x, float y, float z, Random rand) {
+            this(x, y, z, rand, -1);
         }
 
         public boolean update(float deltaSec) {
             age += deltaSec;
-            if (age >= maxAge) return false;
+            if (age >= maxAge)
+                return false;
 
             x += vx * deltaSec;
             y += vy * deltaSec;
             z += vz * deltaSec;
 
-            // Gravity & air drag
-            vy -= 4.0f * deltaSec;
+            // Gentle gravity & air drag
+            vy -= 1.6f * deltaSec;
             vx *= (1.0f - 0.8f * deltaSec);
             vz *= (1.0f - 0.8f * deltaSec);
             return true;
@@ -367,10 +415,223 @@ public class BedrockFlowerRenderer {
                 out[2] = 0.05f + 0.1f * p;
             }
         }
+    }
 
+    /**
+     * Lightweight 4x4 matrix for tracking bone/cube transforms relative to flower root.
+     */
+    public static class ModelMatrix {
+        public final float[] m = new float[16];
+
+        public ModelMatrix() {
+            identity();
+        }
+
+        public void identity() {
+            m[0] = 1; m[4] = 0; m[8]  = 0; m[12] = 0;
+            m[1] = 0; m[5] = 1; m[9]  = 0; m[13] = 0;
+            m[2] = 0; m[6] = 0; m[10] = 1; m[14] = 0;
+            m[3] = 0; m[7] = 0; m[11] = 0; m[15] = 1;
+        }
+
+        public void set(ModelMatrix other) {
+            System.arraycopy(other.m, 0, this.m, 0, 16);
+        }
+
+        public void translate(float x, float y, float z) {
+            for (int i = 0; i < 4; i++) {
+                m[12 + i] += m[0 + i] * x + m[4 + i] * y + m[8 + i] * z;
+            }
+        }
+
+        public void rotateDegX(float deg) {
+            if (deg == 0f) return;
+            float rad = (float) Math.toRadians(deg);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+            for (int i = 0; i < 4; i++) {
+                float v1 = m[4 + i];
+                float v2 = m[8 + i];
+                m[4 + i] = v1 * cos + v2 * sin;
+                m[8 + i] = -v1 * sin + v2 * cos;
+            }
+        }
+
+        public void rotateDegY(float deg) {
+            if (deg == 0f) return;
+            float rad = (float) Math.toRadians(deg);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+            for (int i = 0; i < 4; i++) {
+                float v0 = m[0 + i];
+                float v2 = m[8 + i];
+                m[0 + i] = v0 * cos - v2 * sin;
+                m[8 + i] = v0 * sin + v2 * cos;
+            }
+        }
+
+        public void rotateDegZ(float deg) {
+            if (deg == 0f) return;
+            float rad = (float) Math.toRadians(deg);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+            for (int i = 0; i < 4; i++) {
+                float v0 = m[0 + i];
+                float v1 = m[4 + i];
+                m[0 + i] = v0 * cos + v1 * sin;
+                m[4 + i] = -v0 * sin + v1 * cos;
+            }
+        }
+
+        public float transformX(float x, float y, float z) {
+            return m[0] * x + m[4] * y + m[8] * z + m[12];
+        }
+
+        public float transformY(float x, float y, float z) {
+            return m[1] * x + m[5] * y + m[9] * z + m[13];
+        }
+
+        public float transformZ(float x, float y, float z) {
+            return m[2] * x + m[6] * y + m[10] * z + m[14];
+        }
+    }
+
+    private void recordSmallPetalObstacle(float x0, float y0, float z0, float x1, float y1, ModelMatrix mat, int petalId) {
+        if (smallPetalObstacleCount < smallPetalObstacles.length) {
+            PetalObstacle obs = smallPetalObstacles[smallPetalObstacleCount++];
+            obs.v0[0] = mat.transformX(x0, y0, z0);
+            obs.v0[1] = mat.transformY(x0, y0, z0);
+            obs.v0[2] = mat.transformZ(x0, y0, z0);
+
+            obs.v1[0] = mat.transformX(x1, y0, z0);
+            obs.v1[1] = mat.transformY(x1, y0, z0);
+            obs.v1[2] = mat.transformZ(x1, y0, z0);
+
+            obs.v2[0] = mat.transformX(x1, y1, z0);
+            obs.v2[1] = mat.transformY(x1, y1, z0);
+            obs.v2[2] = mat.transformZ(x1, y1, z0);
+
+            obs.v3[0] = mat.transformX(x0, y1, z0);
+            obs.v3[1] = mat.transformY(x0, y1, z0);
+            obs.v3[2] = mat.transformZ(x0, y1, z0);
+
+            obs.petalId = petalId;
+            obs.valid = true;
+        }
+    }
+
+    public void updateObstacles(float scale) {
+        matrixStack[0].identity();
+        smallPetalObstacleCount = 0;
+        for (Bone root : rootBones) {
+            collectObstaclesPass(root, null, scale, 0);
+        }
+    }
+
+    private void collectObstaclesPass(Bone bone, Bone parent, float scale, int stackDepth) {
+        float px = bone.pivot[0];
+        float py = bone.pivot[1];
+        float pz = bone.pivot[2];
+
+        float ox = (parent == null) ? px : (px - parent.pivot[0]);
+        float oy = (parent == null) ? py : (py - parent.pivot[1]);
+        float oz = (parent == null) ? pz : (pz - parent.pivot[2]);
+
+        float tx = (ox + bone.animPos[0]) * scale;
+        float ty = (oy + bone.animPos[1]) * scale;
+        float tz = (oz + bone.animPos[2]) * scale;
+
+        float rx = -(bone.rotation[0] + bone.animRot[0]);
+        float ry = -(bone.rotation[1] + bone.animRot[1]);
+        float rz = -(bone.rotation[2] + bone.animRot[2]);
+
+        int nextDepth = Math.min(stackDepth + 1, matrixStack.length - 1);
+        ModelMatrix currentBoneMat = matrixStack[nextDepth];
+        currentBoneMat.set(matrixStack[stackDepth]);
+        currentBoneMat.translate(tx, ty, tz);
+        if (rz != 0f) currentBoneMat.rotateDegZ(rz);
+        if (ry != 0f) currentBoneMat.rotateDegY(ry);
+        if (rx != 0f) currentBoneMat.rotateDegX(rx);
+
+        Petal petalForBone = getPetalForBone(bone.name);
+        if (petalForBone != null && !petalForBone.isBig) {
+            for (Cube cube : bone.cubes) {
+                ModelMatrix activeMat = currentBoneMat;
+                if (cube.cubePivot != null && cube.cubeRot != null) {
+                    float cpx = (cube.cubePivot[0] - bone.pivot[0]) * scale;
+                    float cpy = (cube.cubePivot[1] - bone.pivot[1]) * scale;
+                    float cpz = (cube.cubePivot[2] - bone.pivot[2]) * scale;
+                    cubeMatrix.set(currentBoneMat);
+                    cubeMatrix.translate(cpx, cpy, cpz);
+                    if (cube.cubeRot[2] != 0f) cubeMatrix.rotateDegZ(-cube.cubeRot[2]);
+                    if (cube.cubeRot[1] != 0f) cubeMatrix.rotateDegY(-cube.cubeRot[1]);
+                    if (cube.cubeRot[0] != 0f) cubeMatrix.rotateDegX(-cube.cubeRot[0]);
+                    cubeMatrix.translate(-cpx, -cpy, -cpz);
+                    activeMat = cubeMatrix;
+                }
+
+                float x0 = (cube.origin[0] - bone.pivot[0]) * scale;
+                float y0 = (cube.origin[1] - bone.pivot[1]) * scale;
+                float z0 = (cube.origin[2] - bone.pivot[2]) * scale;
+                float x1 = x0 + cube.size[0] * scale;
+                float y1 = y0 + cube.size[1] * scale;
+
+                recordSmallPetalObstacle(x0, y0, z0, x1, y1, activeMat, petalForBone.id);
+            }
+        }
+
+        for (Bone child : bone.children) {
+            collectObstaclesPass(child, bone, scale, nextDepth);
+        }
+    }
+
+    public boolean isUnderSmallPetal(float px, float py, float pz, int sourcePetalId) {
+        if (smallPetalObstacleCount == 0) return false;
+
+        for (int i = 0; i < smallPetalObstacleCount; i++) {
+            PetalObstacle obs = smallPetalObstacles[i];
+            if (!obs.valid) continue;
+            if (obs.petalId == sourcePetalId) continue; // never blocked by the petal that emitted the spark
+
+            if (isPointUnderTriangle(px, py, pz, obs.v0, obs.v1, obs.v2)) {
+                return true;
+            }
+            if (isPointUnderTriangle(px, py, pz, obs.v0, obs.v2, obs.v3)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPointUnderTriangle(float px, float py, float pz,
+                                                float[] a, float[] b, float[] c) {
+        float v0x = b[0] - a[0], v0z = b[2] - a[2];
+        float v1x = c[0] - a[0], v1z = c[2] - a[2];
+        float v2x = px - a[0],   v2z = pz - a[2];
+
+        float den = v0x * v1z - v1x * v0z;
+        if (Math.abs(den) < 1e-7f) {
+            return false;
+        }
+
+        float invDen = 1.0f / den;
+        float u = (v2x * v1z - v1x * v2z) * invDen;
+        float v = (v0x * v2z - v2x * v0z) * invDen;
+        float w = 1.0f - u - v;
+
+        float margin = 0.08f;
+        if (u >= -margin && v >= -margin && w >= -margin) {
+            float ySurface = w * a[1] + u * b[1] + v * c[1];
+            if (py <= ySurface + 0.025f && py >= ySurface - 0.40f) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void load() {
-        if (loaded) return;
+        if (loaded)
+            return;
         initPetals();
         loadBaseTexture();
 
@@ -387,7 +648,8 @@ public class BedrockFlowerRenderer {
             if (geoStream != null) {
                 try (InputStream s = geoStream) {
                     String json = IOUtils.toString(s, StandardCharsets.UTF_8);
-                    if (json.startsWith("\uFEFF")) json = json.substring(1);
+                    if (json.startsWith("\uFEFF"))
+                        json = json.substring(1);
                     parseGeometry(json);
                     buildPetalTexelsFromModel();
                 }
@@ -399,18 +661,21 @@ public class BedrockFlowerRenderer {
                 IResource resAnim = Minecraft.getMinecraft().getResourceManager().getResource(MODEL_ANIM);
                 animStream = resAnim.getInputStream();
             } catch (Throwable ignored) {
-                animStream = BedrockFlowerRenderer.class.getResourceAsStream("/assets/mwccf/animations/flower.animation.json");
+                animStream = BedrockFlowerRenderer.class
+                        .getResourceAsStream("/assets/mwccf/animations/flower.animation.json");
             }
 
             if (animStream != null) {
                 try (InputStream s = animStream) {
                     String json = IOUtils.toString(s, StandardCharsets.UTF_8);
-                    if (json.startsWith("\uFEFF")) json = json.substring(1);
+                    if (json.startsWith("\uFEFF"))
+                        json = json.substring(1);
                     parseAnimation(json);
                 }
             }
 
             loaded = true;
+            updateObstacles(1.0f / 16.0f);
         } catch (Throwable t) {
             System.err.println("[BedrockFlowerRenderer] Failed to load flower model: " + t.getMessage());
             t.printStackTrace();
@@ -435,7 +700,8 @@ public class BedrockFlowerRenderer {
                 img.getRGB(0, 0, w, h, baseTexturePixels, 0, w);
 
                 dynamicTexture = new DynamicTexture(w, h);
-                dynamicTextureLocation = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("flower_burn_tex", dynamicTexture);
+                dynamicTextureLocation = Minecraft.getMinecraft().getTextureManager()
+                        .getDynamicTextureLocation("flower_burn_tex", dynamicTexture);
             }
         } catch (Throwable t) {
             System.err.println("[BedrockFlowerRenderer] Failed to load base texture: " + t.getMessage());
@@ -451,7 +717,8 @@ public class BedrockFlowerRenderer {
         } else if (petalId == -1) { // ignite random
             List<Petal> avail = new ArrayList<>();
             for (Petal p : petals) {
-                if (!p.burning && p.burnProgress <= 0f) avail.add(p);
+                if (!p.burning && p.burnProgress <= 0f)
+                    avail.add(p);
             }
             if (!avail.isEmpty()) {
                 Petal p = avail.get(rand.nextInt(avail.size()));
@@ -476,7 +743,8 @@ public class BedrockFlowerRenderer {
 
     public Petal getPetal(int id) {
         initPetals();
-        if (id >= 0 && id < petals.size()) return petals.get(id);
+        if (id >= 0 && id < petals.size())
+            return petals.get(id);
         return null;
     }
 
@@ -486,7 +754,8 @@ public class BedrockFlowerRenderer {
     }
 
     private void updateTexturePixels() {
-        if (dynamicTexture == null || baseTexturePixels == null) return;
+        if (dynamicTexture == null || baseTexturePixels == null)
+            return;
 
         int[] current = dynamicTexture.getTextureData();
         System.arraycopy(baseTexturePixels, 0, current, 0, baseTexturePixels.length);
@@ -494,7 +763,8 @@ public class BedrockFlowerRenderer {
         // Render all burning / burnt petals or debug views
         for (Petal petal : petals) {
             boolean isHighlighted = (debugHighlightPetal == petal.id);
-            if (!petal.burning && petal.burnProgress <= 0.001f && !isHighlighted && !showTexelDistDebug) continue;
+            if (!petal.burning && petal.burnProgress <= 0.001f && !isHighlighted && !showTexelDistDebug)
+                continue;
 
             float prog = petal.burnProgress;
             float waveCenter = prog;
@@ -504,12 +774,14 @@ public class BedrockFlowerRenderer {
             for (PetalTexel texel : petal.texels) {
                 int u = texel.u;
                 int v = texel.v;
-                if (u < 0 || u >= 32 || v < 0 || v >= 32) continue;
+                if (u < 0 || u >= 32 || v < 0 || v >= 32)
+                    continue;
 
                 int idx = v * 32 + u;
                 int baseCol = baseTexturePixels[idx];
                 int baseA = (baseCol >> 24) & 0xFF;
-                if (baseA == 0) continue;
+                if (baseA == 0)
+                    continue;
 
                 float d = texel.distance;
 
@@ -619,17 +891,21 @@ public class BedrockFlowerRenderer {
     private void parseGeometry(String json) {
         JsonObject root = new JsonParser().parse(json).getAsJsonObject();
         JsonArray geoms = root.getAsJsonArray("minecraft:geometry");
-        if (geoms == null || geoms.size() == 0) return;
+        if (geoms == null || geoms.size() == 0)
+            return;
 
         JsonObject geom = geoms.get(0).getAsJsonObject();
         if (geom.has("description")) {
             JsonObject desc = geom.getAsJsonObject("description");
-            if (desc.has("texture_width")) textureWidth = desc.get("texture_width").getAsFloat();
-            if (desc.has("texture_height")) textureHeight = desc.get("texture_height").getAsFloat();
+            if (desc.has("texture_width"))
+                textureWidth = desc.get("texture_width").getAsFloat();
+            if (desc.has("texture_height"))
+                textureHeight = desc.get("texture_height").getAsFloat();
         }
 
         JsonArray bonesArr = geom.getAsJsonArray("bones");
-        if (bonesArr == null) return;
+        if (bonesArr == null)
+            return;
 
         bonesByName.clear();
         rootBones.clear();
@@ -639,16 +915,16 @@ public class BedrockFlowerRenderer {
             String name = bObj.get("name").getAsString();
             String parent = bObj.has("parent") ? bObj.get("parent").getAsString() : null;
 
-            float[] pivot = new float[]{0, 0, 0};
+            float[] pivot = new float[] { 0, 0, 0 };
             if (bObj.has("pivot")) {
                 JsonArray piv = bObj.getAsJsonArray("pivot");
-                pivot = new float[]{piv.get(0).getAsFloat(), piv.get(1).getAsFloat(), piv.get(2).getAsFloat()};
+                pivot = new float[] { piv.get(0).getAsFloat(), piv.get(1).getAsFloat(), piv.get(2).getAsFloat() };
             }
 
-            float[] rotation = new float[]{0, 0, 0};
+            float[] rotation = new float[] { 0, 0, 0 };
             if (bObj.has("rotation")) {
                 JsonArray rot = bObj.getAsJsonArray("rotation");
-                rotation = new float[]{rot.get(0).getAsFloat(), rot.get(1).getAsFloat(), rot.get(2).getAsFloat()};
+                rotation = new float[] { rot.get(0).getAsFloat(), rot.get(1).getAsFloat(), rot.get(2).getAsFloat() };
             }
 
             Bone bone = new Bone(name, parent, pivot, rotation);
@@ -678,13 +954,15 @@ public class BedrockFlowerRenderer {
                     float[] cubePivot = null;
                     if (cObj.has("pivot")) {
                         JsonArray cp = cObj.getAsJsonArray("pivot");
-                        cubePivot = new float[]{cp.get(0).getAsFloat(), cp.get(1).getAsFloat(), cp.get(2).getAsFloat()};
+                        cubePivot = new float[] { cp.get(0).getAsFloat(), cp.get(1).getAsFloat(),
+                                cp.get(2).getAsFloat() };
                     }
 
                     float[] cubeRot = null;
                     if (cObj.has("rotation")) {
                         JsonArray cr = cObj.getAsJsonArray("rotation");
-                        cubeRot = new float[]{cr.get(0).getAsFloat(), cr.get(1).getAsFloat(), cr.get(2).getAsFloat()};
+                        cubeRot = new float[] { cr.get(0).getAsFloat(), cr.get(1).getAsFloat(),
+                                cr.get(2).getAsFloat() };
                     }
 
                     bone.cubes.add(new Cube(ox, oy, oz, sx, sy, sz, uvU, uvV, cubePivot, cubeRot));
@@ -706,7 +984,8 @@ public class BedrockFlowerRenderer {
 
     private void parseAnimation(String json) {
         JsonObject root = new JsonParser().parse(json).getAsJsonObject();
-        if (!root.has("animations")) return;
+        if (!root.has("animations"))
+            return;
 
         JsonObject anims = root.getAsJsonObject("animations");
         for (Map.Entry<String, JsonElement> entry : anims.entrySet()) {
@@ -760,16 +1039,20 @@ public class BedrockFlowerRenderer {
                             JsonObject vo = val.getAsJsonObject();
                             if (vo.has("post")) {
                                 JsonArray v = vo.getAsJsonArray("post");
-                                target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
+                                target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(),
+                                        v.get(2).getAsFloat()));
                             } else if (vo.has("vector")) {
                                 JsonArray v = vo.getAsJsonArray("vector");
-                                target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
+                                target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(),
+                                        v.get(2).getAsFloat()));
                             }
                         } else if (val.isJsonArray()) {
                             JsonArray v = val.getAsJsonArray();
-                            target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
+                            target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(),
+                                    v.get(2).getAsFloat()));
                         }
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable ignored) {
+                    }
                 }
             }
         } else if (elem.isJsonArray()) {
@@ -802,13 +1085,15 @@ public class BedrockFlowerRenderer {
 
     /**
      * Called whenever the flower tab is opened:
-     * Flower appears fresh/healthy, and all petals that are logically unlocked/burned
+     * Flower appears fresh/healthy, and all petals that are logically
+     * unlocked/burned
      * immediately start their burn wave animation from 0.0f.
      */
     public void onFlowerScreenOpened() {
         initPetals();
         for (Petal p : petals) {
-            // If petal was burned or currently burning, restart burning wave from 0 so it animates each time screen opens
+            // If petal was burned or currently burning, restart burning wave from 0 so it
+            // animates each time screen opens
             if (p.burnProgress > 0.0f || p.burning) {
                 p.burning = true;
                 p.burnProgress = 0.0f;
@@ -843,7 +1128,8 @@ public class BedrockFlowerRenderer {
         update(deltaSec, speed, skillUnlocked, 91.83f, 313.80f, 1.0f);
     }
 
-    public void update(float deltaSec, float speed, boolean[] skillUnlocked, float centerX, float centerY, float scaleNorm) {
+    public void update(float deltaSec, float speed, boolean[] skillUnlocked, float centerX, float centerY,
+            float scaleNorm) {
         load();
 
         if (animPlaying) {
@@ -902,14 +1188,15 @@ public class BedrockFlowerRenderer {
 
         initPetals();
 
-        // Check for newly unlocked skills and assign them to burn petals in exact queue order
+        // Check for newly unlocked skills and assign them to burn petals in exact queue
+        // order
         if (skillUnlocked != null) {
             for (int sId = 1; sId < skillUnlocked.length && sId < 13; sId++) {
                 if (skillUnlocked[sId]) {
                     if (skillToPetal[sId] == -1) {
                         int queueIdx = sId - 1;
-                        int petalId = (queueIdx >= 0 && queueIdx < PETAL_BURN_QUEUE.length) 
-                                ? PETAL_BURN_QUEUE[queueIdx] 
+                        int petalId = (queueIdx >= 0 && queueIdx < PETAL_BURN_QUEUE.length)
+                                ? PETAL_BURN_QUEUE[queueIdx]
                                 : (sId % petals.size());
                         Petal targetPetal = getPetal(petalId);
                         if (targetPetal != null) {
@@ -939,10 +1226,13 @@ public class BedrockFlowerRenderer {
             petal.burnSwayBlend += (targetBlend - petal.burnSwayBlend) * Math.min(1.0f, deltaSec * blendSpeed);
         }
 
+        // Update obstacle positions for collision detection
+        updateObstacles(1.0f / 16.0f);
+
         // Update active 3D sparks
-        for (Iterator<Spark3D> it = sparks3D.iterator(); it.hasNext(); ) {
+        for (Iterator<Spark3D> it = sparks3D.iterator(); it.hasNext();) {
             Spark3D s = it.next();
-            if (!s.update(deltaSec)) {
+            if (!s.update(deltaSec) || isUnderSmallPetal(s.x, s.y, s.z, s.sourcePetalId)) {
                 it.remove();
             }
         }
@@ -953,12 +1243,12 @@ public class BedrockFlowerRenderer {
 
     private void applyProceduralPetalSway(float time, float weight) {
         String[][] bigPetals = {
-            {"group27", "group28", "group29"},
-            {"group30", "group31", "group32"},
-            {"group33", "group34", "group35"},
-            {"group36", "group37", "group38"},
-            {"group39", "group40", "group41"},
-            {"group42", "group43", "group44"}
+                { "group27", "group28", "group29" },
+                { "group30", "group31", "group32" },
+                { "group33", "group34", "group35" },
+                { "group36", "group37", "group38" },
+                { "group39", "group40", "group41" },
+                { "group42", "group43", "group44" }
         };
 
         for (int p = 0; p < bigPetals.length; p++) {
@@ -976,21 +1266,23 @@ public class BedrockFlowerRenderer {
             }
             Bone b1 = bonesByName.get(bigPetals[p][1]);
             if (b1 != null) {
-                b1.animRot[2] += ((float) Math.sin(time * 2.2f + phase + 0.6f) * 1.5f * swayScale + flutter * 0.8f) * weight;
+                b1.animRot[2] += ((float) Math.sin(time * 2.2f + phase + 0.6f) * 1.5f * swayScale + flutter * 0.8f)
+                        * weight;
             }
             Bone b2 = bonesByName.get(bigPetals[p][2]);
             if (b2 != null) {
-                b2.animRot[2] += ((float) Math.sin(time * 2.6f + phase + 1.2f) * 2.2f * swayScale + flutter * 1.2f) * weight;
+                b2.animRot[2] += ((float) Math.sin(time * 2.6f + phase + 1.2f) * 2.2f * swayScale + flutter * 1.2f)
+                        * weight;
             }
         }
 
         String[][] smallPetals = {
-            {"groupx", "group19"},
-            {"groupx2", "group20"},
-            {"groupx3", "group21"},
-            {"groupx4", "group22"},
-            {"groupx5", "group23"},
-            {"groupx6", "group24"}
+                { "groupx", "group19" },
+                { "groupx2", "group20" },
+                { "groupx3", "group21" },
+                { "groupx4", "group22" },
+                { "groupx5", "group23" },
+                { "groupx6", "group24" }
         };
 
         for (int p = 0; p < smallPetals.length; p++) {
@@ -1004,11 +1296,13 @@ public class BedrockFlowerRenderer {
 
             Bone bx = bonesByName.get(smallPetals[p][0]);
             if (bx != null) {
-                bx.animRot[0] += ((float) Math.sin(time * 2.1f + phaseSmall) * 2.0f * swayScale + flutter * 0.6f) * weight;
+                bx.animRot[0] += ((float) Math.sin(time * 2.1f + phaseSmall) * 2.0f * swayScale + flutter * 0.6f)
+                        * weight;
             }
             Bone bt = bonesByName.get(smallPetals[p][1]);
             if (bt != null) {
-                bt.animRot[0] += ((float) Math.sin(time * 2.7f + phaseSmall + 0.8f) * 2.5f * swayScale + flutter * 1.2f) * weight;
+                bt.animRot[0] += ((float) Math.sin(time * 2.7f + phaseSmall + 0.8f) * 2.5f * swayScale + flutter * 1.2f)
+                        * weight;
             }
         }
     }
@@ -1019,7 +1313,8 @@ public class BedrockFlowerRenderer {
         if (anim == null && !animations.isEmpty()) {
             anim = animations.values().iterator().next();
         }
-        if (anim == null) return;
+        if (anim == null)
+            return;
 
         animTime = Math.max(0f, Math.min(1f, progress)) * anim.length;
         for (Bone bone : bonesByName.values()) {
@@ -1039,7 +1334,8 @@ public class BedrockFlowerRenderer {
     }
 
     private void evaluateKeyframes(List<Keyframe> kfs, float time, float[] out) {
-        if (kfs.isEmpty()) return;
+        if (kfs.isEmpty())
+            return;
         if (kfs.size() == 1 || time <= kfs.get(0).time) {
             out[0] = kfs.get(0).x;
             out[1] = kfs.get(0).y;
@@ -1081,15 +1377,17 @@ public class BedrockFlowerRenderer {
         GlStateManager.disableCull();
         GlStateManager.disableLighting();
 
+        matrixStack[0].identity();
+
         for (Bone root : rootBones) {
-            renderBone(root, null, scale);
+            renderBone(root, null, scale, 0);
         }
 
         GlStateManager.enableLighting();
         GlStateManager.enableCull();
     }
 
-    private void renderBone(Bone bone, Bone parent, float scale) {
+    private void renderBone(Bone bone, Bone parent, float scale, int stackDepth) {
         GlStateManager.pushMatrix();
 
         float px = bone.pivot[0];
@@ -1100,33 +1398,50 @@ public class BedrockFlowerRenderer {
         float oy = (parent == null) ? py : (py - parent.pivot[1]);
         float oz = (parent == null) ? pz : (pz - parent.pivot[2]);
 
-        GlStateManager.translate((ox + bone.animPos[0]) * scale,
-                                 (oy + bone.animPos[1]) * scale,
-                                 (oz + bone.animPos[2]) * scale);
+        float tx = (ox + bone.animPos[0]) * scale;
+        float ty = (oy + bone.animPos[1]) * scale;
+        float tz = (oz + bone.animPos[2]) * scale;
+
+        GlStateManager.translate(tx, ty, tz);
 
         float rx = -(bone.rotation[0] + bone.animRot[0]);
         float ry = -(bone.rotation[1] + bone.animRot[1]);
         float rz = -(bone.rotation[2] + bone.animRot[2]);
 
-        if (rz != 0f) GlStateManager.rotate(rz, 0, 0, 1);
-        if (ry != 0f) GlStateManager.rotate(ry, 0, 1, 0);
-        if (rx != 0f) GlStateManager.rotate(rx, 1, 0, 0);
+        if (rz != 0f)
+            GlStateManager.rotate(rz, 0, 0, 1);
+        if (ry != 0f)
+            GlStateManager.rotate(ry, 0, 1, 0);
+        if (rx != 0f)
+            GlStateManager.rotate(rx, 1, 0, 0);
+
+        int nextDepth = Math.min(stackDepth + 1, matrixStack.length - 1);
+        ModelMatrix currentBoneMat = matrixStack[nextDepth];
+        currentBoneMat.set(matrixStack[stackDepth]);
+        currentBoneMat.translate(tx, ty, tz);
+        if (rz != 0f)
+            currentBoneMat.rotateDegZ(rz);
+        if (ry != 0f)
+            currentBoneMat.rotateDegY(ry);
+        if (rx != 0f)
+            currentBoneMat.rotateDegX(rx);
 
         // Render cubes
         for (Cube cube : bone.cubes) {
-            renderCube(cube, bone, scale);
+            renderCube(cube, bone, scale, currentBoneMat);
         }
 
         // Render child bones
         for (Bone child : bone.children) {
-            renderBone(child, bone, scale);
+            renderBone(child, bone, scale, nextDepth);
         }
 
         GlStateManager.popMatrix();
     }
 
     public void renderParticles(Minecraft mc, float fadeAlpha) {
-        if (sparks3D.isEmpty() || fadeAlpha <= 0.01f) return;
+        if (sparks3D.isEmpty() || fadeAlpha <= 0.01f)
+            return;
 
         GlStateManager.pushMatrix();
         GlStateManager.pushAttrib();
@@ -1148,7 +1463,8 @@ public class BedrockFlowerRenderer {
         for (Spark3D s : sparks3D) {
             s.getColor(col);
             float a = col[3] * fadeAlpha;
-            if (a <= 0.01f) continue;
+            if (a <= 0.01f)
+                continue;
 
             int iaHead = (int) (a * 255.0f);
             int irHead = (int) (col[0] * 255.0f);
@@ -1157,7 +1473,7 @@ public class BedrockFlowerRenderer {
 
             // Tail is stretched backwards along velocity and cooler color (orange/ash)
             float speed = (float) Math.sqrt(s.vx * s.vx + s.vy * s.vy + s.vz * s.vz);
-            float tailScale = (speed > 0.001f) ? (s.length * 0.08f) : 0.02f;
+            float tailScale = (speed > 0.001f) ? (s.length * 0.035f) : 0.01f;
             float tailX = s.x - s.vx * tailScale;
             float tailY = s.y - s.vy * tailScale;
             float tailZ = s.z - s.vz * tailScale;
@@ -1181,18 +1497,34 @@ public class BedrockFlowerRenderer {
         GlStateManager.popMatrix();
     }
 
-    private void renderCube(Cube cube, Bone bone, float scale) {
+    private void renderCube(Cube cube, Bone bone, float scale, ModelMatrix boneMat) {
         GlStateManager.pushMatrix();
+
+        ModelMatrix activeMat = boneMat;
 
         if (cube.cubePivot != null && cube.cubeRot != null) {
             float cpx = (cube.cubePivot[0] - bone.pivot[0]) * scale;
             float cpy = (cube.cubePivot[1] - bone.pivot[1]) * scale;
             float cpz = (cube.cubePivot[2] - bone.pivot[2]) * scale;
             GlStateManager.translate(cpx, cpy, cpz);
-            if (cube.cubeRot[2] != 0f) GlStateManager.rotate(-cube.cubeRot[2], 0, 0, 1);
-            if (cube.cubeRot[1] != 0f) GlStateManager.rotate(-cube.cubeRot[1], 0, 1, 0);
-            if (cube.cubeRot[0] != 0f) GlStateManager.rotate(-cube.cubeRot[0], 1, 0, 0);
+            if (cube.cubeRot[2] != 0f)
+                GlStateManager.rotate(-cube.cubeRot[2], 0, 0, 1);
+            if (cube.cubeRot[1] != 0f)
+                GlStateManager.rotate(-cube.cubeRot[1], 0, 1, 0);
+            if (cube.cubeRot[0] != 0f)
+                GlStateManager.rotate(-cube.cubeRot[0], 1, 0, 0);
             GlStateManager.translate(-cpx, -cpy, -cpz);
+
+            cubeMatrix.set(boneMat);
+            cubeMatrix.translate(cpx, cpy, cpz);
+            if (cube.cubeRot[2] != 0f)
+                cubeMatrix.rotateDegZ(-cube.cubeRot[2]);
+            if (cube.cubeRot[1] != 0f)
+                cubeMatrix.rotateDegY(-cube.cubeRot[1]);
+            if (cube.cubeRot[0] != 0f)
+                cubeMatrix.rotateDegX(-cube.cubeRot[0]);
+            cubeMatrix.translate(-cpx, -cpy, -cpz);
+            activeMat = cubeMatrix;
         }
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -1241,17 +1573,22 @@ public class BedrockFlowerRenderer {
             buf.pos(x1, y0, z0).tex(u1n, v1n).normal(0, 0, -1).endVertex();
             buf.pos(x0, y0, z0).tex(u0n, v1n).normal(0, 0, -1).endVertex();
         } else {
-            float uTop = u + d,          vTop = v;
-            float uSide = u,             vSide = v + d;
-            float uFront = u + d,        vFront = v + d;
+            float uTop = u + d, vTop = v;
+            float uSide = u, vSide = v + d;
+            float uFront = u + d, vFront = v + d;
             float uBack = u + d + w + d, vBack = v + d;
 
             quad(buf, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0, uTop, vTop, uTop + w, vTop + d, tw, th, 0, 1, 0);
-            quad(buf, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, uTop + w, vTop, uTop + w + w, vTop + d, tw, th, 0, -1, 0);
-            quad(buf, x0, y1, z0, x1, y1, z0, x1, y0, z0, x0, y0, z0, uFront, vFront, uFront + w, vFront + h, tw, th, 0, 0, -1);
-            quad(buf, x1, y1, z1, x0, y1, z0, x0, y0, z1, x1, y0, z1, uBack, vFront, uBack + w, vFront + h, tw, th, 0, 0, 1);
-            quad(buf, x0, y1, z1, x0, y1, z0, x0, y0, z0, x0, y0, z1, uSide, vSide, uSide + d, vSide + h, tw, th, -1, 0, 0);
-            quad(buf, x1, y1, z0, x1, y1, z1, x1, y0, z1, x1, y0, z0, uSide + d + w, vSide, uSide + d + w + d, vSide + h, tw, th, 1, 0, 0);
+            quad(buf, x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, uTop + w, vTop, uTop + w + w, vTop + d, tw, th, 0,
+                    -1, 0);
+            quad(buf, x0, y1, z0, x1, y1, z0, x1, y0, z0, x0, y0, z0, uFront, vFront, uFront + w, vFront + h, tw, th, 0,
+                    0, -1);
+            quad(buf, x1, y1, z1, x0, y1, z0, x0, y0, z1, x1, y0, z1, uBack, vFront, uBack + w, vFront + h, tw, th, 0,
+                    0, 1);
+            quad(buf, x0, y1, z1, x0, y1, z0, x0, y0, z0, x0, y0, z1, uSide, vSide, uSide + d, vSide + h, tw, th, -1, 0,
+                    0);
+            quad(buf, x1, y1, z0, x1, y1, z1, x1, y0, z1, x1, y0, z0, uSide + d + w, vSide, uSide + d + w + d,
+                    vSide + h, tw, th, 1, 0, 0);
         }
 
         tessellator.draw();
@@ -1262,7 +1599,8 @@ public class BedrockFlowerRenderer {
             int segIdx = petalForBone.getBoneSegmentIndex(bone.name);
             int totalSegs = Math.max(1, petalForBone.boneNames.size());
 
-            // Compute s0 and s1 proportionally to the actual physical length of each bone segment
+            // Compute s0 and s1 proportionally to the actual physical length of each bone
+            // segment
             float totalPetalLen = 0f;
             float boneStartLen = 0f;
             float thisBoneLen = 0f;
@@ -1280,8 +1618,10 @@ public class BedrockFlowerRenderer {
                 }
                 totalPetalLen += blen;
             }
-            if (totalPetalLen <= 0.001f) totalPetalLen = 1.0f;
-            if (thisBoneLen <= 0.001f) thisBoneLen = 1.0f;
+            if (totalPetalLen <= 0.001f)
+                totalPetalLen = 1.0f;
+            if (thisBoneLen <= 0.001f)
+                thisBoneLen = 1.0f;
 
             float s0 = boneStartLen / totalPetalLen;
             float s1 = (boneStartLen + thisBoneLen) / totalPetalLen;
@@ -1292,14 +1632,16 @@ public class BedrockFlowerRenderer {
 
             GlStateManager.disableTexture2D();
             GlStateManager.enableBlend();
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
             GL11.glPolygonOffset(-1.5f, -1.5f);
 
             BufferBuilder obuf = tessellator.getBuffer();
             obuf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-            // 4 subdivisions per unit for ultra-fine micro-pixels matching exact 32x texel scale
+            // 4 subdivisions per unit for ultra-fine micro-pixels matching exact 32x texel
+            // scale
             int stepsX = Math.max(1, Math.round(cube.size[0] * 4.0f));
             int stepsY = Math.max(1, Math.round(cube.size[1] * 4.0f));
             int stepsZ = Math.max(1, Math.round(cube.size[2] * 4.0f));
@@ -1313,7 +1655,8 @@ public class BedrockFlowerRenderer {
             boolean isLargeCube = (boneLen >= 2.8f);
             float currentWaveHalf = isLargeCube ? (waveHalf * 1.55f) : (waveHalf * 0.85f);
 
-            // Fire fading factor as wave finishes the petal (fades at the very end past tip)
+            // Fire fading factor as wave finishes the petal (fades at the very end past
+            // tip)
             float fireFade = 1.0f;
             if (prog > 1.00f) {
                 fireFade = Math.max(0.0f, (1.15f - prog) / 0.15f);
@@ -1329,7 +1672,8 @@ public class BedrockFlowerRenderer {
                     float px1 = (ix == stepsX - 1) ? x1 : (px0 + dx);
                     float uFrac = (stepsX <= 1) ? 0.5f : (float) ix / (stepsX - 1);
                     float dBase = s0 + (s1 - s0) * uFrac;
-                    if (petalForBone.flipDirection) dBase = 1.0f - dBase;
+                    if (petalForBone.flipDirection)
+                        dBase = 1.0f - dBase;
 
                     for (int iz = 0; iz < stepsZ; iz++) {
                         float pz0 = z0 + iz * dz;
@@ -1347,7 +1691,8 @@ public class BedrockFlowerRenderer {
                         float noise = ((seed % 100) / 100.0f) - 0.5f;
                         float noise2 = (((seed / 100) % 100) / 100.0f) - 0.5f;
 
-                        // Patchy edge: sections grouped along X (along petal length direction) = vertical stripes, matching small petals
+                        // Patchy edge: sections grouped along X (along petal length direction) =
+                        // vertical stripes, matching small petals
                         // Larger section size (ix/8) = fewer but longer ash strips
                         int sectionSeed = (petalForBone.id * 101 + (ix / 8) * 31 + (iz == 0 ? 11 : 73)) & 0x7FFFFFFF;
                         boolean edgeSectionActive = ((sectionSeed % 100) < 55);
@@ -1391,7 +1736,9 @@ public class BedrockFlowerRenderer {
                                 }
                             }
 
-                            r = charR; g = charG; b = charB;
+                            r = charR;
+                            g = charG;
+                            b = charB;
 
                         } else if (Math.abs(diff) <= currentWaveHalf && fireFade > 0.01f) {
                             // --- BURNING FRONT ---
@@ -1408,7 +1755,13 @@ public class BedrockFlowerRenderer {
                             if (sparks3D.size() < 250 && rand.nextFloat() < 0.08f) {
                                 float midX = (px0 + px1) * 0.5f;
                                 float midZ = (pz0 + pz1) * 0.5f;
-                                sparks3D.add(new Spark3D(midX, y0 + 0.02f, midZ, rand));
+                                float localY = y0 + 0.02f;
+                                float fx = activeMat.transformX(midX, localY, midZ);
+                                float fy = activeMat.transformY(midX, localY, midZ);
+                                float fz = activeMat.transformZ(midX, localY, midZ);
+                                if (!isUnderSmallPetal(fx, fy, fz, petalForBone.id)) {
+                                    sparks3D.add(new Spark3D(fx, fy, fz, rand, petalForBone.id));
+                                }
                             }
 
                         } else if (diff <= 0f || prog >= 1.0f) {
@@ -1419,17 +1772,21 @@ public class BedrockFlowerRenderer {
                             float charB = 0.020f + noise2 * 0.012f;
                             if (isEdge && edgeSectionActive) {
                                 float greyAdd = 0.13f * slowBreathe;
-                                charR += greyAdd; charG += greyAdd; charB += greyAdd;
+                                charR += greyAdd;
+                                charG += greyAdd;
+                                charB += greyAdd;
                             }
-                            r = charR; g = charG; b = charB;
+                            r = charR;
+                            g = charG;
+                            b = charB;
                         }
                         // Ahead of fire: clean unburned petal!
 
                         if (alpha > 0.01f) {
-                            int ir = (int)(Math.min(1.0f, Math.max(0.0f, r)) * 255);
-                            int ig = (int)(Math.min(1.0f, Math.max(0.0f, g)) * 255);
-                            int ib = (int)(Math.min(1.0f, Math.max(0.0f, b)) * 255);
-                            int ia = (int)(alpha * 255);
+                            int ir = (int) (Math.min(1.0f, Math.max(0.0f, r)) * 255);
+                            int ig = (int) (Math.min(1.0f, Math.max(0.0f, g)) * 255);
+                            int ib = (int) (Math.min(1.0f, Math.max(0.0f, b)) * 255);
+                            int ia = (int) (alpha * 255);
 
                             // Top quad
                             obuf.pos(px0, y0, pz0).color(ir, ig, ib, ia).endVertex();
@@ -1452,7 +1809,8 @@ public class BedrockFlowerRenderer {
                     float py1 = (iy == stepsY - 1) ? y1 : (py0 + dy);
                     float vFrac = (stepsY <= 1) ? 0.5f : (float) iy / (stepsY - 1);
                     float dBase = s0 + (s1 - s0) * vFrac;
-                    if (petalForBone.flipDirection) dBase = 1.0f - dBase;
+                    if (petalForBone.flipDirection)
+                        dBase = 1.0f - dBase;
 
                     for (int ix = 0; ix < stepsX; ix++) {
                         float px0 = x0 + ix * dx;
@@ -1506,7 +1864,9 @@ public class BedrockFlowerRenderer {
                                 }
                             }
 
-                            r = charR; g = charG; b = charB;
+                            r = charR;
+                            g = charG;
+                            b = charB;
 
                         } else if (Math.abs(diff) <= currentWaveHalf && fireFade > 0.01f) {
                             boolean isLeadingEdge = (diff > -currentWaveHalf * 0.35f);
@@ -1522,7 +1882,13 @@ public class BedrockFlowerRenderer {
                             if (sparks3D.size() < 250 && rand.nextFloat() < 0.08f) {
                                 float midX = (px0 + px1) * 0.5f;
                                 float midY = (py0 + py1) * 0.5f;
-                                sparks3D.add(new Spark3D(midX, midY, z0 + 0.02f, rand));
+                                float localZ = z0 + 0.02f;
+                                float fx = activeMat.transformX(midX, midY, localZ);
+                                float fy = activeMat.transformY(midX, midY, localZ);
+                                float fz = activeMat.transformZ(midX, midY, localZ);
+                                if (!isUnderSmallPetal(fx, fy, fz, petalForBone.id)) {
+                                    sparks3D.add(new Spark3D(fx, fy, fz, rand, petalForBone.id));
+                                }
                             }
 
                         } else if (diff <= 0f || prog >= 1.0f) {
@@ -1532,16 +1898,20 @@ public class BedrockFlowerRenderer {
                             float charB = 0.013f + noise2 * 0.008f;
                             if (isEdge && edgeSectionActive) {
                                 float greyAdd = 0.085f * slowBreathe;
-                                charR += greyAdd; charG += greyAdd; charB += greyAdd;
+                                charR += greyAdd;
+                                charG += greyAdd;
+                                charB += greyAdd;
                             }
-                            r = charR; g = charG; b = charB;
+                            r = charR;
+                            g = charG;
+                            b = charB;
                         }
 
                         if (alpha > 0.01f) {
-                            int ir = (int)(Math.min(1.0f, Math.max(0.0f, r)) * 255);
-                            int ig = (int)(Math.min(1.0f, Math.max(0.0f, g)) * 255);
-                            int ib = (int)(Math.min(1.0f, Math.max(0.0f, b)) * 255);
-                            int ia = (int)(alpha * 255);
+                            int ir = (int) (Math.min(1.0f, Math.max(0.0f, r)) * 255);
+                            int ig = (int) (Math.min(1.0f, Math.max(0.0f, g)) * 255);
+                            int ib = (int) (Math.min(1.0f, Math.max(0.0f, b)) * 255);
+                            int ia = (int) (alpha * 255);
 
                             // Front quad
                             obuf.pos(px0, py0, z0).color(ir, ig, ib, ia).endVertex();
@@ -1565,7 +1935,8 @@ public class BedrockFlowerRenderer {
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        // === CENTER CUBE CHARRING: blackens directionally and gradually from the side of ignited petals ===
+        // === CENTER CUBE CHARRING: blackens directionally and gradually from the side
+        // of ignited petals ===
         if ("center".equals(bone.name)) {
             boolean anyBurning = false;
             for (Petal p : petals) {
@@ -1578,7 +1949,8 @@ public class BedrockFlowerRenderer {
             if (anyBurning) {
                 GlStateManager.disableTexture2D();
                 GlStateManager.enableBlend();
-                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
                 GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
                 GL11.glPolygonOffset(-1.5f, -1.5f);
 
@@ -1615,13 +1987,15 @@ public class BedrockFlowerRenderer {
                         float pointAngle = (float) Math.toDegrees(Math.atan2(midZ, midX));
 
                         float localCharLevel = centerCharLevelAt(pointAngle, radNorm);
-                        if (localCharLevel <= 0.01f) continue;
+                        if (localCharLevel <= 0.01f)
+                            continue;
 
                         int cseed = (cix * 53 + ciz * 89 + 1337) & 0x7FFFFFFF;
                         float cnoise = ((cseed % 100) / 100.0f) - 0.5f;
                         float cnoise2 = (((cseed / 100) % 100) / 100.0f) - 0.5f;
 
-                        // Center is lighter/ash-grey, outer edge towards burning petal is darker charcoal
+                        // Center is lighter/ash-grey, outer edge towards burning petal is darker
+                        // charcoal
                         float ashCenterMix = (1.0f - radNorm);
                         float cr = (0.020f + ashCenterMix * 0.065f) + cnoise * 0.010f;
                         float cg = (0.016f + ashCenterMix * 0.065f) + cnoise * 0.010f;
@@ -1636,15 +2010,17 @@ public class BedrockFlowerRenderer {
                                 float csidePhase = (cix + ciz * 3) * 0.4f + 5.7f;
                                 float cBreathe = 0.5f + 0.5f * (float) Math.sin(glowTime * 0.42f + csidePhase);
                                 float cgreyAdd = 0.13f * cBreathe;
-                                cr += cgreyAdd; cg += cgreyAdd; cb += cgreyAdd;
+                                cr += cgreyAdd;
+                                cg += cgreyAdd;
+                                cb += cgreyAdd;
                             }
                         }
 
                         float calpha = localCharLevel * 0.97f;
-                        int cir = (int)(Math.min(1.0f, Math.max(0.0f, cr)) * 255);
-                        int cig = (int)(Math.min(1.0f, Math.max(0.0f, cg)) * 255);
-                        int cib = (int)(Math.min(1.0f, Math.max(0.0f, cb)) * 255);
-                        int cia = (int)(calpha * 255);
+                        int cir = (int) (Math.min(1.0f, Math.max(0.0f, cr)) * 255);
+                        int cig = (int) (Math.min(1.0f, Math.max(0.0f, cg)) * 255);
+                        int cib = (int) (Math.min(1.0f, Math.max(0.0f, cb)) * 255);
+                        int cia = (int) (calpha * 255);
 
                         // Top face
                         cbuf.pos(cpx0, y1, cpz0).color(cir, cig, cib, cia).endVertex();
@@ -1673,22 +2049,25 @@ public class BedrockFlowerRenderer {
                         float angleX1 = (float) Math.toDegrees(Math.atan2(midZ, x1 - centerX));
                         float levelX0 = centerCharLevelAt(angleX0, 1.0f);
                         float levelX1 = centerCharLevelAt(angleX1, 1.0f);
-                        if (levelX0 <= 0.01f && levelX1 <= 0.01f) continue;
+                        if (levelX0 <= 0.01f && levelX1 <= 0.01f)
+                            continue;
 
                         int cseed = (ciy * 53 + ciz * 89 + 7777) & 0x7FFFFFFF;
                         float cnoise = ((cseed % 100) / 100.0f) - 0.5f;
-                        float cr = 0.020f + cnoise * 0.010f, cg = 0.016f + cnoise * 0.010f, cb = 0.016f + cnoise * 0.010f;
-                        int cir = (int)(Math.min(1.0f, cr) * 255), cig = (int)(Math.min(1.0f, cg) * 255), cib = (int)(Math.min(1.0f, cb) * 255);
+                        float cr = 0.020f + cnoise * 0.010f, cg = 0.016f + cnoise * 0.010f,
+                                cb = 0.016f + cnoise * 0.010f;
+                        int cir = (int) (Math.min(1.0f, cr) * 255), cig = (int) (Math.min(1.0f, cg) * 255),
+                                cib = (int) (Math.min(1.0f, cb) * 255);
 
                         if (levelX0 > 0.01f) {
-                            int cia0 = (int)(levelX0 * 0.97f * 255);
+                            int cia0 = (int) (levelX0 * 0.97f * 255);
                             cbuf.pos(x0, cpy0, cpz0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(x0, cpy1, cpz0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(x0, cpy1, cpz1).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(x0, cpy0, cpz1).color(cir, cig, cib, cia0).endVertex();
                         }
                         if (levelX1 > 0.01f) {
-                            int cia1 = (int)(levelX1 * 0.97f * 255);
+                            int cia1 = (int) (levelX1 * 0.97f * 255);
                             cbuf.pos(x1, cpy0, cpz1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(x1, cpy1, cpz1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(x1, cpy1, cpz0).color(cir, cig, cib, cia1).endVertex();
@@ -1710,22 +2089,25 @@ public class BedrockFlowerRenderer {
                         float angleZ1 = (float) Math.toDegrees(Math.atan2(z1 - centerZ, midX));
                         float levelZ0 = centerCharLevelAt(angleZ0, 1.0f);
                         float levelZ1 = centerCharLevelAt(angleZ1, 1.0f);
-                        if (levelZ0 <= 0.01f && levelZ1 <= 0.01f) continue;
+                        if (levelZ0 <= 0.01f && levelZ1 <= 0.01f)
+                            continue;
 
                         int cseed = (ciy * 53 + cix * 89 + 5555) & 0x7FFFFFFF;
                         float cnoise = ((cseed % 100) / 100.0f) - 0.5f;
-                        float cr = 0.020f + cnoise * 0.010f, cg = 0.016f + cnoise * 0.010f, cb = 0.016f + cnoise * 0.010f;
-                        int cir = (int)(Math.min(1.0f, cr) * 255), cig = (int)(Math.min(1.0f, cg) * 255), cib = (int)(Math.min(1.0f, cb) * 255);
+                        float cr = 0.020f + cnoise * 0.010f, cg = 0.016f + cnoise * 0.010f,
+                                cb = 0.016f + cnoise * 0.010f;
+                        int cir = (int) (Math.min(1.0f, cr) * 255), cig = (int) (Math.min(1.0f, cg) * 255),
+                                cib = (int) (Math.min(1.0f, cb) * 255);
 
                         if (levelZ0 > 0.01f) {
-                            int cia0 = (int)(levelZ0 * 0.97f * 255);
+                            int cia0 = (int) (levelZ0 * 0.97f * 255);
                             cbuf.pos(cpx0, cpy0, z0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(cpx1, cpy0, z0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(cpx1, cpy1, z0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(cpx0, cpy1, z0).color(cir, cig, cib, cia0).endVertex();
                         }
                         if (levelZ1 > 0.01f) {
-                            int cia1 = (int)(levelZ1 * 0.97f * 255);
+                            int cia1 = (int) (levelZ1 * 0.97f * 255);
                             cbuf.pos(cpx0, cpy1, z1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(cpx1, cpy1, z1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(cpx1, cpy0, z1).color(cir, cig, cib, cia1).endVertex();
@@ -1741,7 +2123,8 @@ public class BedrockFlowerRenderer {
             }
         }
 
-        // 3D Visual indicator: OUTLINE ONLY (no solid fill!) for currently highlighted petal
+        // 3D Visual indicator: OUTLINE ONLY (no solid fill!) for currently highlighted
+        // petal
         if (debugHighlightPetal >= 0 && debugHighlightPetal < petals.size()) {
             Petal selPetal = petals.get(debugHighlightPetal);
             if (selPetal != null && selPetal.containsBone(bone.name)) {
@@ -1760,28 +2143,41 @@ public class BedrockFlowerRenderer {
                 wbuf.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
 
                 // Bottom quad lines
-                wbuf.pos(x0, y0, z0).endVertex(); wbuf.pos(x1, y0, z0).endVertex();
-                wbuf.pos(x1, y0, z0).endVertex(); wbuf.pos(x1, y0, z1).endVertex();
-                wbuf.pos(x1, y0, z1).endVertex(); wbuf.pos(x0, y0, z1).endVertex();
-                wbuf.pos(x0, y0, z1).endVertex(); wbuf.pos(x0, y0, z0).endVertex();
+                wbuf.pos(x0, y0, z0).endVertex();
+                wbuf.pos(x1, y0, z0).endVertex();
+                wbuf.pos(x1, y0, z0).endVertex();
+                wbuf.pos(x1, y0, z1).endVertex();
+                wbuf.pos(x1, y0, z1).endVertex();
+                wbuf.pos(x0, y0, z1).endVertex();
+                wbuf.pos(x0, y0, z1).endVertex();
+                wbuf.pos(x0, y0, z0).endVertex();
 
                 // Top quad lines
-                wbuf.pos(x0, y1, z0).endVertex(); wbuf.pos(x1, y1, z0).endVertex();
-                wbuf.pos(x1, y1, z0).endVertex(); wbuf.pos(x1, y1, z1).endVertex();
-                wbuf.pos(x1, y1, z1).endVertex(); wbuf.pos(x0, y1, z1).endVertex();
-                wbuf.pos(x0, y1, z1).endVertex(); wbuf.pos(x0, y1, z0).endVertex();
+                wbuf.pos(x0, y1, z0).endVertex();
+                wbuf.pos(x1, y1, z0).endVertex();
+                wbuf.pos(x1, y1, z0).endVertex();
+                wbuf.pos(x1, y1, z1).endVertex();
+                wbuf.pos(x1, y1, z1).endVertex();
+                wbuf.pos(x0, y1, z1).endVertex();
+                wbuf.pos(x0, y1, z1).endVertex();
+                wbuf.pos(x0, y1, z0).endVertex();
 
                 // Vertical pillars
-                wbuf.pos(x0, y0, z0).endVertex(); wbuf.pos(x0, y1, z0).endVertex();
-                wbuf.pos(x1, y0, z0).endVertex(); wbuf.pos(x1, y1, z0).endVertex();
-                wbuf.pos(x1, y0, z1).endVertex(); wbuf.pos(x1, y1, z1).endVertex();
-                wbuf.pos(x0, y0, z1).endVertex(); wbuf.pos(x0, y1, z1).endVertex();
+                wbuf.pos(x0, y0, z0).endVertex();
+                wbuf.pos(x0, y1, z0).endVertex();
+                wbuf.pos(x1, y0, z0).endVertex();
+                wbuf.pos(x1, y1, z0).endVertex();
+                wbuf.pos(x1, y0, z1).endVertex();
+                wbuf.pos(x1, y1, z1).endVertex();
+                wbuf.pos(x0, y0, z1).endVertex();
+                wbuf.pos(x0, y1, z1).endVertex();
 
                 tessellator.draw();
 
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
                 GlStateManager.enableTexture2D();
-                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             }
         }
 
@@ -1789,13 +2185,13 @@ public class BedrockFlowerRenderer {
     }
 
     private static void quad(BufferBuilder buf,
-                             float x1, float y1, float z1,
-                             float x2, float y2, float z2,
-                             float x3, float y3, float z3,
-                             float x4, float y4, float z4,
-                             float u1, float v1, float u2, float v2,
-                             float tw, float th,
-                             float nx, float ny, float nz) {
+            float x1, float y1, float z1,
+            float x2, float y2, float z2,
+            float x3, float y3, float z3,
+            float x4, float y4, float z4,
+            float u1, float v1, float u2, float v2,
+            float tw, float th,
+            float nx, float ny, float nz) {
         float minU = u1 / tw, minV = v1 / th;
         float maxU = u2 / tw, maxV = v2 / th;
 
@@ -1832,10 +2228,11 @@ public class BedrockFlowerRenderer {
         public final float[] cubePivot;
         public final float[] cubeRot;
 
-        public Cube(float ox, float oy, float oz, float sx, float sy, float sz, float u, float v, float[] cp, float[] cr) {
-            this.origin = new float[]{ox, oy, oz};
-            this.size = new float[]{sx, sy, sz};
-            this.uv = new float[]{u, v};
+        public Cube(float ox, float oy, float oz, float sx, float sy, float sz, float u, float v, float[] cp,
+                float[] cr) {
+            this.origin = new float[] { ox, oy, oz };
+            this.size = new float[] { sx, sy, sz };
+            this.uv = new float[] { u, v };
             this.cubePivot = cp;
             this.cubeRot = cr;
         }
@@ -1873,28 +2270,36 @@ public class BedrockFlowerRenderer {
 
     private static float angularDiff(float a, float b) {
         float d = (a - b) % 360f;
-        if (d > 180f) d -= 360f;
-        if (d < -180f) d += 360f;
+        if (d > 180f)
+            d -= 360f;
+        if (d < -180f)
+            d += 360f;
         return d;
     }
 
     /**
-     * Calculates the gradual directional charring level (0.0 to 1.0) at a specific point on the center cube.
+     * Calculates the gradual directional charring level (0.0 to 1.0) at a specific
+     * point on the center cube.
      * Starts and finishes synchronously with the petal burn animation.
-     * @param angleDeg Direction from center cube pivot in XZ plane (-180 to 180 degrees)
-     * @param radialDistNorm Normalized distance from center (0.0 = exact center, 1.0 = outer border facing petals)
+     * 
+     * @param angleDeg       Direction from center cube pivot in XZ plane (-180 to
+     *                       180 degrees)
+     * @param radialDistNorm Normalized distance from center (0.0 = exact center,
+     *                       1.0 = outer border facing petals)
      */
     private float centerCharLevelAt(float angleDeg, float radialDistNorm) {
         int n = petals.size();
-        if (n == 0) return 0f;
+        if (n == 0)
+            return 0f;
 
-        float wedge = 360f / n;          // Exactly 30 degrees per petal (1/12th of circle)
-        float halfWedge = wedge * 0.5f;  // 15 degrees
-        float blendAngle = 8.0f;         // Clean, narrow seam between sectors
+        float wedge = 360f / n; // Exactly 30 degrees per petal (1/12th of circle)
+        float halfWedge = wedge * 0.5f; // 15 degrees
+        float blendAngle = 8.0f; // Clean, narrow seam between sectors
 
         float combinedLevel = 0f;
         for (Petal p : petals) {
-            if (p.burnProgress <= 0.05f) continue;
+            if (p.burnProgress <= 0.05f)
+                continue;
 
             // Synchronized smoothly with petal burn wave: 0.0 at prog=0.05, 1.0 at prog=1.0
             float rawT = Math.min(1.0f, Math.max(0.0f, (p.burnProgress - 0.05f) / 0.95f));
@@ -1911,10 +2316,13 @@ public class BedrockFlowerRenderer {
                 angularWeight = t * 0.75f;
             }
 
-            if (angularWeight <= 0.001f) continue;
+            if (angularWeight <= 0.001f)
+                continue;
 
-            // Radial gradient: starts from the outer edge (radNorm=1.0) and creeps fully inward when burnT=1.0
-            // minRadToBurn=0 when fully burned, so the entire center including the middle gets charred
+            // Radial gradient: starts from the outer edge (radNorm=1.0) and creeps fully
+            // inward when burnT=1.0
+            // minRadToBurn=0 when fully burned, so the entire center including the middle
+            // gets charred
             float minRadToBurn = Math.max(0.0f, 1.0f - burnT * 1.05f);
             float radialFactor = 0f;
             if (radialDistNorm >= minRadToBurn) {
