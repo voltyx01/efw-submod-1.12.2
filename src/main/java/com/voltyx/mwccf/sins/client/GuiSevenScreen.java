@@ -96,7 +96,7 @@ public class GuiSevenScreen extends GuiScreen {
     private final UUID playerUUID;
 
     // ================== FLOWER MODEL & SKILL TREE TUNING ==================
-    public static boolean FLOWER_TUNE_MODE = true; // Enabled debug tuning HUD
+    public static boolean FLOWER_TUNE_MODE = false; // Disabled debug tuning HUD
     private final BedrockFlowerRenderer flowerModel = new BedrockFlowerRenderer();
 
     // Flower screen position, rotation and scale parameters
@@ -280,7 +280,7 @@ public class GuiSevenScreen extends GuiScreen {
     private boolean skillTreeInitialized = false;
     private final boolean[] skillUnlocked = new boolean[SKILL_COUNT];
     private final long[] skillUnlockAnimStart = new long[SKILL_COUNT];
-    private int skillPoints = 5; // placeholder value for testing the UI
+    private int skillPoints = 12; // placeholder value for testing the UI
 
     private int skillsScrollY = 0;
     private int maxSkillsScroll = 0;
@@ -306,55 +306,27 @@ public class GuiSevenScreen extends GuiScreen {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        if (FLOWER_TUNE_MODE && currentTab == TAB_SKILLS) {
-            if (keyCode == Keyboard.KEY_TAB) {
-                flowerSelectedParam = (flowerSelectedParam + 1) % FLOWER_PARAM_NAMES.length;
-                return;
-            }
-            if (keyCode == Keyboard.KEY_UP) {
-                flowerAdjustParam(flowerSelectedParam,
-                        flowerBaseStep(flowerSelectedParam) * flowerStepMultiplier);
-                return;
-            }
-            if (keyCode == Keyboard.KEY_DOWN) {
-                flowerAdjustParam(flowerSelectedParam,
-                        -flowerBaseStep(flowerSelectedParam) * flowerStepMultiplier);
-                return;
-            }
-            if (keyCode == Keyboard.KEY_LEFT) {
-                flowerStepMultiplier = Math.max(0.01f, flowerStepMultiplier * 0.1f);
-                return;
-            }
-            if (keyCode == Keyboard.KEY_RIGHT) {
-                flowerStepMultiplier = Math.min(1000f, flowerStepMultiplier * 10f);
-                return;
-            }
+        if (currentTab == TAB_SKILLS) {
             if (keyCode == Keyboard.KEY_P) {
-                // Ignite selected petal (or random)
-                debugManualWave = false;
-                flowerModel.triggerPetalBurn(debugPetalSelect);
+                // Ignite next petal according to configured queue
+                int qLen = BedrockFlowerRenderer.PETAL_BURN_QUEUE.length;
+                if (qLen > 0) {
+                    int petalId = BedrockFlowerRenderer.PETAL_BURN_QUEUE[debugQueueSlotSelect % qLen];
+                    flowerModel.triggerPetalBurn(petalId);
+                    debugQueueSlotSelect = (debugQueueSlotSelect + 1) % qLen;
+                }
                 return;
             }
             if (keyCode == Keyboard.KEY_R) {
-                // Reset all smolder and burns
-                debugManualWave = false;
-                debugWaveProgress = 0f;
+                // Reset queue, burns, and skill points
+                debugQueueSlotSelect = 0;
                 flowerModel.resetPetalBurns();
+                java.util.Arrays.fill(skillUnlocked, false);
+                skillUnlocked[0] = true;
+                java.util.Arrays.fill(skillUnlockAnimStart, -1L);
+                skillPoints = 12;
                 return;
             }
-            if (keyCode == Keyboard.KEY_H) {
-                // Toggle debug overlay visibility
-                FLOWER_TUNE_MODE = !FLOWER_TUNE_MODE;
-                return;
-            }
-            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
-                flowerPrintValuesToLog();
-                return;
-            }
-        }
-        if (currentTab == TAB_SKILLS && keyCode == Keyboard.KEY_H) {
-            FLOWER_TUNE_MODE = !FLOWER_TUNE_MODE;
-            return;
         }
         if (keyCode == 1) { // ESC key
             if (this.currentState == STATE_LEVEL_UP
@@ -387,6 +359,7 @@ public class GuiSevenScreen extends GuiScreen {
     public void initGui() {
         super.initGui();
         this.buttonList.clear();
+        BedrockFlowerRenderer.debugHighlightPetal = -1;
 
         if ((int) VIRTUAL_W != dustInitWidth || (int) VIRTUAL_H != dustInitHeight) {
             this.dustManager.init((int) VIRTUAL_W, (int) VIRTUAL_H);
