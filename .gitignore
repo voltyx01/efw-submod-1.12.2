@@ -9,7 +9,7 @@ gradle-temp/
 jar-check/
 jar-temp/
 *.class
-
+run/
 # ================================
 # IDEs & System files
 # ================================

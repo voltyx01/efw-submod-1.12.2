@@ -258,29 +258,74 @@ public class GuiSevenScreen extends GuiScreen {
                     "Раз в 10 минут смертельный урон игнорируется: здоровье остаётся на 1, и вы неуязвимы следующие 2 секунды."),
             new SkillNode(5, 1, 1, "Холодная ярость",
                     "Расход выносливости в бою снижен."),
-            new SkillNode(6, 1, 2, "[ЗАГЛУШКА] Стойкость плоти",
+            new SkillNode(6, 1, 2, "Стойкость плоти",
                     "Пока рядом заражённый паразитом враг, регенерация здоровья не прекращается."),
-            new SkillNode(7, 1, 3, "[ЗАГЛУШКА] Хладнокровие",
+            new SkillNode(7, 1, 3, "Хладнокровие",
                     "После добивания врага следующий выстрел не имеет разброса и отдачи."),
-            new SkillNode(8, 1, 4, "[ЗАГЛУШКА] Второе дыхание",
+            new SkillNode(8, 1, 4, "Второе дыхание",
                     "При падении здоровья ниже 20% вы на 3 секунды получаете иммунитет к оглушению и замедлению."),
-            new SkillNode(9, 2, 1, "[ЗАГЛУШКА] Верный прицел",
+            new SkillNode(9, 2, 1, "Верный прицел",
                     "Первый выстрел по новой цели всегда критический."),
-            new SkillNode(10, 2, 2, "[ЗАГЛУШКА] Стальные нервы",
+            new SkillNode(10, 2, 2, "Стальные нервы",
                     "Получение урона больше не сбивает прицеливание."),
-            new SkillNode(11, 2, 3, "[ЗАГЛУШКА] Голод хищника",
+            new SkillNode(11, 2, 3, "Голод хищника",
                     "Добивание врага восстанавливает часть выносливости."),
-            new SkillNode(12, 2, 4, "[ЗАГЛУШКА] Последний вдох",
+            new SkillNode(12, 2, 4, "Последний вдох",
                     "Если удар должен был убить вас, здоровье не может опуститься ниже 1 в течение следующих 4 секунд."),
     };
 
-    // Client-side placeholder state. TODO: replace with real data wired to
-    // ISinCapability + a network packet (e.g. PacketUnlockSkill) once the actual
-    // skill-tree backend/persistence exists. This is purely visual for now.
-    private boolean skillTreeInitialized = false;
-    private final boolean[] skillUnlocked = new boolean[SKILL_COUNT];
-    private final long[] skillUnlockAnimStart = new long[SKILL_COUNT];
-    private int skillPoints = 12; // placeholder value for testing the UI
+    private static final int[] SKILL_ASSIGNED_ICON = new int[SKILL_COUNT];
+    static {
+        // Root is always skill0
+        SKILL_ASSIGNED_ICON[0] = 0;
+        // Branch 0: intermediate skills -> 1, 2, 3; capstone -> 10 (skill10f)
+        SKILL_ASSIGNED_ICON[1] = 1;
+        SKILL_ASSIGNED_ICON[2] = 2;
+        SKILL_ASSIGNED_ICON[3] = 3;
+        SKILL_ASSIGNED_ICON[4] = 10;
+        // Branch 1: intermediate skills -> 4, 5, 6; capstone -> 11 (skill11f)
+        SKILL_ASSIGNED_ICON[5] = 4;
+        SKILL_ASSIGNED_ICON[6] = 5;
+        SKILL_ASSIGNED_ICON[7] = 6;
+        SKILL_ASSIGNED_ICON[8] = 11;
+        // Branch 2: intermediate skills -> 7, 8, 9; capstone -> 12 (skill12f)
+        SKILL_ASSIGNED_ICON[9] = 7;
+        SKILL_ASSIGNED_ICON[10] = 8;
+        SKILL_ASSIGNED_ICON[11] = 9;
+        SKILL_ASSIGNED_ICON[12] = 12;
+    }
+
+    // Client-side placeholder state.
+    private static final boolean[] skillUnlocked = new boolean[SKILL_COUNT];
+    private static final long[] skillUnlockAnimStart = new long[SKILL_COUNT];
+    static {
+        java.util.Arrays.fill(skillUnlocked, false);
+        skillUnlocked[0] = true; // Root node 0 is unlocked by default
+        java.util.Arrays.fill(skillUnlockAnimStart, -1L);
+    }
+    private static int skillPoints = 12; // placeholder value for testing the UI
+
+    // Procedural burning textures for skill unlock animation (from center to edges)
+    private static final int SKILL_TEX_SIZE = 16;
+    private static final ResourceLocation TEX_SKILL_UNUPGRADED = new ResourceLocation("mwccf", "textures/gui/skills/skill_unupgraded.png");
+    private static final ResourceLocation[] TEX_SKILLS = new ResourceLocation[13];
+    static {
+        TEX_SKILLS[0] = new ResourceLocation("mwccf", "textures/gui/skills/skill0.png");
+        for (int i = 1; i <= 9; i++) {
+            TEX_SKILLS[i] = new ResourceLocation("mwccf", "textures/gui/skills/skill" + i + ".png");
+        }
+        TEX_SKILLS[10] = new ResourceLocation("mwccf", "textures/gui/skills/skill10f.png");
+        TEX_SKILLS[11] = new ResourceLocation("mwccf", "textures/gui/skills/skill11f.png");
+        TEX_SKILLS[12] = new ResourceLocation("mwccf", "textures/gui/skills/skill12f.png");
+    }
+
+    private static int[] rawTexSkillUnupgraded = null;
+    private static final int[][] rawTexSkills = new int[13][];
+    private static boolean skillRawTexturesLoaded = false;
+
+    private final net.minecraft.client.renderer.texture.DynamicTexture[] skillBurnTextures = new net.minecraft.client.renderer.texture.DynamicTexture[SKILL_COUNT];
+    private final ResourceLocation[] skillBurnTextureLocations = new ResourceLocation[SKILL_COUNT];
+    private static final long SKILL_BURN_DURATION_MS = 1400L;
 
     private int skillsScrollY = 0;
     private int maxSkillsScroll = 0;
@@ -959,11 +1004,15 @@ public class GuiSevenScreen extends GuiScreen {
             tooltipY = infoY + 14;
         }
 
-        int iconX = cx + (SIN_CARD_W - 34) / 2;
+        int iconBoxSize = 34;
+        int iconX = cx + (SIN_CARD_W - iconBoxSize) / 2;
         int iconY = cy + 22;
-        drawDashedOutline(iconX, iconY, 34, 34, isHovered ? COLOR_BLOOD_BRIGHT : COLOR_PAPER_DIM);
-        drawCenteredString(this.fontRenderer, "ICON", iconX + 17, iconY + 13,
-                isHovered ? COLOR_BLOOD_BRIGHT : COLOR_INK);
+        drawBoxOutline(iconX, iconY, iconBoxSize, iconBoxSize, isHovered ? COLOR_BLOOD_BRIGHT : COLOR_LINE);
+
+        int iconSize = 32;
+        int drawIconX = iconX + (iconBoxSize - iconSize) / 2;
+        int drawIconY = iconY + (iconBoxSize - iconSize) / 2;
+        drawSinIcon(sin, drawIconX, drawIconY, iconSize);
 
         int nameW = this.fontRenderer.getStringWidth(sin.getNameRu());
         this.fontRenderer.drawString(sin.getNameRu(), cx + (SIN_CARD_W - nameW) / 2, cy + SIN_CARD_H - 14,
@@ -1238,11 +1287,6 @@ public class GuiSevenScreen extends GuiScreen {
 
     // ================== FLOWER MODEL & SKILL TREE RENDER ==================
     private void drawFlowerDisplay(int mouseX, int mouseY, float partialTicks, float deltaSec, float slideProgress) {
-        if (!skillTreeInitialized) {
-            skillUnlocked[0] = true;
-            java.util.Arrays.fill(skillUnlockAnimStart, -1L);
-            skillTreeInitialized = true;
-        }
 
         // Smooth slide-in offset from bottom
         float slideOffsetY = (1.0f - easeOutCubic(slideProgress)) * 160f;
@@ -1303,11 +1347,7 @@ public class GuiSevenScreen extends GuiScreen {
     }
 
     private void drawSkillsTab(int mouseX, int mouseY) {
-        if (!skillTreeInitialized) {
-            skillUnlocked[0] = true; // root starts already learned
-            java.util.Arrays.fill(skillUnlockAnimStart, -1L);
-            skillTreeInitialized = true;
-        }
+        ensureSkillRawTexturesLoaded();
 
         int panelW = 236;
         int rightX = (int) VIRTUAL_W - panelW - 10;
@@ -1368,7 +1408,7 @@ public class GuiSevenScreen extends GuiScreen {
         }
 
         // Root node
-        boolean rootHover = isPointInSkillNode(mouseX, mouseY, rootX, rootY);
+        boolean rootHover = isPointInSkillNode(mouseX, mouseY, rootX, rootY, SKILL_NODES[0]);
         drawSkillNode(SKILL_NODES[0], rootX, rootY, rootHover);
         if (rootHover) {
             hoveredSkillNodeForTooltip = SKILL_NODES[0];
@@ -1382,7 +1422,7 @@ public class GuiSevenScreen extends GuiScreen {
             for (int d = 1; d <= SKILLS_PER_BRANCH; d++) {
                 SkillNode node = findSkillNode(b, d);
                 int nodeY = treeTop + d * SKILL_ROW_GAP + SKILL_NODE_SIZE / 2;
-                boolean hover = isPointInSkillNode(mouseX, mouseY, colX, nodeY);
+                boolean hover = isPointInSkillNode(mouseX, mouseY, colX, nodeY, node);
                 drawSkillNode(node, colX, nodeY, hover);
                 if (hover) {
                     hoveredSkillNodeForTooltip = node;
@@ -1391,6 +1431,10 @@ public class GuiSevenScreen extends GuiScreen {
                 }
             }
         }
+    }
+
+    private int getSkillNodeSize(SkillNode node) {
+        return (node.depth == SKILLS_PER_BRANCH) ? 26 : SKILL_NODE_SIZE;
     }
 
     private SkillNode findSkillNode(int branch, int depth) {
@@ -1402,8 +1446,8 @@ public class GuiSevenScreen extends GuiScreen {
         return null;
     }
 
-    private boolean isPointInSkillNode(int mouseX, int mouseY, int cx, int cy) {
-        int half = SKILL_NODE_SIZE / 2;
+    private boolean isPointInSkillNode(int mouseX, int mouseY, int cx, int cy, SkillNode node) {
+        int half = getSkillNodeSize(node) / 2;
         return mouseX >= cx - half && mouseX <= cx + half && mouseY >= cy - half && mouseY <= cy + half;
     }
 
@@ -1427,59 +1471,46 @@ public class GuiSevenScreen extends GuiScreen {
      * - locked (prerequisite not met): grey, dim icon
      * - available (prereq met, unspent point): white icon, RED outline; GOLD on hover
      * - unlocked: pale-gold fill, thin gold outline, white icon
-     * Unlocking briefly plays the same chasing perimeter glow used on level-up cards.
+     * Unlocking briefly plays the procedural burn animation and perimeter glow.
      */
     private void drawSkillNode(SkillNode node, int cx, int cy, boolean isHovered) {
-        int half = SKILL_NODE_SIZE / 2;
+        int nodeSize = getSkillNodeSize(node);
+        int half = nodeSize / 2;
         int x = cx - half;
         int y = cy - half;
 
         boolean unlocked = skillUnlocked[node.id];
         boolean available = isSkillAvailable(node);
 
-        int fillColor;
+        int fillColor = 0;
         int borderColor;
-        int iconColor;
 
         if (unlocked) {
-            fillColor = 0x2AFFF6DC;
-            borderColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_GOLD;
-            iconColor = COLOR_PAPER;
+            fillColor = 0; // No tint overlay on unlocked skills - show clean crisp texture
+            borderColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_LINE;
         } else if (available) {
-            fillColor = isHovered ? 0x33E8A53D : 0x18FFFFFF;
+            fillColor = isHovered ? 0x2E000000 : 0x44000000;
             borderColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_BLOOD_BRIGHT;
-            iconColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_PAPER;
         } else {
-            fillColor = 0x00000000;
+            fillColor = 0x55000000;
             borderColor = COLOR_LINE;
-            iconColor = COLOR_PAPER_DIM;
         }
 
-        drawRect(x, y, x + SKILL_NODE_SIZE, y + SKILL_NODE_SIZE, fillColor);
-        drawBoxOutline(x, y, SKILL_NODE_SIZE, SKILL_NODE_SIZE, borderColor);
+        // 1. Texture occupies the entire node box
+        drawSkillIcon(node, x, y, nodeSize, unlocked, isHovered, available);
+
+        // 2. Translucent state tint overlay & border on top
+        if (fillColor != 0) {
+            drawRect(x, y, x + nodeSize, y + nodeSize, fillColor);
+        }
+        drawBoxOutline(x, y, nodeSize, nodeSize, borderColor);
 
         long animStart = skillUnlockAnimStart[node.id];
         if (animStart > 0) {
             long elapsed = (System.nanoTime() - animStart) / 1_000_000L;
             if (elapsed < SKILL_UNLOCK_GLOW_MS) {
-                drawPerimeterGlow(x, y, SKILL_NODE_SIZE, SKILL_NODE_SIZE, elapsed / (float) SKILL_UNLOCK_GLOW_MS);
-            } else {
-                skillUnlockAnimStart[node.id] = -1L;
+                drawPerimeterGlow(x, y, nodeSize, nodeSize, elapsed / (float) SKILL_UNLOCK_GLOW_MS);
             }
-        }
-
-        drawSkillIcon(node, cx, cy, iconColor);
-    }
-
-    /** Placeholder icon shapes until real per-skill icons exist: diamond = root, dot = normal, double-ring = capstone. */
-    private void drawSkillIcon(SkillNode node, int cx, int cy, int color) {
-        if (node.depth == 0) {
-            drawRect(cx - 3, cy - 3, cx + 3, cy + 3, color);
-        } else if (node.depth == SKILLS_PER_BRANCH) {
-            drawBoxOutline(cx - 5, cy - 5, 10, 10, color);
-            drawRect(cx - 1, cy - 1, cx + 1, cy + 1, color);
-        } else {
-            drawRect(cx - 2, cy - 2, cx + 2, cy + 2, color);
         }
     }
 
@@ -1516,10 +1547,7 @@ public class GuiSevenScreen extends GuiScreen {
         if (!isSkillAvailable(node)) {
             return;
         }
-        // TODO: replace with a real network round-trip (e.g. send
-        // PacketUnlockSkill(sinType, node.id) and let the server validate points +
-        // apply the actual gameplay effect via capability). Purely client-visual
-        // for now so the tree UI can be built and tested on its own.
+        // Client visual unlock with procedural burn animation
         skillUnlocked[node.id] = true;
         skillPoints = Math.max(0, skillPoints - 1);
         skillUnlockAnimStart[node.id] = System.nanoTime();
@@ -2361,7 +2389,7 @@ public class GuiSevenScreen extends GuiScreen {
         int rootX = contentX + contentW / 2;
         int rootY = treeTop + SKILL_NODE_SIZE / 2;
 
-        if (isPointInSkillNode(mouseX, mouseY, rootX, rootY)) {
+        if (isPointInSkillNode(mouseX, mouseY, rootX, rootY, SKILL_NODES[0])) {
             tryUnlockSkill(SKILL_NODES[0]);
             return;
         }
@@ -2371,7 +2399,7 @@ public class GuiSevenScreen extends GuiScreen {
             for (int d = 1; d <= SKILLS_PER_BRANCH; d++) {
                 SkillNode node = findSkillNode(b, d);
                 int nodeY = treeTop + d * SKILL_ROW_GAP + SKILL_NODE_SIZE / 2;
-                if (isPointInSkillNode(mouseX, mouseY, colX, nodeY)) {
+                if (isPointInSkillNode(mouseX, mouseY, colX, nodeY, node)) {
                     tryUnlockSkill(node);
                     return;
                 }
@@ -2488,5 +2516,252 @@ public class GuiSevenScreen extends GuiScreen {
         drawLine(cx + size, cy, cx, cy + size, color);
         drawLine(cx, cy + size, cx - size, cy, color);
         drawLine(cx - size, cy, cx, cy - size, color);
+    }
+
+    private static final java.util.Map<SinType, ResourceLocation> SIN_ICONS = new java.util.EnumMap<>(SinType.class);
+    static {
+        for (SinType s : SinType.values()) {
+            SIN_ICONS.put(s, new ResourceLocation("mwccf", "textures/gui/sins/" + s.getId() + ".png"));
+        }
+    }
+
+    public static ResourceLocation getSinIcon(SinType sin) {
+        return SIN_ICONS.get(sin);
+    }
+
+    private void drawSinIcon(SinType sin, int x, int y, int size) {
+        ResourceLocation icon = getSinIcon(sin);
+        if (icon == null) return;
+        this.mc.getTextureManager().bindTexture(icon);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO);
+        GlStateManager.enableAlpha();
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        drawScaledCustomSizeModalRect(x, y, 0.0F, 0.0F, 16, 16, size, size, 16.0F, 16.0F);
+        GlStateManager.disableBlend();
+    }
+
+    private static synchronized void ensureSkillRawTexturesLoaded() {
+        if (skillRawTexturesLoaded) return;
+        try {
+            rawTexSkillUnupgraded = loadRawRgbaPixels(TEX_SKILL_UNUPGRADED);
+            for (int i = 0; i < TEX_SKILLS.length; i++) {
+                if (TEX_SKILLS[i] != null) {
+                    rawTexSkills[i] = loadRawRgbaPixels(TEX_SKILLS[i]);
+                }
+            }
+            skillRawTexturesLoaded = true;
+        } catch (Throwable t) {
+            System.err.println("[GuiSevenScreen] Failed to load raw skill icon textures: " + t.getMessage());
+        }
+    }
+
+    private static int[] loadRawRgbaPixels(ResourceLocation loc) {
+        try {
+            java.io.InputStream stream = null;
+            try {
+                net.minecraft.client.resources.IResource res = Minecraft.getMinecraft().getResourceManager().getResource(loc);
+                stream = res.getInputStream();
+            } catch (Throwable ignored) {
+                stream = GuiSevenScreen.class.getResourceAsStream("/assets/" + loc.getNamespace() + "/" + loc.getPath());
+            }
+            if (stream != null) {
+                try (java.io.InputStream s = stream) {
+                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(s);
+                    if (img != null) {
+                        int w = img.getWidth();
+                        int h = img.getHeight();
+                        int[] pixels = new int[w * h];
+                        img.getRGB(0, 0, w, h, pixels, 0, w);
+                        return pixels;
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            System.err.println("[GuiSevenScreen] Error loading image " + loc + ": " + t.getMessage());
+        }
+        return new int[16 * 16];
+    }
+
+    private void drawSkillIcon(SkillNode node, int x, int y, int nodeSize, boolean unlocked, boolean isHovered, boolean available) {
+        ensureSkillRawTexturesLoaded();
+
+        int assignedIndex = (node.id >= 0 && node.id < SKILL_ASSIGNED_ICON.length) ? SKILL_ASSIGNED_ICON[node.id] : 0;
+        ResourceLocation targetTex = (assignedIndex >= 0 && assignedIndex < TEX_SKILLS.length) ? TEX_SKILLS[assignedIndex] : TEX_SKILLS[0];
+
+        long animStart = skillUnlockAnimStart[node.id];
+        boolean isBurning = false;
+        float burnProgress = 0.0f;
+        if (animStart > 0 && unlocked && node.id > 0) {
+            long elapsed = (System.nanoTime() - animStart) / 1_000_000L;
+            if (elapsed < SKILL_BURN_DURATION_MS) {
+                isBurning = true;
+                burnProgress = Math.max(0.0f, Math.min(1.0f, elapsed / (float) SKILL_BURN_DURATION_MS));
+            }
+        }
+
+        if (isBurning) {
+            updateSkillBurnTexture(node.id, assignedIndex, burnProgress);
+            ResourceLocation dynLoc = skillBurnTextureLocations[node.id];
+            if (dynLoc != null) {
+                this.mc.getTextureManager().bindTexture(dynLoc);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                GlStateManager.enableBlend();
+                GlStateManager.tryBlendFuncSeparate(
+                        GlStateManager.SourceFactor.SRC_ALPHA,
+                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                        GlStateManager.SourceFactor.ONE,
+                        GlStateManager.DestFactor.ZERO);
+                GlStateManager.enableAlpha();
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                drawScaledCustomSizeModalRect(x, y, 0.0F, 0.0F, 16, 16, nodeSize, nodeSize, 16.0F, 16.0F);
+                GlStateManager.disableBlend();
+                return;
+            }
+        }
+
+        ResourceLocation texToBind = unlocked ? targetTex : TEX_SKILL_UNUPGRADED;
+        if (texToBind != null) {
+            this.mc.getTextureManager().bindTexture(texToBind);
+            if (unlocked) {
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            } else if (available) {
+                if (isHovered) {
+                    GlStateManager.color(1.0F, 0.95F, 0.8F, 1.0F);
+                } else {
+                    GlStateManager.color(0.85F, 0.85F, 0.85F, 0.9F);
+                }
+            } else {
+                GlStateManager.color(0.55F, 0.52F, 0.50F, 0.75F);
+            }
+
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(
+                    GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ZERO);
+            GlStateManager.enableAlpha();
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            drawScaledCustomSizeModalRect(x, y, 0.0F, 0.0F, 16, 16, nodeSize, nodeSize, 16.0F, 16.0F);
+            GlStateManager.disableBlend();
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        }
+    }
+
+    private void updateSkillBurnTexture(int nodeId, int assignedIndex, float progress) {
+        if (skillBurnTextures[nodeId] == null) {
+            skillBurnTextures[nodeId] = new net.minecraft.client.renderer.texture.DynamicTexture(16, 16);
+            skillBurnTextureLocations[nodeId] = Minecraft.getMinecraft().getTextureManager()
+                    .getDynamicTextureLocation("skill_burn_" + nodeId, skillBurnTextures[nodeId]);
+        }
+
+        int[] unup = rawTexSkillUnupgraded;
+        int[] target = (assignedIndex >= 0 && assignedIndex < rawTexSkills.length) ? rawTexSkills[assignedIndex] : null;
+        if (unup == null || target == null || unup.length < 256 || target.length < 256) return;
+
+        int[] current = skillBurnTextures[nodeId].getTextureData();
+        float centerX = 7.5f;
+        float centerY = 7.5f;
+        float maxDist = (float) Math.sqrt(7.5 * 7.5 + 7.5 * 7.5); // ~10.606
+
+        float waveCenter = progress * 1.25f; // travels from 0.0 to 1.25 to completely burn corners
+        float waveHalfWidth = 0.022f; // very thin, crisp delicate glowing flame line
+        float ashAhead = 0.055f;      // subtle narrow ash line right ahead of flame
+
+        float glowTimeSec = (System.nanoTime() / 1_000_000_000.0f);
+
+        for (int v = 0; v < 16; v++) {
+            for (int u = 0; u < 16; u++) {
+                int idx = v * 16 + u;
+                int baseCol = unup[idx];
+                int targetCol = target[idx];
+
+                float dx = u - centerX;
+                float dy = v - centerY;
+                float normDist = (float) Math.sqrt(dx * dx + dy * dy) / maxDist; // 0.0 at center, 1.0 at furthest corner
+
+                // Subtle organic noise variation per texel
+                float noise = ((u * 37 + v * 53 + nodeId * 101) & 15) / 15.0f - 0.5f;
+                float d = normDist + noise * 0.03f;
+
+                float diff = d - waveCenter;
+
+                int baseA = (baseCol >> 24) & 0xFF;
+                int targetA = (targetCol >> 24) & 0xFF;
+                if (baseA == 0 && targetA == 0) {
+                    current[idx] = 0;
+                    continue;
+                }
+
+                int origR = (baseCol >> 16) & 0xFF;
+                int origG = (baseCol >> 8) & 0xFF;
+                int origB = baseCol & 0xFF;
+
+                int targR = (targetCol >> 16) & 0xFF;
+                int targG = (targetCol >> 8) & 0xFF;
+                int targB = targetCol & 0xFF;
+
+                int finalR, finalG, finalB, finalA = 255;
+
+                if (diff < -waveHalfWidth) {
+                    // Behind the wave: unupgraded texture burned away, reveal target upgraded skill texture
+                    float coolDist = Math.min(1.0f, (-diff - waveHalfWidth) * 8.0f);
+                    finalA = targetA;
+                    if (coolDist < 0.6f) {
+                        // Brief glowing ember edge fading rapidly into target texture
+                        float redHeat = 1.0f - coolDist / 0.6f;
+                        finalR = Math.min(255, (int) (targR + (255 - targR) * redHeat * 0.5f));
+                        finalG = Math.min(255, (int) (targG + (70 - targG) * redHeat * 0.3f));
+                        finalB = targB;
+                    } else {
+                        finalR = targR;
+                        finalG = targG;
+                        finalB = targB;
+                    }
+                } else if (Math.abs(diff) <= waveHalfWidth) {
+                    // Burning front: thin delicate radiant fire edge (#FF8C14 and gold sparks)
+                    float frontT = 1.0f - Math.abs(diff) / waveHalfWidth;
+                    float flicker = 0.90f + 0.10f * (float) Math.sin(glowTimeSec * 22.0f + (u + v * 3) * 1.5f);
+                    finalR = 255;
+                    finalG = Math.max(0, Math.min(255, (int) ((125 + 40 * frontT) * flicker)));
+                    finalB = Math.max(0, Math.min(255, (int) ((10 + 20 * frontT) * flicker)));
+                    finalA = Math.max(baseA, targetA);
+                } else if (diff <= ashAhead) {
+                    // Ahead of the wave: narrow pale ash gradient creeping over unupgraded texture
+                    float ashT = 1.0f - (diff - waveHalfWidth) / (ashAhead - waveHalfWidth);
+                    int ashR = 195;
+                    int ashG = 190;
+                    int ashB = 180;
+                    float mix = ashT * 0.65f;
+                    finalR = Math.max(0, Math.min(255, (int) (origR + (ashR - origR) * mix)));
+                    finalG = Math.max(0, Math.min(255, (int) (origG + (ashG - origG) * mix)));
+                    finalB = Math.max(0, Math.min(255, (int) (origB + (ashB - origB) * mix)));
+                    finalA = baseA;
+                    if (ashT > 0.8f) {
+                        float warm = (ashT - 0.8f) / 0.2f;
+                        finalR = Math.min(255, (int) (finalR + (255 - finalR) * warm * 0.4f));
+                        finalG = Math.min(255, (int) (finalG + (110 - finalG) * warm * 0.2f));
+                    }
+                } else {
+                    // Untouched unupgraded texture
+                    finalR = origR;
+                    finalG = origG;
+                    finalB = origB;
+                    finalA = baseA;
+                }
+
+                current[idx] = (finalA << 24) | (finalR << 16) | (finalG << 8) | finalB;
+            }
+        }
+        skillBurnTextures[nodeId].updateDynamicTexture();
     }
 }
