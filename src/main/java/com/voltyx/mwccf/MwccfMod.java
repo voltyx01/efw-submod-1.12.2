@@ -104,6 +104,7 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.sins.network.PacketAcceptCard.Handler.class, com.voltyx.mwccf.sins.network.PacketAcceptCard.class, 15, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.sins.network.PacketSyncSinData.Handler.class, com.voltyx.mwccf.sins.network.PacketSyncSinData.class, 16, Side.CLIENT);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.sins.network.PacketUseManual.Handler.class, com.voltyx.mwccf.sins.network.PacketUseManual.class, 17, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketCloseTerminal.Handler.class, com.voltyx.mwccf.terminal.network.PacketCloseTerminal.class, 18, Side.SERVER);
 
 		// Регистрация Capability грехов
 		CapabilityManager.INSTANCE.register(com.voltyx.mwccf.sins.capability.ISinCapability.class,

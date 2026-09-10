@@ -1997,7 +1997,8 @@ public class BedrockFlowerRenderer {
                 // Center coordinates in local space
                 float centerX = (x0 + x1) * 0.5f;
                 float centerZ = (z0 + z1) * 0.5f;
-                float maxRadius = (float) Math.hypot((x1 - x0) * 0.5f, (z1 - z0) * 0.5f);
+                float halfW = (x1 - x0) * 0.5f;
+                float halfD = (z1 - z0) * 0.5f;
 
                 // Top & Bottom faces
                 for (int cix = 0; cix < csX; cix++) {
@@ -2010,8 +2011,9 @@ public class BedrockFlowerRenderer {
                         float cpz1 = (ciz == csZ - 1) ? z1 : (cpz0 + cdz);
                         float midZ = (cpz0 + cpz1) * 0.5f - centerZ;
 
-                        float distFromCenter = (float) Math.hypot(midX, midZ);
-                        float radNorm = (maxRadius > 0.001f) ? Math.min(1.0f, distFromCenter / maxRadius) : 1.0f;
+                        float normX = (halfW > 0.001f) ? Math.abs(midX) / halfW : 0f;
+                        float normZ = (halfD > 0.001f) ? Math.abs(midZ) / halfD : 0f;
+                        float radNorm = Math.min(1.0f, Math.max(normX, normZ));
                         float pointAngle = (float) Math.toDegrees(Math.atan2(midZ, midX));
 
                         float localCharLevel = centerCharLevelAt(pointAngle, radNorm);
@@ -2022,29 +2024,13 @@ public class BedrockFlowerRenderer {
                         float cnoise = ((cseed % 100) / 100.0f) - 0.5f;
                         float cnoise2 = (((cseed / 100) % 100) / 100.0f) - 0.5f;
 
-                        // Center is lighter/ash-grey, outer edge towards burning petal is darker
-                        // charcoal
+                        // Center is ash-grey, outer edges and sides are deep charcoal black
                         float ashCenterMix = (1.0f - radNorm);
-                        float cr = (0.020f + ashCenterMix * 0.065f) + cnoise * 0.010f;
-                        float cg = (0.016f + ashCenterMix * 0.065f) + cnoise * 0.010f;
-                        float cb = (0.016f + ashCenterMix * 0.065f) + cnoise2 * 0.010f;
+                        float cr = (0.018f + ashCenterMix * 0.075f) + cnoise * 0.008f;
+                        float cg = (0.015f + ashCenterMix * 0.075f) + cnoise * 0.008f;
+                        float cb = (0.015f + ashCenterMix * 0.075f) + cnoise2 * 0.008f;
 
-                        // Edge ash breathing strips on center cube sides
-                        boolean cIsEdge = (cix == 0 || cix == csX - 1 || ciz == 0 || ciz == csZ - 1);
-                        if (cIsEdge) {
-                            int csecSeed = (cix / 8 * 31 + ciz / 8 * 17 + 999) & 0x7FFFFFFF;
-                            boolean csecActive = ((csecSeed % 100) < 55);
-                            if (csecActive) {
-                                float csidePhase = (cix + ciz * 3) * 0.4f + 5.7f;
-                                float cBreathe = 0.5f + 0.5f * (float) Math.sin(glowTime * 0.42f + csidePhase);
-                                float cgreyAdd = 0.13f * cBreathe;
-                                cr += cgreyAdd;
-                                cg += cgreyAdd;
-                                cb += cgreyAdd;
-                            }
-                        }
-
-                        float calpha = localCharLevel * 0.97f;
+                        float calpha = localCharLevel * 0.98f;
                         int cir = (int) (Math.min(1.0f, Math.max(0.0f, cr)) * 255);
                         int cig = (int) (Math.min(1.0f, Math.max(0.0f, cg)) * 255);
                         int cib = (int) (Math.min(1.0f, Math.max(0.0f, cb)) * 255);
@@ -2082,20 +2068,20 @@ public class BedrockFlowerRenderer {
 
                         int cseed = (ciy * 53 + ciz * 89 + 7777) & 0x7FFFFFFF;
                         float cnoise = ((cseed % 100) / 100.0f) - 0.5f;
-                        float cr = 0.020f + cnoise * 0.010f, cg = 0.016f + cnoise * 0.010f,
-                                cb = 0.016f + cnoise * 0.010f;
+                        float cr = 0.018f + cnoise * 0.008f, cg = 0.015f + cnoise * 0.008f,
+                                cb = 0.015f + cnoise * 0.008f;
                         int cir = (int) (Math.min(1.0f, cr) * 255), cig = (int) (Math.min(1.0f, cg) * 255),
                                 cib = (int) (Math.min(1.0f, cb) * 255);
 
                         if (levelX0 > 0.01f) {
-                            int cia0 = (int) (levelX0 * 0.97f * 255);
+                            int cia0 = (int) (levelX0 * 0.98f * 255);
                             cbuf.pos(x0, cpy0, cpz0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(x0, cpy1, cpz0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(x0, cpy1, cpz1).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(x0, cpy0, cpz1).color(cir, cig, cib, cia0).endVertex();
                         }
                         if (levelX1 > 0.01f) {
-                            int cia1 = (int) (levelX1 * 0.97f * 255);
+                            int cia1 = (int) (levelX1 * 0.98f * 255);
                             cbuf.pos(x1, cpy0, cpz1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(x1, cpy1, cpz1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(x1, cpy1, cpz0).color(cir, cig, cib, cia1).endVertex();
@@ -2122,20 +2108,20 @@ public class BedrockFlowerRenderer {
 
                         int cseed = (ciy * 53 + cix * 89 + 5555) & 0x7FFFFFFF;
                         float cnoise = ((cseed % 100) / 100.0f) - 0.5f;
-                        float cr = 0.020f + cnoise * 0.010f, cg = 0.016f + cnoise * 0.010f,
-                                cb = 0.016f + cnoise * 0.010f;
+                        float cr = 0.018f + cnoise * 0.008f, cg = 0.015f + cnoise * 0.008f,
+                                cb = 0.015f + cnoise * 0.008f;
                         int cir = (int) (Math.min(1.0f, cr) * 255), cig = (int) (Math.min(1.0f, cg) * 255),
                                 cib = (int) (Math.min(1.0f, cb) * 255);
 
                         if (levelZ0 > 0.01f) {
-                            int cia0 = (int) (levelZ0 * 0.97f * 255);
+                            int cia0 = (int) (levelZ0 * 0.98f * 255);
                             cbuf.pos(cpx0, cpy0, z0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(cpx1, cpy0, z0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(cpx1, cpy1, z0).color(cir, cig, cib, cia0).endVertex();
                             cbuf.pos(cpx0, cpy1, z0).color(cir, cig, cib, cia0).endVertex();
                         }
                         if (levelZ1 > 0.01f) {
-                            int cia1 = (int) (levelZ1 * 0.97f * 255);
+                            int cia1 = (int) (levelZ1 * 0.98f * 255);
                             cbuf.pos(cpx0, cpy1, z1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(cpx1, cpy1, z1).color(cir, cig, cib, cia1).endVertex();
                             cbuf.pos(cpx1, cpy0, z1).color(cir, cig, cib, cia1).endVertex();
@@ -2322,7 +2308,9 @@ public class BedrockFlowerRenderer {
 
         float wedge = 360f / n; // Exactly 30 degrees per petal (1/12th of circle)
         float halfWedge = wedge * 0.5f; // 15 degrees
-        float blendAngle = 8.0f; // Clean, narrow seam between sectors
+        float blendAngle = 8.0f; // Clean, seamless transition region between sectors
+        float innerAngle = halfWedge - blendAngle * 0.5f; // 11 degrees
+        float outerAngle = halfWedge + blendAngle * 0.5f; // 19 degrees
 
         float combinedLevel = 0f;
         for (Petal p : petals) {
@@ -2331,39 +2319,43 @@ public class BedrockFlowerRenderer {
 
             // Synchronized smoothly with petal burn wave: 0.0 at prog=0.05, 1.0 at prog=1.0
             float rawT = Math.min(1.0f, Math.max(0.0f, (p.burnProgress - 0.05f) / 0.95f));
-            // Smooth ease-in ease-out progression (not instant, ends exactly with wave)
+            // Smooth ease-in ease-out progression
             float burnT = rawT * rawT * (3.0f - 2.0f * rawT);
 
             float absAngleDiff = Math.abs(angularDiff(angleDeg, p.centerAngleDeg));
 
             float angularWeight = 0f;
-            if (absAngleDiff <= halfWedge) {
-                angularWeight = 1.0f - (absAngleDiff / halfWedge) * 0.25f;
-            } else if (absAngleDiff <= halfWedge + blendAngle) {
-                float t = 1.0f - (absAngleDiff - halfWedge) / blendAngle;
-                angularWeight = t * 0.75f;
+            if (absAngleDiff <= innerAngle) {
+                angularWeight = 1.0f;
+            } else if (absAngleDiff < outerAngle) {
+                float t = (outerAngle - absAngleDiff) / blendAngle;
+                angularWeight = t * t * (3.0f - 2.0f * t);
             }
 
             if (angularWeight <= 0.001f)
                 continue;
 
-            // Radial gradient: starts from the outer edge (radNorm=1.0) and creeps fully
-            // inward when burnT=1.0
-            // minRadToBurn=0 when fully burned, so the entire center including the middle
-            // gets charred
-            float minRadToBurn = Math.max(0.0f, 1.0f - burnT * 1.05f);
+            // Burn front sweeps inward from outer edge (radNorm = 1.0) to center (radNorm = 0.0).
+            // Behind the advancing front, the center is fully charred (1.0).
+            // When burnT = 1.0, the front has swept completely through the center, leaving it 100% charred.
+            float frontRad = 1.0f - burnT * 1.25f;
             float radialFactor = 0f;
-            if (radialDistNorm >= minRadToBurn) {
-                float radDepth = (radialDistNorm - minRadToBurn) / (1.0f - minRadToBurn + 0.001f);
-                radialFactor = 0.20f + 0.80f * radDepth; // gradient from inner edge to outer boundary
+            float transitionWidth = 0.20f;
+
+            if (radialDistNorm >= frontRad + transitionWidth) {
+                radialFactor = 1.0f;
+            } else if (radialDistNorm > frontRad) {
+                float t = (radialDistNorm - frontRad) / transitionWidth;
+                radialFactor = t * t * (3.0f - 2.0f * t);
             }
+
+            if (radialFactor <= 0.001f)
+                continue;
 
             float petalContrib = burnT * angularWeight * radialFactor;
-            if (petalContrib > combinedLevel) {
-                combinedLevel = petalContrib;
-            }
+            combinedLevel = Math.min(1.0f, combinedLevel + petalContrib);
         }
 
-        return Math.min(1.0f, combinedLevel);
+        return combinedLevel;
     }
 }

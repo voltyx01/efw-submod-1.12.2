@@ -434,5 +434,23 @@
         "sounds": [
             "mwccf:bandage"
         ]
+    },
+    "skill.upgrade": {
+        "category": "master",
+        "sounds": [
+            "mwccf:upgrade"
+        ]
+    },
+    "menu.swoosh": {
+        "category": "master",
+        "sounds": [
+            "mwccf:menuswoosh"
+        ]
+    },
+    "menu.swooshinvert": {
+        "category": "master",
+        "sounds": [
+            "mwccf:menuswooshinvert"
+        ]
     }
 }

@@ -1,0 +1,15 @@
+{
+  "forge_marker": 1,
+  "defaults": {
+    "model": "builtin/generated",
+    "textures": {
+      "particle": "mwccf:blocks/terminal"
+    }
+  },
+  "variants": {
+    "facing=north": {},
+    "facing=south": {},
+    "facing=west": {},
+    "facing=east": {}
+  }
+}
