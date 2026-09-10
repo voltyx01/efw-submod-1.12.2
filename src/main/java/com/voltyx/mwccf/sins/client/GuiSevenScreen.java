@@ -150,6 +150,8 @@ public class GuiSevenScreen extends GuiScreen {
 
     // Smooth hover animation for cards
     private final float[] sinCardHoverLift = new float[7];
+    private SinType lastKnownChosenSin = null;
+    private float hudHeaderFade = 0.0f;
 
     // Class-select flow sub-phases: mirrors the level-up SELECT/EXIT/RETURN flow so
     // choosing a sin feels the same as accepting a level-up card, and doesn't just
@@ -185,14 +187,14 @@ public class GuiSevenScreen extends GuiScreen {
 
     private static final long LVLUP_ENTER_DURATION_MS = 650L;
     private static final long LVLUP_SELECT_DURATION_MS = 1000L;
-    private static final long LVLUP_EXIT_DURATION_MS = 500L;
+    private static final long LVLUP_EXIT_DURATION_MS = 434L;
     private static final long LVLUP_RETURN_DURATION_MS = 650L;
     private static final float LVLUP_SELECTED_SCALE = 1.08f;
 
-    private static final long LVLUP_CARD_INITIAL_DELAY_MS = 180L;
-    private static final long LVLUP_CARD_STEP_DELAY_MS = 190L;
-    private static final long LVLUP_CARD_FLIGHT_MS = 480L;
-    private static final long LVLUP_TITLE_FADE_MS = 380L;
+    private static final long LVLUP_CARD_INITIAL_DELAY_MS = 0L;
+    private static final long LVLUP_CARD_STEP_DELAY_MS = 0L;
+    private static final long LVLUP_CARD_FLIGHT_MS = 434L;
+    private static final long LVLUP_TITLE_FADE_MS = 300L;
 
     private int levelUpPhase = LVLUP_PHASE_ENTER;
     private long levelUpPhaseStartTime = 0L;
@@ -325,7 +327,133 @@ public class GuiSevenScreen extends GuiScreen {
 
     private final net.minecraft.client.renderer.texture.DynamicTexture[] skillBurnTextures = new net.minecraft.client.renderer.texture.DynamicTexture[SKILL_COUNT];
     private final ResourceLocation[] skillBurnTextureLocations = new ResourceLocation[SKILL_COUNT];
-    private static final long SKILL_BURN_DURATION_MS = 1400L;
+    private static final long SKILL_BURN_DURATION_MS = 1000L;
+    private static final long SKILL_FLASH_DURATION_MS = 350L;
+    private static final net.minecraft.util.SoundEvent SOUND_SKILL_UPGRADE = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "skill.upgrade"));
+    private static final net.minecraft.util.SoundEvent SOUND_MENU_SWOOSH = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "menu.swoosh"));
+    private static final net.minecraft.util.SoundEvent SOUND_MENU_SWOOSH_INVERT = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "menu.swooshinvert"));
+    private static final ResourceLocation PARTICLES_TEXTURE = new ResourceLocation("mwccf", "textures/particles/particles.png");
+
+    private static class SkillSpark2D {
+        float x, y;
+        float vx, vy;
+        float age, maxAge;
+        float size;
+
+        SkillSpark2D(float cx, float cy, java.util.Random rand) {
+            this.x = cx + (rand.nextFloat() - 0.5f) * 12.0f;
+            this.y = cy + (rand.nextFloat() - 0.5f) * 12.0f;
+            float angle = rand.nextFloat() * 6.283185f;
+            float speed = 14.0f + rand.nextFloat() * 30.0f;
+            this.vx = (float) Math.cos(angle) * speed;
+            this.vy = (float) Math.sin(angle) * speed - 16.0f; // drift upwards
+            this.age = 0f;
+            this.maxAge = 0.40f + rand.nextFloat() * 0.40f;
+            this.size = 1.8f + rand.nextFloat() * 2.2f;
+        }
+
+        boolean update(float deltaSec) {
+            this.age += deltaSec;
+            if (this.age >= this.maxAge) return false;
+            this.x += this.vx * deltaSec;
+            this.y += this.vy * deltaSec;
+            this.vy += 20.0f * deltaSec; // subtle gravity
+            this.vx *= (1.0f - 0.8f * deltaSec);
+            return true;
+        }
+    }
+
+    private final java.util.List<SkillSpark2D> skillSparks2D = new java.util.ArrayList<>();
+    private final java.util.Random skillRand = new java.util.Random();
+
+    private void spawnSkillSparks(float cx, float cy) {
+        int count = 12 + skillRand.nextInt(6);
+        for (int i = 0; i < count; i++) {
+            skillSparks2D.add(new SkillSpark2D(cx, cy, skillRand));
+        }
+    }
+
+    private float getSkillNodeCenterX(SkillNode node) {
+        int panelW = 236;
+        int rightX = (int) VIRTUAL_W - panelW - 10;
+        int contentX = rightX + 12;
+        int contentW = panelW - 24;
+        int colW = contentW / SKILL_BRANCHES;
+        if (node.depth == 0) {
+            return contentX + contentW / 2.0f;
+        }
+        return contentX + colW * node.branch + colW / 2.0f;
+    }
+
+    private float getSkillNodeCenterY(SkillNode node) {
+        int panelY = 40;
+        int scrollOff = Math.round(skillsScrollAnim);
+        int baseY = panelY + 10 - scrollOff;
+        int sepY = baseY + 11;
+        int treeTop = sepY + 10;
+        return treeTop + node.depth * SKILL_ROW_GAP + SKILL_NODE_SIZE / 2.0f;
+    }
+
+    private void updateAndRenderSkillSparks(float deltaSec) {
+        if (skillSparks2D.isEmpty()) return;
+
+        java.util.Iterator<SkillSpark2D> it = skillSparks2D.iterator();
+        while (it.hasNext()) {
+            SkillSpark2D s = it.next();
+            if (!s.update(deltaSec)) {
+                it.remove();
+            }
+        }
+
+        if (skillSparks2D.isEmpty()) return;
+
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO
+        );
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.getBuffer();
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+
+        for (SkillSpark2D s : skillSparks2D) {
+            float progress = s.age / s.maxAge; // 0..1
+            float alpha = (float) Math.sin(progress * Math.PI); // Smooth fade in and out
+            int a = (int) (alpha * 240);
+            int r = 255;
+            int g = (int) (225 - progress * 95); // bright gold to warm ember
+            int b = (int) (120 - progress * 100);
+            float sz = s.size * (1.0f - progress * 0.35f);
+
+            float x0 = s.x - sz * 0.5f;
+            float y0 = s.y - sz * 0.5f;
+            float x1 = s.x + sz * 0.5f;
+            float y1 = s.y + sz * 0.5f;
+
+            buffer.pos(x0, y1, 0.0D).color(r, g, b, a).endVertex();
+            buffer.pos(x1, y1, 0.0D).color(r, g, b, a).endVertex();
+            buffer.pos(x1, y0, 0.0D).color(r, g, b, a).endVertex();
+            buffer.pos(x0, y0, 0.0D).color(r, g, b, a).endVertex();
+        }
+
+        tessellator.draw();
+
+        GlStateManager.shadeModel(GL11.GL_FLAT);
+        GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO
+        );
+        GlStateManager.enableAlpha();
+        GlStateManager.enableTexture2D();
+    }
 
     private int skillsScrollY = 0;
     private int maxSkillsScroll = 0;
@@ -434,6 +562,9 @@ public class GuiSevenScreen extends GuiScreen {
         if (this.currentTab != newTab) {
             int oldTab = this.currentTab;
             this.currentTab = newTab;
+            if (this.mc != null) {
+                this.mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord.getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
             if (newTab == TAB_SKILLS) {
                 flowerModel.playOpen();
             } else if (oldTab == TAB_SKILLS) {
@@ -884,7 +1015,31 @@ public class GuiSevenScreen extends GuiScreen {
         this.dustManager.updateAndRender((int) VIRTUAL_W, (int) VIRTUAL_H, mc);
         GlStateManager.popMatrix();
 
-        this.fontRenderer.drawString("DOSSIER // SEVEN", 16, 14, COLOR_BLOOD_BRIGHT);
+        SinType chosenSin = null;
+        ISinCapability cap = getSinCap();
+        if (cap != null && cap.getChosenSin() != null) {
+            chosenSin = cap.getChosenSin();
+            lastKnownChosenSin = chosenSin;
+        } else if (lastKnownChosenSin != null) {
+            chosenSin = lastKnownChosenSin;
+        } else if (selectedSinIndex >= 0 && selectedSinIndex < SinType.values().length) {
+            chosenSin = SinType.values()[selectedSinIndex];
+        }
+
+        if (this.currentState == STATE_MAIN_HUD || this.currentState == STATE_LEVEL_UP) {
+            hudHeaderFade = Math.min(1.0f, hudHeaderFade + deltaSec * 3.5f);
+        } else if (this.currentState == STATE_CLASS_SELECT) {
+            if (classSelectPhase == CLASS_PHASE_RETURN) {
+                long phaseElapsed = (now - classSelectPhaseStartTime) / 1_000_000L;
+                hudHeaderFade = easeOutCubic(clamp01(phaseElapsed / (float) LVLUP_RETURN_DURATION_MS));
+            } else {
+                hudHeaderFade = 0.0f;
+            }
+        }
+
+        if (chosenSin != null && hudHeaderFade > 0.005f) {
+            drawChosenSinHeader(chosenSin, hudHeaderFade);
+        }
 
         if (this.currentState == STATE_CLASS_SELECT) {
             drawClassSelectFlow(vMouseX, vMouseY, deltaSec, partialTicks);
@@ -1004,14 +1159,9 @@ public class GuiSevenScreen extends GuiScreen {
             tooltipY = infoY + 14;
         }
 
-        int iconBoxSize = 34;
-        int iconX = cx + (SIN_CARD_W - iconBoxSize) / 2;
-        int iconY = cy + 22;
-        drawBoxOutline(iconX, iconY, iconBoxSize, iconBoxSize, isHovered ? COLOR_BLOOD_BRIGHT : COLOR_LINE);
-
         int iconSize = 32;
-        int drawIconX = iconX + (iconBoxSize - iconSize) / 2;
-        int drawIconY = iconY + (iconBoxSize - iconSize) / 2;
+        int drawIconX = cx + (SIN_CARD_W - iconSize) / 2;
+        int drawIconY = cy + 23;
         drawSinIcon(sin, drawIconX, drawIconY, iconSize);
 
         int nameW = this.fontRenderer.getStringWidth(sin.getNameRu());
@@ -1039,6 +1189,9 @@ public class GuiSevenScreen extends GuiScreen {
                 if (phaseElapsed >= LVLUP_SELECT_DURATION_MS) {
                     classSelectPhase = CLASS_PHASE_EXIT;
                     classSelectPhaseStartTime = now;
+                    if (this.mc != null) {
+                        this.mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord.getMasterRecord(SOUND_MENU_SWOOSH_INVERT, 1.0F));
+                    }
                 }
                 break;
             }
@@ -1431,6 +1584,9 @@ public class GuiSevenScreen extends GuiScreen {
                 }
             }
         }
+
+        // Render spark particles from unlocked/upgraded skill nodes
+        updateAndRenderSkillSparks(currentDeltaSec);
     }
 
     private int getSkillNodeSize(SkillNode node) {
@@ -1463,14 +1619,14 @@ public class GuiSevenScreen extends GuiScreen {
     }
 
     private void drawSkillConnector(int x1, int y1, int x2, int y2, boolean lit) {
-        drawLine(x1, y1, x2, y2, lit ? COLOR_GOLD : COLOR_LINE);
+        drawLine(x1, y1, x2, y2, COLOR_LINE);
     }
 
     /**
      * Node palette:
      * - locked (prerequisite not met): grey, dim icon
-     * - available (prereq met, unspent point): white icon, RED outline; GOLD on hover
-     * - unlocked: pale-gold fill, thin gold outline, white icon
+     * - available (prereq met, unspent point): white icon, blood outline; GOLD on hover
+     * - unlocked: crisp icon, clean dark line border
      * Unlocking briefly plays the procedural burn animation and perimeter glow.
      */
     private void drawSkillNode(SkillNode node, int cx, int cy, boolean isHovered) {
@@ -1487,10 +1643,10 @@ public class GuiSevenScreen extends GuiScreen {
 
         if (unlocked) {
             fillColor = 0; // No tint overlay on unlocked skills - show clean crisp texture
-            borderColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_LINE;
+            borderColor = COLOR_LINE; // No persistent gold highlight on unlocked skills
         } else if (available) {
-            fillColor = isHovered ? 0x2E000000 : 0x44000000;
-            borderColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_BLOOD_BRIGHT;
+            fillColor = isHovered ? 0x22000000 : 0x33000000;
+            borderColor = isHovered ? COLOR_GOLD_BRIGHT : COLOR_BLOOD;
         } else {
             fillColor = 0x55000000;
             borderColor = COLOR_LINE;
@@ -1508,8 +1664,27 @@ public class GuiSevenScreen extends GuiScreen {
         long animStart = skillUnlockAnimStart[node.id];
         if (animStart > 0) {
             long elapsed = (System.nanoTime() - animStart) / 1_000_000L;
-            if (elapsed < SKILL_UNLOCK_GLOW_MS) {
-                drawPerimeterGlow(x, y, nodeSize, nodeSize, elapsed / (float) SKILL_UNLOCK_GLOW_MS);
+
+            // Flash gold immediately after 1 second of burning
+            if (elapsed >= SKILL_BURN_DURATION_MS && elapsed < SKILL_BURN_DURATION_MS + SKILL_FLASH_DURATION_MS) {
+                float flashProgress = (elapsed - SKILL_BURN_DURATION_MS) / (float) SKILL_FLASH_DURATION_MS;
+                float flashIntensity = (float) Math.sin(flashProgress * Math.PI); // Smooth in & out bell curve
+                int flashAlpha = Math.max(0, Math.min(255, (int) (flashIntensity * 175)));
+                int flashColor = (flashAlpha << 24) | 0xFFE066;
+
+                GlStateManager.enableBlend();
+                GlStateManager.tryBlendFuncSeparate(
+                        GlStateManager.SourceFactor.SRC_ALPHA,
+                        GlStateManager.DestFactor.ONE,
+                        GlStateManager.SourceFactor.ONE,
+                        GlStateManager.DestFactor.ZERO);
+                drawRect(x, y, x + nodeSize, y + nodeSize, flashColor);
+                drawBoxOutline(x, y, nodeSize, nodeSize, (Math.min(255, flashAlpha + 60) << 24) | 0xFFF099);
+                GlStateManager.tryBlendFuncSeparate(
+                        GlStateManager.SourceFactor.SRC_ALPHA,
+                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                        GlStateManager.SourceFactor.ONE,
+                        GlStateManager.DestFactor.ZERO);
             }
         }
     }
@@ -1551,6 +1726,16 @@ public class GuiSevenScreen extends GuiScreen {
         skillUnlocked[node.id] = true;
         skillPoints = Math.max(0, skillPoints - 1);
         skillUnlockAnimStart[node.id] = System.nanoTime();
+
+        // Spawn golden spark burst from skill node icon
+        float cx = getSkillNodeCenterX(node);
+        float cy = getSkillNodeCenterY(node);
+        spawnSkillSparks(cx, cy);
+
+        // Play upgrade sound immediately
+        if (this.mc != null && this.mc.player != null) {
+            this.mc.player.playSound(SOUND_SKILL_UPGRADE, 1.0F, 1.0F);
+        }
     }
 
     private void drawFlowerTuneOverlay() {
@@ -1832,15 +2017,25 @@ public class GuiSevenScreen extends GuiScreen {
         int dporIconY = lvlY + 20;
         ItemStack dporIconStack = new ItemStack(efw.init.EfwModItems.DPOR);
 
-        GlStateManager.enableRescaleNormal();
-        RenderHelper.enableGUIStandardItemLighting();
-        GlStateManager.enableDepth();
-        this.itemRender.renderItemAndEffectIntoGUI(mc.player, dporIconStack, dporIconX, dporIconY);
-        RenderHelper.disableStandardItemLighting();
+        this.mc.getTextureManager().bindTexture(DPOR_ICON_TEX);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO);
+        GlStateManager.enableAlpha();
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
-        if (!hasDpor) {
-            drawRect(dporIconX, dporIconY, dporIconX + dporIconSize, dporIconY + dporIconSize, 0xCC0A0A0A);
+        if (hasDpor) {
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        } else {
+            GlStateManager.color(0.45F, 0.45F, 0.45F, 0.45F);
         }
+        drawScaledCustomSizeModalRect(dporIconX, dporIconY, 0.0F, 0.0F, 16, 16, dporIconSize, dporIconSize, 16.0F, 16.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.disableBlend();
 
         boolean dporIconHover = mouseX >= dporIconX && mouseX <= dporIconX + dporIconSize
                 && mouseY >= dporIconY && mouseY <= dporIconY + dporIconSize;
@@ -2009,6 +2204,9 @@ public class GuiSevenScreen extends GuiScreen {
                 if (phaseElapsed >= LVLUP_ENTER_DURATION_MS) {
                     levelUpPhase = LVLUP_PHASE_CARDS;
                     levelUpAnimStartTime = now;
+                    if (this.mc != null) {
+                        this.mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord.getMasterRecord(SOUND_MENU_SWOOSH, 1.0F));
+                    }
                 }
                 break;
             }
@@ -2023,9 +2221,12 @@ public class GuiSevenScreen extends GuiScreen {
 
                 drawLevelUpSelection(t);
 
-                if (phaseElapsed >= 1000L) {
+                if (phaseElapsed >= LVLUP_SELECT_DURATION_MS) {
                     levelUpPhase = LVLUP_PHASE_EXIT;
                     levelUpPhaseStartTime = now;
+                    if (this.mc != null) {
+                        this.mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord.getMasterRecord(SOUND_MENU_SWOOSH_INVERT, 1.0F));
+                    }
                 }
                 break;
             }
@@ -2313,6 +2514,7 @@ public class GuiSevenScreen extends GuiScreen {
             if (mouseX >= cx && mouseX <= cx + SIN_CARD_W && mouseY >= drawY && mouseY <= drawY + SIN_CARD_H) {
                 SinType selectedSin = sins[i];
                 MwccfMod.PACKET_HANDLER.sendToServer(new PacketSelectSin(selectedSin));
+                this.lastKnownChosenSin = selectedSin;
 
                 // Don't cut to the main HUD instantly -- play the same
                 // center+grow+glow-then-slide-down flow used for accepting a
@@ -2529,6 +2731,8 @@ public class GuiSevenScreen extends GuiScreen {
         return SIN_ICONS.get(sin);
     }
 
+    private static final ResourceLocation DPOR_ICON_TEX = new ResourceLocation("efw", "textures/item/dpor.png");
+
     private void drawSinIcon(SinType sin, int x, int y, int size) {
         ResourceLocation icon = getSinIcon(sin);
         if (icon == null) return;
@@ -2545,6 +2749,42 @@ public class GuiSevenScreen extends GuiScreen {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         drawScaledCustomSizeModalRect(x, y, 0.0F, 0.0F, 16, 16, size, size, 16.0F, 16.0F);
         GlStateManager.disableBlend();
+    }
+
+
+    private void drawChosenSinHeader(SinType sin, float alpha) {
+        int x = 12;
+        int y = 10;
+        int iconSize = 16;
+
+        ResourceLocation icon = getSinIcon(sin);
+        if (icon != null) {
+            this.mc.getTextureManager().bindTexture(icon);
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(
+                    GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ZERO);
+            GlStateManager.enableAlpha();
+            GlStateManager.alphaFunc(GL11.GL_GREATER, 0.003921569F);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            drawScaledCustomSizeModalRect(x, y, 0.0F, 0.0F, 16, 16, iconSize, iconSize, 16.0F, 16.0F);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.disableBlend();
+        }
+
+        int textAlpha = Math.max(4, Math.min(255, (int) (alpha * 255)));
+        int textColor = (textAlpha << 24) | (COLOR_PAPER & 0x00FFFFFF);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO);
+        this.fontRenderer.drawString(TextFormatting.BOLD + sin.getNameRu().toUpperCase(), x + iconSize + 6, y + 4, textColor);
     }
 
     private static synchronized void ensureSkillRawTexturesLoaded() {
@@ -2763,5 +3003,10 @@ public class GuiSevenScreen extends GuiScreen {
             }
         }
         skillBurnTextures[nodeId].updateDynamicTexture();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
     }
 }

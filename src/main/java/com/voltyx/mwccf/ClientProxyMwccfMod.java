@@ -134,6 +134,9 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityFridge.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityFridgeRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityMicrowaveRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new com.voltyx.mwccf.terminal.client.TileEntityTerminalRenderer());
+
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.terminal.client.TerminalCameraController());
 
 		net.minecraftforge.fml.client.registry.RenderingRegistry.registerEntityRenderingHandler(com.voltyx.mwccf.furniture.EntitySeat.class, manager -> {
 			return new net.minecraft.client.renderer.entity.Render<com.voltyx.mwccf.furniture.EntitySeat>(manager) {

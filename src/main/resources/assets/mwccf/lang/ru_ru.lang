@@ -743,3 +743,4 @@ item.c_diary.name=Дневник Собирателя
 itemGroup.efw_tab=Записки и Дневник
 
 gui.mwccf.looting=Обыск...
+tile.mwccf.terminal.name=Настенный терминал

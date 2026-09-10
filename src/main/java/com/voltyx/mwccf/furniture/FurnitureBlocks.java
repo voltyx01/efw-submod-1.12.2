@@ -24,6 +24,7 @@ public class FurnitureBlocks {
     public static final List<Item> ITEMS = new ArrayList<>();
 
     public static Block WORKBENCH;
+    public static Block TERMINAL;
     
     // Chairs
     public static Block CHAIR_OAK;
@@ -104,12 +105,15 @@ public class FurnitureBlocks {
             registerBlock(new BlockLamp(color + "_lamp"));
         }
 
+        TERMINAL = registerBlock(new com.voltyx.mwccf.terminal.BlockTerminal("terminal"));
+
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityFridge.class, new ResourceLocation("mwccf", "fridge"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityStove.class, new ResourceLocation("mwccf", "stove"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave.class, new ResourceLocation("mwccf", "microwave"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityCabinet.class, new ResourceLocation("mwccf", "cabinet"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityComputer.class, new ResourceLocation("mwccf", "computer"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityWashingMachine.class, new ResourceLocation("mwccf", "washing_machine"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new ResourceLocation("mwccf", "terminal"));
     }
 
     private static Block registerBlock(Block block) {
