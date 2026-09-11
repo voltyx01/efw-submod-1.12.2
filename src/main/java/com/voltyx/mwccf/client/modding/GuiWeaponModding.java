@@ -228,6 +228,7 @@ public class GuiWeaponModding extends GuiScreen {
 
         net.minecraft.client.shader.Framebuffer fb = mc.getFramebuffer();
         if (fb != null && !fb.isStencilEnabled()) {
+            fb.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
             fb.enableStencil();
         }
 

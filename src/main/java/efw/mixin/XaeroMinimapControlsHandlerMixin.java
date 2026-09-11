@@ -9,18 +9,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Pseudo
-@Mixin(targets = "xaero.map.controls.ControlsHandler", remap = false)
-public abstract class XaeroControlsHandlerMixin {
+@Mixin(targets = "xaero.common.controls.ControlsHandler", remap = false)
+public abstract class XaeroMinimapControlsHandlerMixin {
 
     @Inject(method = "keyDown", at = @At("HEAD"), cancellable = true, remap = false)
     private void onKeyDown(KeyBinding kb, boolean tickEnd, boolean isRepeat, CallbackInfo ci) {
-        if (!MapDeviceState.hasActiveMap()) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "handleKeyEvents", at = @At("HEAD"), cancellable = true, remap = false)
-    private void onHandleKeyEvents(CallbackInfo ci) {
         if (!MapDeviceState.hasActiveMap()) {
             ci.cancel();
         }

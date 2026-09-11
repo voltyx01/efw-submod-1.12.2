@@ -1150,8 +1150,11 @@ public class AnimationTickHandler {
                 String baseCandidate = prefix + lowerMapped + "_lower";
 
                 efw.animation.AnimationClip weaponClipUpper = efw.animation.AnimationRegistry.getClip(actionCandidate);
+                boolean isRollActiveOrFading = "roll".equals(ap.getCurrentActionName())
+                        || (ap.isActionFadingOut() && "roll".equals(ap.getFadeActionName()));
                 if (weaponClipUpper != null) {
-                    if (!isRolling) {
+                    ap.lastWeaponClip = weaponClipUpper;
+                    if (!isRolling && !isRollActiveOrFading) {
                         if (!ap.isActionPlaying() || !actionCandidate.equals(ap.getCurrentActionName())) {
                             float speed = actionCandidate.contains("reload") ? (0.83f * reloadSpeedMult) : 1.0f;
                             ap.setAction(weaponClipUpper, 0f, speed);
@@ -1160,7 +1163,7 @@ public class AnimationTickHandler {
                         }
                     }
                 } else {
-                    if (!"roll".equals(ap.getCurrentActionName())) ap.cancelAction();
+                    if (!isRollActiveOrFading) ap.cancelAction();
                 }
 
                 if (efw.animation.AnimationRegistry.getClip(baseCandidate) != null) {
@@ -1188,7 +1191,7 @@ public class AnimationTickHandler {
             efw.animation.AnimationClip rollClip = efw.animation.AnimationRegistry.getClip("roll");
             if (rollClip != null) {
                 if (!"roll".equals(ap.getCurrentActionName()) || ap.isActionFadingOut()) {
-                    ap.setAction(rollClip, 0f, 1.0f);
+                    ap.setAction(rollClip, 0f, 1.3f);
                 }
             }
         } else if ("roll".equals(ap.getCurrentActionName()) && !ap.isActionFadingOut()) {

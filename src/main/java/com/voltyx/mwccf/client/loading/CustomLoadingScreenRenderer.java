@@ -52,6 +52,7 @@ public class CustomLoadingScreenRenderer extends LoadingScreenRenderer {
         // ВАЖНО: Включаем буфер глубины (true), иначе 3D предметы (например из MWC)
         // не будут рендериться или будут отсекаться!
         this.framebuffer = new Framebuffer(mc.displayWidth, mc.displayHeight, true);
+        this.framebuffer.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
         this.framebuffer.setFramebufferFilter(9728);
     }
 
