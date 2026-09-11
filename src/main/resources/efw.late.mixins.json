@@ -27,9 +27,14 @@
     "XaeroMinimapRendererMixin",
     "XaeroRadarStateUpdaterMixin",
     "XaeroControlsHandlerMixin",
+    "XaeroKeyMappingTickHandlerMixin",
+    "XaeroMinimapControlsHandlerMixin",
+    "XaeroWaypointsIngameRendererMixin",
+    "XaeroClientEventsMixin",
     "XaeroGuiMapMixin",
     "MixinCustomGui",
-    "MixinModificationGUI"
+    "MixinModificationGUI",
+    "MixinHDRFramebuffer"
   ],
   "injectors": {
     "defaultRequire": 1

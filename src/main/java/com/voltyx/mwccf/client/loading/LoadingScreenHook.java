@@ -16,7 +16,6 @@ public class LoadingScreenHook {
         if (event.getGui() instanceof GuiScreenWorking
                 && !(event.getGui() instanceof LoadingScreenGui)) {
             if (!CustomLoadingScreenRenderer.isRunning()) return; // При выходе из игры ничего не перехватываем!
-            com.voltyx.mwccf.ClientProxyMwccfMod.enableStencilEarly();
             ItemLoadingScreenRenderer.pickRandom();
             ItemLoadingScreenRenderer.preloadTexture();
             event.setGui(new LoadingScreenGui());
@@ -26,7 +25,6 @@ public class LoadingScreenHook {
         // Второй перехват — предмет уже выбран, просто показываем экран
         if (event.getGui() instanceof GuiDownloadTerrain
                 && !(event.getGui() instanceof LoadingScreenGui)) {
-            com.voltyx.mwccf.ClientProxyMwccfMod.enableStencilEarly();
             event.setGui(new LoadingScreenGui());
             return;
         }
@@ -40,7 +38,6 @@ public class LoadingScreenHook {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderTick(TickEvent.RenderTickEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
-        com.voltyx.mwccf.ClientProxyMwccfMod.enableStencilEarly();
         if (!(mc.loadingScreen instanceof CustomLoadingScreenRenderer)) {
             mc.loadingScreen = new CustomLoadingScreenRenderer(mc);
         }
@@ -50,7 +47,6 @@ public class LoadingScreenHook {
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            com.voltyx.mwccf.ClientProxyMwccfMod.enableStencilEarly();
             Minecraft mc = Minecraft.getMinecraft();
             if (mc.world != null && mc.currentScreen == null && ItemLoadingScreenRenderer.hasPicked()) {
                 ItemLoadingScreenRenderer.reset();

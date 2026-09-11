@@ -47,6 +47,7 @@ public abstract class MixinMinecraftSplash {
     private void onBeforeFirstGui(CallbackInfo ci) {
         SplashRenderer.restoreDisplayMode((Minecraft) (Object) this);
         applyResizeFixOnce((Minecraft) (Object) this);
+        com.voltyx.mwccf.ClientProxyMwccfMod.initFramebufferEarly();
     }
 
     /**

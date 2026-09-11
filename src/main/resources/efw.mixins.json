@@ -39,7 +39,8 @@
     "MixinGuiInventory",
     "MixinMinecraftSplash",
     "MixinFMLClientHandler",
-    "MixinSplashProgress"
+    "MixinSplashProgress",
+    "MixinFramebuffer"
   ],
   "server": [],
   "injectors": {

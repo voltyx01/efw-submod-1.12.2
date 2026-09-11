@@ -54,6 +54,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new efw.biomeinfo.BiomeInfoRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.dash.OverlayStamina());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.inspect.InspectTransitionHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.geo.XaeroGuiBlockerHandler());
 
 		registerBlinkingLayer();
 	}
@@ -170,25 +171,60 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 	}
 
 	/**
-	 * The main framebuffer only allocates a stencil attachment lazily, the first
-	 * time something calls Framebuffer#enableStencil(). That call recreates the
-	 * framebuffer's color attachment, which briefly holds undefined content and
-	 * shows up as a one-frame white flash.
-	 * By reserving the stencil bit and enabling stencil during startup / loading screens,
-	 * the stencil buffer is already allocated when the player joins the world.
+	 * Initializes the game framebuffer with HDR (if enabled) and stencil buffer
+	 * early during startup, before any GUI or world is displayed.
+	 * This prevents any mid-game framebuffer recreation, eliminating the white screen flash.
 	 */
-	public static void enableStencilEarly() {
+	public static void initFramebufferEarly() {
 		try {
 			net.minecraftforge.client.MinecraftForgeClient.reserveStencilBit();
 		} catch (Throwable ignored) {
 		}
 		try {
-			net.minecraft.client.shader.Framebuffer fb = Minecraft.getMinecraft().getFramebuffer();
-			if (fb != null && !fb.isStencilEnabled()) {
-				fb.enableStencil();
+			Minecraft mc = Minecraft.getMinecraft();
+			if (mc == null) return;
+			net.minecraft.client.shader.Framebuffer fb = mc.getFramebuffer();
+			if (fb == null) return;
+
+			fb.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
+
+			boolean enableHdr = false;
+			try {
+				enableHdr = com.paneedah.weaponlib.config.ModernConfigManager.enableHDRFramebuffer;
+			} catch (Throwable ignored) {
 			}
-		} catch (Throwable ignored) {
+
+			if (enableHdr) {
+				if (!(fb instanceof com.paneedah.weaponlib.render.HDRFramebuffer)) {
+					com.paneedah.weaponlib.render.HDRFramebuffer hdr = new com.paneedah.weaponlib.render.HDRFramebuffer(
+							fb.framebufferWidth, fb.framebufferHeight, fb.useDepth);
+					hdr.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
+					if (!hdr.isStencilEnabled()) {
+						hdr.enableStencil();
+					}
+					try {
+						java.lang.reflect.Field fbField = net.minecraftforge.fml.relauncher.ReflectionHelper.findField(
+								Minecraft.class, "field_147124_at", "framebuffer");
+						fbField.setAccessible(true);
+						fbField.set(mc, hdr);
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+					hdr.bindFramebuffer(true);
+				}
+			} else {
+				if (!fb.isStencilEnabled()) {
+					fb.enableStencil();
+					fb.bindFramebuffer(true);
+				}
+			}
+		} catch (Throwable t) {
+			t.printStackTrace();
 		}
+	}
+
+	public static void enableStencilEarly() {
+		initFramebufferEarly();
 	}
 
 	@Override

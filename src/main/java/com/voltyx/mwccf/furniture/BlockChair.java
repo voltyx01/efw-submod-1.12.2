@@ -41,11 +41,8 @@ public class BlockChair extends BlockFurnitureHorizontal {
 
     @Override
     public IBlockState getStateFromMeta(int meta) {
-        EnumFacing facing = EnumFacing.byIndex(meta & 7);
-        if (facing.getAxis() == EnumFacing.Axis.Y) {
-            facing = EnumFacing.NORTH;
-        }
-        boolean tucked = (meta & 8) != 0;
+        EnumFacing facing = EnumFacing.byHorizontalIndex(meta & 3);
+        boolean tucked = (meta & 4) != 0;
         return this.getDefaultState().withProperty(FACING, facing).withProperty(TUCKED, tucked);
     }
 
