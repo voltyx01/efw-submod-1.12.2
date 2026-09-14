@@ -29,6 +29,16 @@ public abstract class WeaponHandling {
             return;
         }
 
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            if (event.getRenderer() instanceof RenderPlayer) {
+                RenderPlayer rp = (RenderPlayer) event.getRenderer();
+                rp.getMainModel().leftArmPose = ModelBiped.ArmPose.EMPTY;
+                rp.getMainModel().rightArmPose = ModelBiped.ArmPose.EMPTY;
+            }
+            ci.cancel();
+            return;
+        }
+
         ItemStack itemStack = event.getEntity().getHeldItemMainhand(); // Deobfuscated: func_184614_ca() -> getHeldItemMainhand()
         
         if (itemStack != null && itemStack.getItem() instanceof Weapon) { 

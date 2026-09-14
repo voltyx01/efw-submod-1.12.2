@@ -103,7 +103,8 @@ public class NoteGui extends GuiContainer {
             content = net.minecraft.client.resources.I18n.format("tooltip.mwccf.dpor.inspect");
         } else if (stack.getItem() instanceof NoteItem) {
             int id = NoteItem.getNoteId(stack);
-            content = NotesConfig.getText(id);
+            boolean isQuest = NoteItem.isQuest(stack);
+            content = NotesConfig.getText(id, isQuest);
         } else {
             content = "Item not found";
         }
@@ -181,6 +182,15 @@ public class NoteGui extends GuiContainer {
 
         FontRenderer fr = Minecraft.getMinecraft().fontRenderer;
 
+        int maxLineWidth = 0;
+        for (String line : splitText) {
+            int w = fr.getStringWidth(line);
+            if (w > maxLineWidth) {
+                maxLineWidth = w;
+            }
+        }
+        int contentWidth = Math.max(visibleWidth, maxLineWidth);
+
         int totalHeight = splitText.size() * fr.FONT_HEIGHT;
         int maxScroll = Math.max(0, totalHeight - visibleHeight);
 
@@ -196,7 +206,7 @@ public class NoteGui extends GuiContainer {
         GL11.glScissor(
                 (int) (textX * scale),
                 (int) (this.mc.displayHeight - (textY + visibleHeight) * scale),
-                (int) (visibleWidth * scale),
+                (int) ((contentWidth + 4) * scale),
                 (int) (visibleHeight * scale));
 
         int y = textY - (int) scrollAmount;
@@ -209,7 +219,7 @@ public class NoteGui extends GuiContainer {
 
         // Scroll bar
         if (totalHeight > visibleHeight) {
-            int barX = textX + visibleWidth + 5;
+            int barX = textX + contentWidth + 6;
             int barH = visibleHeight;
             drawRect(barX, textY, barX + 2, textY + barH, 0x44FFFFFF);
             int knobH = Math.max(10, visibleHeight * visibleHeight / totalHeight);

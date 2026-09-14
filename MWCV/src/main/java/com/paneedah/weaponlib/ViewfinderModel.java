@@ -11,6 +11,7 @@ import com.paneedah.weaponlib.shader.jim.Shader;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
@@ -67,9 +68,22 @@ public class ViewfinderModel extends ModelBase {
 		surfaceRenderer.render(scale);
 	}
 
+	private static boolean lastLoggedFXMode = false;
+	private static long lastFXLogTime = 0;
+
 	public void render(Reticle ret, RenderContext<RenderableState> renderContext, Entity entity, float f5) {
 
-		if (ModernConfigManager.enableAllShaders && ModernConfigManager.enableScopeEffects) {
+		boolean fxMode = ModernConfigManager.enableAllShaders && ModernConfigManager.enableScopeEffects;
+		long now = System.currentTimeMillis();
+		if (fxMode != lastLoggedFXMode || (now - lastFXLogTime > 4000 && darkAlpha < 0.99f)) {
+			lastLoggedFXMode = fxMode;
+			lastFXLogTime = now;
+			System.out.println(String.format("[MWC-SCOPE-DEBUG] ViewfinderModel.render: fxMode=%s (allShaders=%s, scopeEffects=%s), darkAlpha=%.2f, isForcedDark=%s",
+					fxMode, ModernConfigManager.enableAllShaders, ModernConfigManager.enableScopeEffects,
+					darkAlpha, forceDarkMode));
+		}
+
+		if (fxMode) {
 			renderWithScopeFX(ret, renderContext, entity, f5);
 		} else {
 			renderDry(ret, entity, f5);
@@ -102,6 +116,9 @@ public class ViewfinderModel extends ModelBase {
 			GlStateManager.popMatrix();
 		}
 		GlStateManager.enableCull();
+		GlStateManager.enableAlpha();
+		GlStateManager.enableBlend();
+		GlStateManager.bindTexture(0);
 	}
 
 	public void renderWithScopeFX(Reticle ret, RenderContext<RenderableState> renderContext, Entity entity, float f5) {
@@ -197,6 +214,24 @@ public class ViewfinderModel extends ModelBase {
 		GlStateManager.enableBlend();
 		surfaceRenderer.render(f5);
 		scopeShader.release();
+		OpenGlHelper.glUseProgram(0);
+
+		// Clean up auxiliary texture units so they never leak into subsequent fixed-function rendering or HUD
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GlStateManager.bindTexture(0);
+		GlStateManager.disableTexture2D();
+
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 4);
+		GlStateManager.bindTexture(0);
+		GlStateManager.disableTexture2D();
+
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 3);
+		GlStateManager.bindTexture(0);
+		GlStateManager.disableTexture2D();
+
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
+		GlStateManager.bindTexture(0);
+		GlStateManager.enableTexture2D();
 		GlStateManager.enableCull();
 	}
 

@@ -17,8 +17,12 @@ public abstract class MixinLayerArmorBase {
         System.out.println("[EFW-MIXIN-LOAD] MixinLayerArmorBase class loaded!");
     }
 
-    @Inject(method = "renderArmorLayer", at = @At("HEAD"))
+    @Inject(method = "renderArmorLayer", at = @At("HEAD"), cancellable = true)
     public void onRenderArmorLayerHead(EntityLivingBase entityLivingBaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale, EntityEquipmentSlot slotIn, CallbackInfo ci) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            ci.cancel();
+            return;
+        }
         SlimArmorStateManager.CURRENT_ENTITY.set(entityLivingBaseIn);
     }
 

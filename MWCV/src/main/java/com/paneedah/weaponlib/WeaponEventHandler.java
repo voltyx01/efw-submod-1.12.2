@@ -71,7 +71,7 @@ public class WeaponEventHandler {
 boolean reloadingAlmost = instance.suppressFovZoom;
 if (instance.isAimed()
         && !reloadingAlmost
-        && ClientProxy.renderingPhase == null
+        && (ClientProxy.renderingPhase == null || ClientProxy.renderingPhase == RenderingPhase.NORMAL)
         && !(state == WeaponState.DRAWING))
     fov = 0.85f;
 if (MC.player.isSprinting())

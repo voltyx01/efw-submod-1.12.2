@@ -77,6 +77,9 @@ public class DiaryGui extends GuiContainer {
         storedNotes = CDiaryItem.getStoredNotes(diary);
     }
 
+    private GuiButton btnPrev;
+    private GuiButton btnNext;
+
     @Override
     public void initGui() {
         super.initGui();
@@ -93,10 +96,21 @@ public class DiaryGui extends GuiContainer {
         this.visibleHeight = this.height - 160;
 
         int btnBaseX = this.width / 4 - 18;
-        this.addButton(new GuiButton(BTN_PREV, btnBaseX - 40, this.height - 40, 30, 20, "<"));
-        this.addButton(new GuiButton(BTN_NEXT, btnBaseX + 30, this.height - 40, 30, 20, ">"));
+        btnPrev = new DiaryNavButton(BTN_PREV, btnBaseX - 40, this.height - 40, 30, 20, "<");
+        btnNext = new DiaryNavButton(BTN_NEXT, btnBaseX + 30, this.height - 40, 30, 20, ">");
+        this.addButton(btnPrev);
+        this.addButton(btnNext);
 
         loadPageData();
+    }
+
+    private void updateButtonStates() {
+        if (btnPrev != null) {
+            btnPrev.enabled = (currentPage > 0);
+        }
+        if (btnNext != null) {
+            btnNext.enabled = (storedNotes != null && currentPage < storedNotes.tagCount() - 1);
+        }
     }
 
     private void loadPageData() {
@@ -107,22 +121,26 @@ public class DiaryGui extends GuiContainer {
             NBTTagCompound noteTag = storedNotes.getCompoundTagAt(currentPage);
             int noteId = noteTag.getInteger("noteId");
             int variant = noteTag.hasKey("variant") ? noteTag.getInteger("variant") : 1;
+            boolean isQuest = noteTag.hasKey("isQuest") && noteTag.getBoolean("isQuest");
 
             fakeNoteStack = new ItemStack(EfwModItems.NOTE);
             NBTTagCompound sub = new NBTTagCompound();
             sub.setInteger("noteId", noteId);
             sub.setInteger("variant", variant);
+            sub.setBoolean("isQuest", isQuest);
 
             NBTTagCompound tag = new NBTTagCompound();
             tag.setTag("efw_note", sub);
             fakeNoteStack.setTagCompound(tag);
 
-            String content = NotesConfig.getText(noteId);
+            String content = NotesConfig.getText(noteId, isQuest);
             splitText = fr.listFormattedStringToWidth(content, visibleWidth);
         } else {
             splitText = fr.listFormattedStringToWidth("This diary is empty.", visibleWidth);
             fakeNoteStack = ItemStack.EMPTY;
         }
+
+        updateButtonStates();
     }
 
     @Override
@@ -131,7 +149,7 @@ public class DiaryGui extends GuiContainer {
             currentPage--;
             loadPageData();
             playPageSound();
-        } else if (button.id == BTN_NEXT && storedNotes.tagCount() > 0 && currentPage < storedNotes.tagCount() - 1) {
+        } else if (button.id == BTN_NEXT && storedNotes != null && storedNotes.tagCount() > 0 && currentPage < storedNotes.tagCount() - 1) {
             currentPage++;
             loadPageData();
             playPageSound();
@@ -175,7 +193,7 @@ public class DiaryGui extends GuiContainer {
         currentPanX += (targetPanX - currentPanX) * lerpFactor;
         currentPanY += (targetPanY - currentPanY) * lerpFactor;
 
-        // 1. Draw Background
+        // 1. Draw Background and Buttons
         super.drawScreen(mouseX, mouseY, partialTicks);
 
         // 2. Ambient floating ash dust particles in the background
@@ -204,6 +222,15 @@ public class DiaryGui extends GuiContainer {
         FontRenderer fr = Minecraft.getMinecraft().fontRenderer;
 
         if (splitText != null) {
+            int maxLineWidth = 0;
+            for (String line : splitText) {
+                int w = fr.getStringWidth(line);
+                if (w > maxLineWidth) {
+                    maxLineWidth = w;
+                }
+            }
+            int contentWidth = Math.max(visibleWidth, maxLineWidth);
+
             int totalHeight = splitText.size() * fr.FONT_HEIGHT;
             int maxScroll = Math.max(0, totalHeight - visibleHeight);
             if (scrollAmount < 0) scrollAmount = 0;
@@ -214,7 +241,7 @@ public class DiaryGui extends GuiContainer {
             GL11.glScissor(
                     (int)(textX * scale),
                     (int)(this.mc.displayHeight - (textY + visibleHeight) * scale),
-                    (int)(visibleWidth * scale),
+                    (int)((contentWidth + 4) * scale),
                     (int)(visibleHeight * scale));
 
             int y = textY - (int) scrollAmount;
@@ -227,7 +254,7 @@ public class DiaryGui extends GuiContainer {
 
             // Scroll bar
             if (totalHeight > visibleHeight) {
-                int barX  = textX + visibleWidth + 5;
+                int barX  = textX + contentWidth + 6;
                 drawRect(barX, textY, barX + 2, textY + visibleHeight, 0x44FFFFFF);
                 int knobH   = Math.max(10, visibleHeight * visibleHeight / totalHeight);
                 int knobPos = (int)(scrollAmount * (visibleHeight - knobH) / (double)(totalHeight - visibleHeight));
@@ -235,10 +262,67 @@ public class DiaryGui extends GuiContainer {
             }
 
             // Page counter
-            if (storedNotes.tagCount() > 0) {
+            if (storedNotes != null && storedNotes.tagCount() > 0) {
                 fr.drawString((currentPage + 1) + " / " + storedNotes.tagCount(),
                         this.width / 4 - 20, this.height - 55, 0xAAAAAA, false);
             }
+        }
+    }
+
+    /**
+     * Sleek custom button for diary page navigation that matches dark atmospheric theme
+     * and guarantees stable rendering on hover.
+     */
+    private static class DiaryNavButton extends GuiButton {
+        public DiaryNavButton(int buttonId, int x, int y, int widthIn, int heightIn, String buttonText) {
+            super(buttonId, x, y, widthIn, heightIn, buttonText);
+        }
+
+        @Override
+        public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+            if (!this.visible) return;
+
+            FontRenderer fontrenderer = mc.fontRenderer;
+            this.hovered = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width && mouseY < this.y + this.height;
+
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ZERO);
+
+            // Dark semi-transparent card button
+            int bgColor;
+            int borderColor;
+            int textColor;
+
+            if (!this.enabled) {
+                bgColor = 0x22FFFFFF;
+                borderColor = 0x33FFFFFF;
+                textColor = 0x55AAAAAA;
+            } else if (this.hovered) {
+                bgColor = 0x66FFFFFF;
+                borderColor = 0xAAFFFFFF;
+                textColor = 0xFFFFFFA0; // subtle warm glow on hover
+            } else {
+                bgColor = 0x33FFFFFF;
+                borderColor = 0x55FFFFFF;
+                textColor = 0xFFE0E0E0;
+            }
+
+            // Outer border
+            drawRect(this.x, this.y, this.x + this.width, this.y + this.height, borderColor);
+            // Inner fill
+            drawRect(this.x + 1, this.y + 1, this.x + this.width - 1, this.y + this.height - 1, bgColor);
+
+            this.mouseDragged(mc, mouseX, mouseY);
+
+            this.drawCenteredString(fontrenderer, this.displayString,
+                    this.x + this.width / 2,
+                    this.y + (this.height - 8) / 2,
+                    textColor);
+
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
     }
 

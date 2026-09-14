@@ -36,24 +36,7 @@ public class OpticalScopePerspective extends FirstPersonPerspective<RenderableSt
 
     @Override
     public float getBrightness(RenderContext<RenderableState> renderContext) {
-     // if(1+1==2) return 1f;
-    	
-    	float brightness = 0f;
-        PlayerWeaponInstance instance = renderContext.getWeaponInstance();
-        if(instance == null) {
-            return 0f;
-        }
-        boolean aimed = instance != null && instance.isAimed();
-        float progress = Math.min(1f, renderContext.getTransitionProgress());
-
-        if(isAimingState(renderContext.getFromState()) && isAimingState(renderContext.getToState())) {
-            brightness = 1f;
-        } else if(progress > 0f && aimed && isAimingState(renderContext.getToState())) {
-            brightness = progress;
-        } else if(isAimingState(renderContext.getFromState()) && progress > 0f && !aimed) {
-            brightness = Math.max(1 - progress, 0f);
-        }
-        return brightness;
+        return 1.0f;
     }
 
     private static boolean isAimingState(RenderableState renderableState) {
@@ -63,11 +46,20 @@ public class OpticalScopePerspective extends FirstPersonPerspective<RenderableSt
                 ;
     }
 
+    private static boolean lastLoggedUpdateAiming = false;
+
     @Override
     public void update(TickEvent.RenderTickEvent event) {
-    	
-         PlayerWeaponInstance instance = modContext.getMainHeldWeapon();
+        PlayerWeaponInstance instance = modContext.getMainHeldWeapon();
         boolean isAiming = instance != null && instance.isAimed() && !com.paneedah.weaponlib.electronics.ScopePerspective.isReloadingOrBusy(instance.getState());
+        if (isAiming != lastLoggedUpdateAiming) {
+            lastLoggedUpdateAiming = isAiming;
+            System.out.println(String.format("[MWC-SCOPE-DEBUG] OpticalScopePerspective.update: isAiming=%s, darkAlpha=%.2f, fbo=%s, fboTex=%d, w=%d, h=%d",
+                    isAiming, com.paneedah.weaponlib.electronics.ScopePerspective.darkAlpha,
+                    framebuffer != null ? framebuffer.framebufferObject : -1,
+                    framebuffer != null ? framebuffer.framebufferTexture : -1,
+                    width, height));
+        }
         if(instance != null && (isAiming || com.paneedah.weaponlib.electronics.ScopePerspective.darkAlpha < 0.99f)) {
             ItemScope scope = instance.getScope();
             if(scope.isOptical()) {

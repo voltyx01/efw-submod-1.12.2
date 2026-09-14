@@ -300,13 +300,14 @@ public class ClientEventHandler {
 			}
 
 			// Per-tick check for holdToAim mode: if aimed and RMB is released, un-aim immediately
-			if (com.paneedah.weaponlib.config.ModernConfigManager.holdToAim && mainHandHeldWeaponInstance.isAimed()) {
+			if (com.paneedah.weaponlib.config.ModernConfigManager.holdToAim && (mainHandHeldWeaponInstance.isAimed() || mainHandHeldWeaponInstance.wasAimedBeforeReload)) {
 				int aimKeyCode = MC.gameSettings.keyBindUseItem.getKeyCode();
 				boolean aimKeyHeld = aimKeyCode < 0
 						? org.lwjgl.input.Mouse.isButtonDown(aimKeyCode + 100)
 						: org.lwjgl.input.Keyboard.isKeyDown(aimKeyCode);
 				if (!aimKeyHeld) {
 					mainHandHeldWeaponInstance.setAimed(false);
+					mainHandHeldWeaponInstance.wasAimedBeforeReload = false;
 				}
 			}
 			

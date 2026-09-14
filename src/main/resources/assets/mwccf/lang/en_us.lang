@@ -759,8 +759,25 @@ effect.mwccf.adrenaline_effect=Adrenaline
 # Notes & Diary
 item.note.name=Note
 item.c_diary.name=Collector's Diary
+tooltip.mwccf.note_to_diary=§7[RMB] Collect into Collector's Diary
+tooltip.mwccf.note_creative_config=§e[Shift + RMB] Configure Note (Creative)
 itemGroup.efw_tab=Notes & Diary
 item.redbull.name=RedBull
 
 gui.mwccf.looting=Searching...
 tile.mwccf.terminal.name=Wall Terminal
+tile.mwccf.antenna.name=Safe
+
+# Flickering Lamps
+tile.mwccf.flickering_lamp_soft.name=Soft Flickering Lamp
+tile.mwccf.flickering_lamp_broken.name=Faulty Flickering Lamp
+tile.mwccf.flickering_lamp_dying.name=Dying Strobe Lamp
+tooltip.mwccf.flickering_lamp_soft.desc=Flickers softly with occasional voltage drops.
+tooltip.mwccf.flickering_lamp_broken.desc=Unstable flickering, frequently blacking out.
+tooltip.mwccf.flickering_lamp_dying.desc=Mostly dark, occasionally emits rapid strobe flashes.
+tooltip.mwccf.flickering_lamp.redstone=Redstone power disables the lamp.
+
+# Placed Item & Placer Tool
+tile.mwccf.placed_item.name=Placed Item
+item.mwccf.placer_tool.name=Item Placer Tool
+item.mwccf.zone_tool.name=Quest Zone Tool

@@ -20,6 +20,11 @@ public class MixinLayerHeldItem {
 
     @Inject(method = "renderHeldItem", at = @At("HEAD"), cancellable = true)
     private void onRenderHeldItemPre(EntityLivingBase entityLivingBaseIn, ItemStack stack, ItemCameraTransforms.TransformType transformType, EnumHandSide handSide, CallbackInfo ci) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            ci.cancel();
+            return;
+        }
+
         if (entityLivingBaseIn instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) entityLivingBaseIn;
             ItemStack mainStack = player.getHeldItemMainhand();

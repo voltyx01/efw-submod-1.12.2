@@ -507,6 +507,12 @@ public class AnimationPlayer {
             return targetFactor * Math.max(0.0f, Math.min(1.0f, 1.0f - smoothW));
         }
 
+        // If the base animation is crawling/lying/rolling, arms must NOT pitch up/down into the ground!
+        if (currentClip != null) {
+            float baseFactor = getClipPitchFactor(currentClip.name);
+            if (baseFactor == 0.0f) return 0.0f;
+        }
+
         IAnimation anim = actionLayer.getAnimation();
         if (anim instanceof AbstractFadeModifier) {
             AbstractFadeModifier fm = (AbstractFadeModifier) anim;
@@ -528,12 +534,12 @@ public class AnimationPlayer {
             return getClipPitchFactor(actionClip.name);
         }
 
-        if (this.lastWeaponClip != null) {
-            return getClipPitchFactor(this.lastWeaponClip.name);
-        }
-
         if (currentClip != null) {
             return getClipPitchFactor(currentClip.name);
+        }
+
+        if (this.lastWeaponClip != null) {
+            return getClipPitchFactor(this.lastWeaponClip.name);
         }
 
         return 1.0f;
@@ -542,7 +548,7 @@ public class AnimationPlayer {
     private static float getClipPitchFactor(String name) {
         if (name == null) return 1.0f;
         if (name.contains("run") || name.contains("sprint") || name.contains("roll") 
-            || name.contains("lie") || name.contains("reload")) {
+            || name.contains("lie") || name.contains("reload") || name.contains("crawl")) {
             return 0.0f;
         }
         return 1.0f;

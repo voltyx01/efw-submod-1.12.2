@@ -105,6 +105,15 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.sins.network.PacketSyncSinData.Handler.class, com.voltyx.mwccf.sins.network.PacketSyncSinData.class, 16, Side.CLIENT);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.sins.network.PacketUseManual.Handler.class, com.voltyx.mwccf.sins.network.PacketUseManual.class, 17, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketCloseTerminal.Handler.class, com.voltyx.mwccf.terminal.network.PacketCloseTerminal.class, 18, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.antenna.network.PacketAntennaPin.Handler.class, com.voltyx.mwccf.antenna.network.PacketAntennaPin.class, 19, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.antenna.network.PacketCloseAntenna.Handler.class, com.voltyx.mwccf.antenna.network.PacketCloseAntenna.class, 20, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketUpdatePlacedItem.Handler.class, com.voltyx.mwccf.network.PacketUpdatePlacedItem.class, 21, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.zone.network.PacketSyncZones.Handler.class, com.voltyx.mwccf.zone.network.PacketSyncZones.class, 22, Side.CLIENT);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.zone.network.PacketCreateZone.Handler.class, com.voltyx.mwccf.zone.network.PacketCreateZone.class, 23, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.zone.network.PacketDeleteZoneAt.Handler.class, com.voltyx.mwccf.zone.network.PacketDeleteZoneAt.class, 24, Side.SERVER);
+		PACKET_HANDLER.registerMessage(efw.network.PacketConfigureNote.Handler.class, efw.network.PacketConfigureNote.class, 25, Side.SERVER);
+
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.QuestZoneEventHandler());
 
 		// Регистрация Capability грехов
 		CapabilityManager.INSTANCE.register(com.voltyx.mwccf.sins.capability.ISinCapability.class,

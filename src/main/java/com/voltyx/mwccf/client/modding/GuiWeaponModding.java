@@ -444,6 +444,8 @@ public class GuiWeaponModding extends GuiScreen {
                 // ---------- ПАСС B: Отрисовка offset-обводки ----------
                 GlStateManager.disableLighting();
                 GlStateManager.disableTexture2D();
+                GlStateManager.disableDepth();
+                GlStateManager.depthMask(false);
                 GlStateManager.enableBlend();
                 GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
                 GlStateManager.color(1.0F, 1.0F, 1.0F, 0.55F);
@@ -453,13 +455,20 @@ public class GuiWeaponModding extends GuiScreen {
                         org.lwjgl.opengl.GL11.GL_KEEP);
 
                 float d = 0.0055f;
-                // Оптимизация: 8 семплов вместо 16 — разница визуально минимальна,
-                // но нагрузка на рендер падает в 2 раза.
-                int samples = 8;
+                int samples = 12;
                 for (int i = 0; i < samples; i++) {
                     double angle = (Math.PI * 2.0 * i) / (double) samples;
                     float offX = (float) (Math.cos(angle) * d);
                     float offY = (float) (Math.sin(angle) * d);
+
+                    GlStateManager.disableLighting();
+                    GlStateManager.disableTexture2D();
+                    GlStateManager.disableDepth();
+                    GlStateManager.depthMask(false);
+                    GlStateManager.enableBlend();
+                    GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                    GlStateManager.color(1.0F, 1.0F, 1.0F, 0.55F);
+
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(0.0f, offY, offX);
                     mc.getRenderItem().renderItem(stack, TransformType.THIRD_PERSON_LEFT_HAND);

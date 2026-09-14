@@ -1,5 +1,6 @@
 item.note.name=Note
 item.c_diary.name=Collector's Diary
+tooltip.mwccf.note_to_diary=§7[RMB] Collect into Collector's Diary
 itemGroup.efw_tab=Notes & Diary
 item.machete.name=Machete
 item.modern_axe.name=Modern Axe

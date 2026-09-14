@@ -452,5 +452,17 @@
         "sounds": [
             "mwccf:menuswooshinvert"
         ]
+    },
+    "flowermenu": {
+        "category": "master",
+        "sounds": [
+            "mwccf:flowermenu"
+        ]
+    },
+    "flowermenu0": {
+        "category": "master",
+        "sounds": [
+            "mwccf:flowermenu0"
+        ]
     }
 }

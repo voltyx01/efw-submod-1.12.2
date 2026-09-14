@@ -209,13 +209,27 @@ public class PlayerItemInstanceRegistry {
 				int slot = -1;
 				if(MC.player == player) {
 				    // For current player, the latest instance is available locally
-					for(slot = 0; slot < ((EntityPlayer) player).inventory.getSizeInventory(); slot++) {
-						if(((EntityPlayer) player).inventory.getStackInSlot(slot) == itemStack)
+					int invSize = ((EntityPlayer) player).inventory.getSizeInventory();
+					for(int i = 0; i < invSize; i++) {
+						ItemStack s = ((EntityPlayer) player).inventory.getStackInSlot(i);
+						if(s == itemStack) {
+							slot = i;
 							break;
+						}
+						if(!s.isEmpty() && !itemStack.isEmpty() && s.getItem() == itemStack.getItem()) {
+							UUID sUuid = Tags.getInstanceUuid(s);
+							UUID targetUuid = Tags.getInstanceUuid(itemStack);
+							if (sUuid != null && targetUuid != null && sUuid.equals(targetUuid)) {
+								slot = i;
+								break;
+							} else if (slot == -1) {
+								slot = i;
+							}
+						}
 					}
 				}
 				
-				if(slot >= 0) {
+				if(slot >= 0 && slot < ((EntityPlayer) player).inventory.getSizeInventory()) {
 					instance = getItemInstance((EntityPlayer) player, slot);
 					LOG.debug("Resolved item stack instance {} in slot {}", instance, slot);
 				}

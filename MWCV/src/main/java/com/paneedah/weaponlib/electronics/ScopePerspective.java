@@ -10,6 +10,7 @@ import com.paneedah.weaponlib.perspective.Perspective;
 import com.paneedah.weaponlib.perspective.PerspectiveRenderer;
 import com.paneedah.weaponlib.render.scopes.Reticle;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
@@ -24,6 +25,8 @@ public class ScopePerspective extends PerspectiveRenderer {
 	private Reticle reticle;
 	public static float darkAlpha = 1.0f;
 	private static long lastUpdateTime = System.currentTimeMillis();
+	private static boolean lastLoggedAiming = false;
+	private static int lastLoggedTexId = -1;
 
 	public ScopePerspective(Runnable positioning, Reticle reticle) {
 		super(positioning);
@@ -111,32 +114,62 @@ public class ScopePerspective extends PerspectiveRenderer {
 				brightness = perspective.getBrightness(renderContext);
 			} catch (Throwable ignored) {}
 		}
+		if (brightness <= 0.0f) {
+			brightness = 1.0f;
+		}
 
-		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
+		if (isAiming != lastLoggedAiming || (isAiming && texId != lastLoggedTexId)) {
+			lastLoggedAiming = isAiming;
+			lastLoggedTexId = texId;
+			int err = GL11.glGetError();
+			System.out.println(String.format("[MWC-SCOPE-DEBUG] ScopePerspective.render: isAiming=%s, texId=%d, darkAlpha=%.2f, brightness=%.2f, glError=%d",
+					isAiming, texId, darkAlpha, brightness, err));
+		}
+
+		GlStateManager.pushMatrix();
 
 		positioning.run();
 
+		GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
 		if (texId > 0) {
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+			GlStateManager.bindTexture(texId);
 		} else {
 			MC.getTextureManager().bindTexture(DARK_SCREEN);
 		}
 
-		MC.entityRenderer.disableLightmap();
 		GlStateManager.enableDepth();
+		GlStateManager.depthMask(true);
 		GlStateManager.disableLighting();
-		GlStateManager.disableAlpha();
-		GlStateManager.disableBlend();
+		GlStateManager.enableAlpha();
+		GlStateManager.alphaFunc(GL11.GL_GREATER, 0.0f);
+		GlStateManager.enableBlend();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
 
-		GL11.glColor4f(brightness, brightness, brightness, 1.0F);
+		GlStateManager.color(brightness, brightness, brightness, 1.0F);
 
 		if (model != null && renderContext != null) {
 			model.render(this.reticle, renderContext, renderContext.getPlayer(), renderContext.getScale());
 		}
 
-		MC.entityRenderer.enableLightmap();
-		GL11.glPopAttrib();
-		GL11.glPopMatrix();
+		OpenGlHelper.glUseProgram(0);
+
+		int postErr = GL11.glGetError();
+		if (postErr != GL11.GL_NO_ERROR) {
+			System.err.println("[MWC-SCOPE-DEBUG] GL error in ScopePerspective after render: " + postErr);
+		}
+
+		// Clean up GL state using GlStateManager so internal caches remain in sync with hardware
+		GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+		GlStateManager.bindTexture(0);
+		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.enableDepth();
+		GlStateManager.depthMask(true);
+		GlStateManager.enableAlpha();
+		GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+		GlStateManager.enableBlend();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		GlStateManager.enableCull();
+
+		GlStateManager.popMatrix();
 	}
 }

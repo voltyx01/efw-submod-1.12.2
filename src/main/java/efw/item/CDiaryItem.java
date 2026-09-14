@@ -43,16 +43,25 @@ public class CDiaryItem extends Item {
      * Returns true if absorbed.
      */
     public static boolean tryAbsorbNote(ItemStack diary, ItemStack other, EntityPlayer player) {
-        if (diary.isEmpty() || other.isEmpty())
+        if (diary == null || diary.isEmpty() || !(diary.getItem() instanceof CDiaryItem))
             return false;
-        if (!(other.getItem() instanceof NoteItem))
-            return false;
-        if (!other.hasTagCompound() || !other.getTagCompound().hasKey("efw_note"))
+        if (other == null || other.isEmpty() || !(other.getItem() instanceof NoteItem))
             return false;
 
-        NBTTagCompound noteNbt = other.getTagCompound().getCompoundTag("efw_note");
-        if (!noteNbt.hasKey("noteId"))
-            return false;
+        int noteId = NoteItem.getNoteId(other);
+        int variant = NoteItem.getVariant(other);
+        boolean isQuest = NoteItem.isQuest(other);
+        if (!other.hasTagCompound() || !other.getTagCompound().hasKey("efw_note")) {
+            int maxNotes = efw.config.NotesConfig.getEntriesCount();
+            noteId = maxNotes > 0 ? (int) (Math.random() * maxNotes) + 1 : 1;
+            variant = (int) (Math.random() * 10) + 1;
+            isQuest = false;
+        }
+
+        NBTTagCompound noteNbt = new NBTTagCompound();
+        noteNbt.setInteger("noteId", noteId);
+        noteNbt.setInteger("variant", variant);
+        noteNbt.setBoolean("isQuest", isQuest);
 
         // Ensure diary has tag
         if (!diary.hasTagCompound())
@@ -63,11 +72,13 @@ public class CDiaryItem extends Item {
         NBTTagCompound diaryTag = diaryRoot.getCompoundTag("efw_diary");
 
         NBTTagList notesList = diaryTag.getTagList("StoredNotes", 10);
-        notesList.appendTag(noteNbt.copy());
+        notesList.appendTag(noteNbt);
         diaryTag.setTag("StoredNotes", notesList);
 
         other.shrink(1);
-        player.playSound(efw.init.EfwModSounds.NOTES, 1.5f, 1.0f);
+        if (player != null) {
+            player.playSound(efw.init.EfwModSounds.DIARYOPEN, 1.2f, 1.0f);
+        }
         return true;
     }
 

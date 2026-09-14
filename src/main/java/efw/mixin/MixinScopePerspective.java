@@ -7,29 +7,24 @@ import com.paneedah.weaponlib.perspective.Perspective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.lwjgl.opengl.GL11;
 
+/**
+ * Patches ScopePerspective.render() for MWC 0.1.9 compatibility.
+ *
+ * History:
+ *  - onBindScopeTexture: REMOVED — GL11.glBindTexture is no longer called directly in 0.1.9
+ *    (texture binding moved to TextureManager). Caused critical Mixin injection failure (0/1 targets).
+ *  - onRenderReturn: REMOVED — MWC 0.1.9 already does full GL state cleanup via glPopAttrib +
+ *    glPopMatrix + manual texture/blend/alpha restore. Our duplicate cleanup after theirs was
+ *    corrupting subsequent HUD rendering (black-and-white, duplicated HUD).
+ */
 @Mixin(value = ScopePerspective.class, remap = false)
 public class MixinScopePerspective {
 
-    @Redirect(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lorg/lwjgl/opengl/GL11;glBindTexture(II)V",
-            ordinal = 0,
-            remap = false
-        ),
-        remap = false
-    )
-    private void onBindScopeTexture(int target, int texture) {
-        if (texture <= 0) {
-            GL11.glBindTexture(target, 0);
-        } else {
-            GL11.glBindTexture(target, texture);
-        }
-    }
-
+    /**
+     * Null-guards the perspective texture ID returned by the scope lens.
+     * Prevents NPE/GL errors when a scope has no texture configured.
+     */
     @Redirect(
         method = "render",
         at = @At(

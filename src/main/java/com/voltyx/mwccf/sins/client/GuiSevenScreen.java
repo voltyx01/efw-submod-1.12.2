@@ -300,6 +300,7 @@ public class GuiSevenScreen extends GuiScreen {
     // Client-side placeholder state.
     private static final boolean[] skillUnlocked = new boolean[SKILL_COUNT];
     private static final long[] skillUnlockAnimStart = new long[SKILL_COUNT];
+    public static final List<Integer> skillUnlockOrder = new ArrayList<>();
     static {
         java.util.Arrays.fill(skillUnlocked, false);
         skillUnlocked[0] = true; // Root node 0 is unlocked by default
@@ -332,6 +333,9 @@ public class GuiSevenScreen extends GuiScreen {
     private static final net.minecraft.util.SoundEvent SOUND_SKILL_UPGRADE = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "skill.upgrade"));
     private static final net.minecraft.util.SoundEvent SOUND_MENU_SWOOSH = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "menu.swoosh"));
     private static final net.minecraft.util.SoundEvent SOUND_MENU_SWOOSH_INVERT = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "menu.swooshinvert"));
+    private static final net.minecraft.util.SoundEvent SOUND_FLOWER_MENU = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "flowermenu"));
+    private static final net.minecraft.util.SoundEvent SOUND_FLOWER_MENU_0 = new net.minecraft.util.SoundEvent(new ResourceLocation("mwccf", "flowermenu0"));
+    private boolean flowerMenuSoundPlayed = false;
     private static final ResourceLocation PARTICLES_TEXTURE = new ResourceLocation("mwccf", "textures/particles/particles.png");
 
     private static class SkillSpark2D {
@@ -497,6 +501,7 @@ public class GuiSevenScreen extends GuiScreen {
                 java.util.Arrays.fill(skillUnlocked, false);
                 skillUnlocked[0] = true;
                 java.util.Arrays.fill(skillUnlockAnimStart, -1L);
+                skillUnlockOrder.clear();
                 skillPoints = 12;
                 return;
             }
@@ -551,6 +556,10 @@ public class GuiSevenScreen extends GuiScreen {
 
         if (this.currentState == STATE_MAIN_HUD && this.currentTab == TAB_SKILLS) {
             flowerModel.playOpen();
+            if (!flowerMenuSoundPlayed) {
+                playFlowerMenuSound();
+                flowerMenuSoundPlayed = true;
+            }
         }
 
         if (this.currentState == STATE_MAIN_HUD && this.currentTab == TAB_APPEARANCE) {
@@ -562,16 +571,64 @@ public class GuiSevenScreen extends GuiScreen {
         if (this.currentTab != newTab) {
             int oldTab = this.currentTab;
             this.currentTab = newTab;
-            if (this.mc != null) {
-                this.mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord.getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
-            }
             if (newTab == TAB_SKILLS) {
                 flowerModel.playOpen();
-            } else if (oldTab == TAB_SKILLS) {
-                flowerModel.playClose(1.8f);
+                playFlowerMenuSound();
+                flowerMenuSoundPlayed = true;
+            } else {
+                if (this.mc != null) {
+                    this.mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord.getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                }
+                if (oldTab == TAB_SKILLS) {
+                    flowerModel.playClose(1.8f);
+                    flowerMenuSoundPlayed = false;
+                }
             }
             initGui();
         }
+    }
+
+    private void playFlowerMenuSound() {
+        if (this.mc == null) return;
+
+        // Count how many of the 12 upgradable skills (1..12) are unlocked
+        int upgradedCount = 0;
+        for (int i = 1; i < skillUnlocked.length && i < 13; i++) {
+            if (skillUnlocked[i]) {
+                upgradedCount++;
+            }
+        }
+
+        // volFlower: 0 skills -> 0%, 12 skills -> 100%
+        float volFlower = Math.max(0.0f, Math.min(1.0f, upgradedCount / 12.0f));
+        // flowermenu0 plays always at fixed 60% volume
+        float volFlower0 = 0.60f;
+
+        if (volFlower > 0.001f) {
+            this.mc.getSoundHandler().playSound(
+                new net.minecraft.client.audio.PositionedSoundRecord(
+                    SOUND_FLOWER_MENU.getSoundName(),
+                    net.minecraft.util.SoundCategory.MASTER,
+                    volFlower,
+                    1.0F,
+                    false, 0,
+                    net.minecraft.client.audio.ISound.AttenuationType.NONE,
+                    0.0F, 0.0F, 0.0F
+                )
+            );
+        }
+
+        this.mc.getSoundHandler().playSound(
+            new net.minecraft.client.audio.PositionedSoundRecord(
+                SOUND_FLOWER_MENU_0.getSoundName(),
+                net.minecraft.util.SoundCategory.MASTER,
+                volFlower0,
+                1.0F,
+                false, 0,
+                net.minecraft.client.audio.ISound.AttenuationType.NONE,
+                0.0F, 0.0F, 0.0F
+            )
+        );
     }
 
     private void initAppearanceControls() {
@@ -1388,17 +1445,6 @@ public class GuiSevenScreen extends GuiScreen {
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.enableDepth();
 
-            net.minecraft.entity.player.InventoryPlayer inv = ent.inventory;
-            ItemStack savedMain = inv.mainInventory.get(inv.currentItem);
-            ItemStack savedOffhand = inv.offHandInventory.get(0);
-            ItemStack[] savedArmor = new ItemStack[inv.armorInventory.size()];
-            for (int i = 0; i < inv.armorInventory.size(); i++) {
-                savedArmor[i] = inv.armorInventory.get(i);
-                inv.armorInventory.set(i, ItemStack.EMPTY);
-            }
-            inv.mainInventory.set(inv.currentItem, ItemStack.EMPTY);
-            inv.offHandInventory.set(0, ItemStack.EMPTY);
-
             try {
                 boolean isBlinkEdit = (currentTab == TAB_APPEARANCE && blinkEditorOpen);
 
@@ -1426,11 +1472,6 @@ public class GuiSevenScreen extends GuiScreen {
             } finally {
                 efw.util.RenderContext.isRenderingPlayerInSevenScreen = false;
                 efw.util.RenderContext.isRenderingPlayerInGui = false;
-                inv.mainInventory.set(inv.currentItem, savedMain);
-                inv.offHandInventory.set(0, savedOffhand);
-                for (int i = 0; i < inv.armorInventory.size(); i++) {
-                    inv.armorInventory.set(i, savedArmor[i]);
-                }
             }
         } finally {
             GlStateManager.popMatrix();
@@ -1450,7 +1491,7 @@ public class GuiSevenScreen extends GuiScreen {
         float scaleNorm = flowerScreenScale / 300.0f;
 
         // Update flower animation, smoldering burn spots, and ember/ash particles with real screen coordinates
-        flowerModel.update(deltaSec, flowerAnimSpeed, skillUnlocked, curX, curY - 20.0f * scaleNorm, scaleNorm);
+        flowerModel.update(deltaSec, flowerAnimSpeed, skillUnlocked, skillUnlockOrder, curX, curY - 20.0f * scaleNorm, scaleNorm);
         if (debugManualWave) {
             BedrockFlowerRenderer.Petal p = flowerModel.getPetal(debugPetalSelect);
             if (p != null) {
@@ -1724,6 +1765,9 @@ public class GuiSevenScreen extends GuiScreen {
         }
         // Client visual unlock with procedural burn animation
         skillUnlocked[node.id] = true;
+        if (!skillUnlockOrder.contains(node.id)) {
+            skillUnlockOrder.add(node.id);
+        }
         skillPoints = Math.max(0, skillPoints - 1);
         skillUnlockAnimStart[node.id] = System.nanoTime();
 

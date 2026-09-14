@@ -34,7 +34,7 @@
     "XaeroGuiMapMixin",
     "MixinCustomGui",
     "MixinModificationGUI",
-    "MixinHDRFramebuffer"
+    "CameraOverhaulClientHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

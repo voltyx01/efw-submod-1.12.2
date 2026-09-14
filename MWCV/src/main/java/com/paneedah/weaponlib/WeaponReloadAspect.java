@@ -106,7 +106,6 @@ public class WeaponReloadAspect implements Aspect<WeaponState, PlayerWeaponInsta
             .currentTimeMillis() >= weaponInstance.getStateUpdateTimestamp()
                     + weaponInstance.getWeapon().getAllLoadIterationAnimationsCompletedDuration();
 
-    private static Predicate<PlayerWeaponInstance> reloadAnimationCompleted = weaponInstance -> {
     private static double getEffectiveReloadSpeed(PlayerWeaponInstance weaponInstance) {
         if (weaponInstance == null) return com.paneedah.weaponlib.config.ModernConfigManager.reloadSpeedMultiplier;
         double speed = com.paneedah.weaponlib.config.ModernConfigManager.reloadSpeedMultiplier;
@@ -499,7 +498,6 @@ public class WeaponReloadAspect implements Aspect<WeaponState, PlayerWeaponInsta
 
             instance.lastReloadTriggerTimestamp = System.currentTimeMillis();
             instance.wasAimedBeforeReload = instance.isAimed();
-            instance.setAimed(false);
             instance.suppressFovZoom = false;
             if (AnimationModeProcessor.getInstance().isLegacyMode()) {
                 furtherLoadInstructionsReceived(instance);
@@ -574,7 +572,6 @@ public class WeaponReloadAspect implements Aspect<WeaponState, PlayerWeaponInsta
             instance.lastReloadTriggerTimestamp = System.currentTimeMillis();
 
             instance.wasAimedBeforeReload = instance.isAimed();
-            instance.setAimed(false);
             instance.getWeapon().getRenderer().compoundReloadEmpty = false;
             instance.getWeapon().getRenderer().compoundReload = false;
             instance.setLoadAfterUnloadEnabled(false);
@@ -979,18 +976,25 @@ public class WeaponReloadAspect implements Aspect<WeaponState, PlayerWeaponInsta
     }
 
     private void afterReloadFinished(PlayerWeaponInstance instance) {
-        boolean wasAimed = instance.wasAimedBeforeReload;
+        boolean wasAimed = instance.wasAimedBeforeReload || instance.isAimed();
         instance.wasAimedBeforeReload = false;
         instance.suppressFovZoom = false;
         instance.wasReloadedFromEmpty = false;
-        if (instance.getPlayer() != null && instance.getPlayer().world != null && instance.getPlayer().world.isRemote && !instance.getPlayer().isSprinting() && com.paneedah.weaponlib.config.ModernConfigManager.holdToAim && wasAimed) {
-            checkAimKeyAndSetAim(instance);
+        if (instance.getPlayer() != null && instance.getPlayer().world != null && instance.getPlayer().world.isRemote) {
+            if (instance.getPlayer().isSprinting()) {
+                instance.setAimed(false);
+            } else if (com.paneedah.weaponlib.config.ModernConfigManager.holdToAim) {
+                checkAimKeyAndSetAim(instance);
+            } else if (wasAimed) {
+                instance.setAimed(true);
+            }
         }
     }
 
     @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
     private void checkAimKeyAndSetAim(PlayerWeaponInstance instance) {
         if (instance.getPlayer() == null || instance.getPlayer().isSprinting()) {
+            instance.setAimed(false);
             return;
         }
 
@@ -1004,6 +1008,8 @@ public class WeaponReloadAspect implements Aspect<WeaponState, PlayerWeaponInsta
 
         if (!com.paneedah.weaponlib.config.ModernConfigManager.holdToAim || aimKeyHeld) {
             instance.setAimed(true);
+        } else {
+            instance.setAimed(false);
         }
     }
 

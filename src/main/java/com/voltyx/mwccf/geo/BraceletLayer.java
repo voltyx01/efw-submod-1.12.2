@@ -26,6 +26,10 @@ public class BraceletLayer implements LayerRenderer<AbstractClientPlayer> {
     public void doRenderLayer(AbstractClientPlayer player,
                               float limbSwing, float limbSwingAmount, float delta,
                               float age, float yaw, float pitch, float scale) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            return;
+        }
+
         // Не рисуем слой 3-го лица для себя в 1-м лице
         if (player == net.minecraft.client.Minecraft.getMinecraft().player && 
             net.minecraft.client.Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {

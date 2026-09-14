@@ -269,7 +269,7 @@ public class WildfirePlayerListScreen extends GuiScreen {
 			ent.swingProgress = 0.0F;
 			ent.prevSwingProgress = 0.0F;
 			setFloatField(ent, "field_184615_bR", "swingProgressLast", 0.0F);
-			if (!savedActiveItem.isEmpty()) {
+			if (!savedActiveItem.isEmpty() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
 				ent.resetActiveHand();
 			}
 		} catch (Throwable ignored) {

@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "powered=false": { "model": "mwccf:flickering_lamp_soft" },
+    "powered=true": { "model": "mwccf:flickering_lamp_soft" }
+  }
+}

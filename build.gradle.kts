@@ -119,20 +119,21 @@ tasks.jar {
 }
 tasks.withType<JavaCompile> { options.encoding = "UTF-8" }
 
+val currentProject = project
 tasks.register("deployToParent") {
     doLast {
-        val mwcvDir = file("MWCV")
-        val rootJar = file("Modern-Warfare-Cubed-0.1.9.jar")
+        val mwcvDir = currentProject.file("MWCV")
+        val rootJar = currentProject.file("Modern-Warfare-Cubed-0.1.9.jar")
         val classesDir = mwcvDir.resolve("build/classes/java/main")
-        
-        exec {
-            workingDir = mwcvDir
-            commandLine(if (System.getProperty("os.name").toLowerCase().contains("win")) listOf("cmd", "/c", "gradlew.bat", "compileJava") else listOf("./gradlew", "compileJava"))
-        }
+
+        val isWin = System.getProperty("os.name").lowercase().contains("win")
+        val gradleCmd = if (isWin) listOf("cmd", "/c", "gradlew.bat", "compileJava") else listOf("./gradlew", "compileJava")
+        val proc1 = ProcessBuilder(gradleCmd).directory(mwcvDir).inheritIO().start()
+        proc1.waitFor()
+
         if (rootJar.exists() && classesDir.exists()) {
-            exec {
-                commandLine("jar", "uf", rootJar.absolutePath, "-C", classesDir.absolutePath, ".")
-            }
+            val proc2 = ProcessBuilder("jar", "uf", rootJar.absolutePath, "-C", classesDir.absolutePath, ".").inheritIO().start()
+            proc2.waitFor()
             println(">>> Successfully injected MWCV classes into Modern-Warfare-Cubed-0.1.9.jar!")
         }
     }

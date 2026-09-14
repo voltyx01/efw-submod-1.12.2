@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "powered=false": { "model": "mwccf:flickering_lamp_dying" },
+    "powered=true": { "model": "mwccf:flickering_lamp_dying" }
+  }
+}

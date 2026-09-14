@@ -25,6 +25,10 @@ public class FurnitureBlocks {
 
     public static Block WORKBENCH;
     public static Block TERMINAL;
+    public static Block ANTENNA;
+    public static Block PLACED_ITEM;
+    public static Item PLACER_TOOL;
+    public static Item ZONE_TOOL;
     
     // Chairs
     public static Block CHAIR_OAK;
@@ -106,6 +110,7 @@ public class FurnitureBlocks {
         }
 
         TERMINAL = registerBlock(new com.voltyx.mwccf.terminal.BlockTerminal("terminal"));
+        ANTENNA = registerBlock(new com.voltyx.mwccf.antenna.BlockAntenna("antenna"));
 
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityFridge.class, new ResourceLocation("mwccf", "fridge"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityStove.class, new ResourceLocation("mwccf", "stove"));
@@ -114,6 +119,12 @@ public class FurnitureBlocks {
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityComputer.class, new ResourceLocation("mwccf", "computer"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityWashingMachine.class, new ResourceLocation("mwccf", "washing_machine"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new ResourceLocation("mwccf", "terminal"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new ResourceLocation("mwccf", "antenna"));
+
+        PLACED_ITEM = registerBlock(new BlockPlacedItem("placed_item"));
+        PLACER_TOOL = registerItem(new com.voltyx.mwccf.item.ItemPlacerTool("placer_tool"));
+        ZONE_TOOL = registerItem(new com.voltyx.mwccf.item.ItemZoneTool("zone_tool"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityPlacedItem.class, new ResourceLocation("mwccf", "placed_item"));
     }
 
     private static Block registerBlock(Block block) {
@@ -122,6 +133,11 @@ public class FurnitureBlocks {
         itemBlock.setRegistryName(block.getRegistryName());
         ITEMS.add(itemBlock);
         return block;
+    }
+
+    private static Item registerItem(Item item) {
+        ITEMS.add(item);
+        return item;
     }
 
     @Mod.EventBusSubscriber(modid = "mwccf")

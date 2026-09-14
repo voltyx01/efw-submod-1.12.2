@@ -9,7 +9,8 @@
     "InventoryPickupMixin",
     "MixinPreventBackpackEquip",
     "ItemBackpackMixin",
-    "ContainerDiaryMixin"
+    "ContainerDiaryMixin",
+    "MixinStructureTemplate"
   ],
   "client": [
     "MixinRenderGlobal",
@@ -40,7 +41,7 @@
     "MixinMinecraftSplash",
     "MixinFMLClientHandler",
     "MixinSplashProgress",
-    "MixinFramebuffer"
+    "MixinRender"
   ],
   "server": [],
   "injectors": {

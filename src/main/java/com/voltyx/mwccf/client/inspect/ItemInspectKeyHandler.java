@@ -113,6 +113,25 @@ public class ItemInspectKeyHandler {
     }
 
     @SubscribeEvent
+    public static void onKeyInput(net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent event) {
+        if (Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_I) {
+            Minecraft mc = Minecraft.getMinecraft();
+            if (mc.currentScreen == null && mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == net.minecraft.util.math.RayTraceResult.Type.BLOCK) {
+                net.minecraft.util.math.BlockPos pos = mc.objectMouseOver.getBlockPos();
+                if (mc.world != null) {
+                    net.minecraft.tileentity.TileEntity te = mc.world.getTileEntity(pos);
+                    if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityPlacedItem) {
+                        ItemStack stack = ((com.voltyx.mwccf.furniture.tileentity.TileEntityPlacedItem) te).getStack();
+                        if (!stack.isEmpty() && !ItemInspectConfig.isBlacklisted(stack)) {
+                            InspectTransitionHandler.startTransition(stack.copy(), null);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         if (stack != null && !stack.isEmpty()) {
@@ -132,6 +151,13 @@ public class ItemInspectKeyHandler {
 
             if (stack.getItem() instanceof efw.item.ManualItem) {
                 event.getToolTip().add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.use_manual"));
+            }
+
+            if (stack.getItem() instanceof efw.item.NoteItem) {
+                event.getToolTip().add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.note_to_diary"));
+                if (net.minecraft.client.Minecraft.getMinecraft().player != null && net.minecraft.client.Minecraft.getMinecraft().player.capabilities.isCreativeMode) {
+                    event.getToolTip().add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.note_creative_config"));
+                }
             }
 
             // Оставляем тултип Inspect для DporItem

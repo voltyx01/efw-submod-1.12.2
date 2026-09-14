@@ -1,5 +1,6 @@
 item.note.name=Записка
 item.c_diary.name=Дневник Собирателя
+tooltip.mwccf.note_to_diary=§7[ПКМ] Собрать в Дневник Собирателя
 itemGroup.efw_tab=Записки и Дневник
 item.machete.name=Мачете
 item.modern_axe.name=Современный топор

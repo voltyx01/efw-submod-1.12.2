@@ -192,6 +192,10 @@ public class AnimationTickHandler {
 
     @SubscribeEvent
     public void onRenderPlayerPre(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            return;
+        }
+
         EntityPlayer player = event.getEntityPlayer();
         boolean isLocal = (player == Minecraft.getMinecraft().player);
 
@@ -201,7 +205,8 @@ public class AnimationTickHandler {
         float interpWeight = prevWeaponHoldWeight + (weaponHoldWeight - prevWeaponHoldWeight) * partialTicks;
 
         efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(player);
-        boolean isLyingAnim = ap != null && ap.getCurrentAnimationName() != null && ap.getCurrentAnimationName().contains("lie");
+        boolean isLyingAnim = ap != null && ap.getCurrentAnimationName() != null &&
+                (ap.getCurrentAnimationName().contains("lie") || ap.getCurrentAnimationName().contains("crawl") || player.height < 1.0F);
         float effectiveHoldWeight = isLyingAnim ? 1.0f : interpWeight;
 
         // Use rotationYaw for local player (updates every frame at full FPS by mouse), rotationYawHead for remote
@@ -1179,8 +1184,7 @@ public class AnimationTickHandler {
             }
 
             if (isLying && animName != null) {
-                // The user wants pistol_lie_move for empty hands always, frozen when not moving
-                String fallbackCandidate = "pistol_lie_move";
+                String fallbackCandidate = isMoving ? "pistol_lie_move" : "pistol_lie";
                 if (efw.animation.AnimationRegistry.getClip(fallbackCandidate) != null) {
                     animName = fallbackCandidate;
                 }

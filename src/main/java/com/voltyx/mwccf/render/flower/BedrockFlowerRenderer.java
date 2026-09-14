@@ -1158,6 +1158,11 @@ public class BedrockFlowerRenderer {
 
     public void update(float deltaSec, float speed, boolean[] skillUnlocked, float centerX, float centerY,
             float scaleNorm) {
+        update(deltaSec, speed, skillUnlocked, null, centerX, centerY, scaleNorm);
+    }
+
+    public void update(float deltaSec, float speed, boolean[] skillUnlocked, List<Integer> unlockOrder,
+            float centerX, float centerY, float scaleNorm) {
         load();
 
         if (animPlaying) {
@@ -1216,22 +1221,44 @@ public class BedrockFlowerRenderer {
 
         initPetals();
 
-        // Check for newly unlocked skills and assign them to burn petals in exact queue
-        // order
+        // Assign newly unlocked skills to burn petals in exact sequential queue order:
+        // [5, 7, 4, 8, 3, 9, 10, 0, 11, 1, 6, 2, 7]
+        // regardless of which skill ID or branch was unlocked
         if (skillUnlocked != null) {
-            for (int sId = 1; sId < skillUnlocked.length && sId < 13; sId++) {
-                if (skillUnlocked[sId]) {
-                    if (skillToPetal[sId] == -1) {
-                        int queueIdx = sId - 1;
-                        int petalId = (queueIdx >= 0 && queueIdx < PETAL_BURN_QUEUE.length)
-                                ? PETAL_BURN_QUEUE[queueIdx]
-                                : (sId % petals.size());
-                        Petal targetPetal = getPetal(petalId);
-                        if (targetPetal != null) {
-                            targetPetal.burning = true;
-                            skillToPetal[sId] = targetPetal.id;
+            int queueIdx = 0;
+            if (unlockOrder != null && !unlockOrder.isEmpty()) {
+                for (int i = 0; i < unlockOrder.size(); i++) {
+                    int sId = unlockOrder.get(i);
+                    if (sId >= 1 && sId < skillUnlocked.length && skillUnlocked[sId]) {
+                        if (skillToPetal[sId] == -1) {
+                            int petalId = (queueIdx < PETAL_BURN_QUEUE.length)
+                                    ? PETAL_BURN_QUEUE[queueIdx]
+                                    : (queueIdx % petals.size());
+                            Petal targetPetal = getPetal(petalId);
+                            if (targetPetal != null) {
+                                targetPetal.burning = true;
+                                targetPetal.burnProgress = 0.0f;
+                                skillToPetal[sId] = targetPetal.id;
+                            }
                         }
+                        queueIdx++;
                     }
+                }
+            }
+
+            // For any unlocked skill not in unlockOrder (or if unlockOrder is null)
+            for (int sId = 1; sId < skillUnlocked.length && sId < 13; sId++) {
+                if (skillUnlocked[sId] && skillToPetal[sId] == -1) {
+                    int petalId = (queueIdx < PETAL_BURN_QUEUE.length)
+                            ? PETAL_BURN_QUEUE[queueIdx]
+                            : (queueIdx % petals.size());
+                    Petal targetPetal = getPetal(petalId);
+                    if (targetPetal != null) {
+                        targetPetal.burning = true;
+                        targetPetal.burnProgress = 0.0f;
+                        skillToPetal[sId] = targetPetal.id;
+                    }
+                    queueIdx++;
                 }
             }
         }

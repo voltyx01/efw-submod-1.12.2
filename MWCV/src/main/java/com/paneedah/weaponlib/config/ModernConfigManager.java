@@ -164,7 +164,7 @@ public class ModernConfigManager {
 	
 	@RequiresMcRestart
 	@ConfigSync(category = CATEGORY_RENDERING, comment = "Enables the HDR framebuffer, requires restart. The HDR is the cause of a lot of shader incompat")
-	public static boolean enableHDRFramebuffer = true;
+	public static boolean enableHDRFramebuffer = false;
 	
 	@ConfigSync(category = CATEGORY_RENDERING, comment = "Enables the fancy MWC snow/rain")
 	public static boolean enableFancyRainAndSnow = true;

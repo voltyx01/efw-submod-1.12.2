@@ -55,6 +55,8 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.dash.OverlayStamina());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.inspect.InspectTransitionHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.geo.XaeroGuiBlockerHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.client.ClientZoneRenderer());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.gui.GuiWeaponSlotOverlay());
 
 		registerBlinkingLayer();
 	}
@@ -136,8 +138,27 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityFridge.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityFridgeRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityMicrowaveRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new com.voltyx.mwccf.terminal.client.TileEntityTerminalRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.block.lamp.TileEntityFlickeringLamp.class, new com.voltyx.mwccf.block.lamp.TileEntityFlickeringLampRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new com.voltyx.mwccf.antenna.client.TileEntityAntennaRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityPlacedItem.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityPlacedItemRenderer());
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.terminal.client.TerminalCameraController());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.antenna.client.AntennaCameraController());
+
+		net.minecraft.item.Item antennaItem = net.minecraft.item.Item.getItemFromBlock(com.voltyx.mwccf.furniture.FurnitureBlocks.ANTENNA);
+		if (antennaItem != null) {
+			antennaItem.setTileEntityItemStackRenderer(new net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer() {
+				private final com.voltyx.mwccf.antenna.TileEntityAntenna dummy = new com.voltyx.mwccf.antenna.TileEntityAntenna();
+				@Override
+				public void renderByItem(net.minecraft.item.ItemStack itemStack, float partialTicks) {
+					net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher.instance.render(dummy, 0.0D, 0.0D, 0.0D, 0.0F, partialTicks);
+				}
+				@Override
+				public void renderByItem(net.minecraft.item.ItemStack itemStack) {
+					renderByItem(itemStack, 1.0F);
+				}
+			});
+		}
 
 		net.minecraftforge.fml.client.registry.RenderingRegistry.registerEntityRenderingHandler(com.voltyx.mwccf.furniture.EntitySeat.class, manager -> {
 			return new net.minecraft.client.renderer.entity.Render<com.voltyx.mwccf.furniture.EntitySeat>(manager) {
@@ -171,60 +192,29 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 	}
 
 	/**
-	 * Initializes the game framebuffer with HDR (if enabled) and stencil buffer
-	 * early during startup, before any GUI or world is displayed.
-	 * This prevents any mid-game framebuffer recreation, eliminating the white screen flash.
+	 * The main framebuffer only allocates a stencil attachment lazily, the first
+	 * time something calls Framebuffer#enableStencil(). That call recreates the
+	 * framebuffer's color attachment, which briefly holds undefined content and
+	 * shows up as a one-frame white flash.
+	 * By reserving the stencil bit and enabling stencil during startup / loading screens,
+	 * the stencil buffer is already allocated when the player joins the world.
 	 */
 	public static void initFramebufferEarly() {
+		enableStencilEarly();
+	}
+
+	public static void enableStencilEarly() {
 		try {
 			net.minecraftforge.client.MinecraftForgeClient.reserveStencilBit();
 		} catch (Throwable ignored) {
 		}
 		try {
-			Minecraft mc = Minecraft.getMinecraft();
-			if (mc == null) return;
-			net.minecraft.client.shader.Framebuffer fb = mc.getFramebuffer();
-			if (fb == null) return;
-
-			fb.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
-
-			boolean enableHdr = false;
-			try {
-				enableHdr = com.paneedah.weaponlib.config.ModernConfigManager.enableHDRFramebuffer;
-			} catch (Throwable ignored) {
+			net.minecraft.client.shader.Framebuffer fb = Minecraft.getMinecraft().getFramebuffer();
+			if (fb != null && !fb.isStencilEnabled()) {
+				fb.enableStencil();
 			}
-
-			if (enableHdr) {
-				if (!(fb instanceof com.paneedah.weaponlib.render.HDRFramebuffer)) {
-					com.paneedah.weaponlib.render.HDRFramebuffer hdr = new com.paneedah.weaponlib.render.HDRFramebuffer(
-							fb.framebufferWidth, fb.framebufferHeight, fb.useDepth);
-					hdr.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
-					if (!hdr.isStencilEnabled()) {
-						hdr.enableStencil();
-					}
-					try {
-						java.lang.reflect.Field fbField = net.minecraftforge.fml.relauncher.ReflectionHelper.findField(
-								Minecraft.class, "field_147124_at", "framebuffer");
-						fbField.setAccessible(true);
-						fbField.set(mc, hdr);
-					} catch (Throwable ex) {
-						ex.printStackTrace();
-					}
-					hdr.bindFramebuffer(true);
-				}
-			} else {
-				if (!fb.isStencilEnabled()) {
-					fb.enableStencil();
-					fb.bindFramebuffer(true);
-				}
-			}
-		} catch (Throwable t) {
-			t.printStackTrace();
+		} catch (Throwable ignored) {
 		}
-	}
-
-	public static void enableStencilEarly() {
-		initFramebufferEarly();
 	}
 
 	@Override

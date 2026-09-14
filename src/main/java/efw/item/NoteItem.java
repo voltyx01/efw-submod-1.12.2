@@ -71,8 +71,18 @@ public class NoteItem extends Item {
             if (!nbt.hasKey("noteId")) {
                 nbt.setInteger("noteId", getRandomNoteId());
                 nbt.setInteger("variant", getRandomNoteVariant());
+                nbt.setBoolean("isQuest", false);
             }
         }
+
+        // Если игрок в креативе и в приседе: открываем GUI настройки записки
+        if (player.capabilities.isCreativeMode && player.isSneaking()) {
+            if (world.isRemote) {
+                openConfigGui(player, hand);
+            }
+            return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+        }
+
         NoteRightclickedOnBlockProcedure.execute(world, player, stack);
         return new ActionResult<>(EnumActionResult.SUCCESS, stack);
     }
@@ -81,8 +91,39 @@ public class NoteItem extends Item {
     public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos,
             EnumHand hand, net.minecraft.util.EnumFacing facing,
             float hitX, float hitY, float hitZ) {
-        NoteRightclickedOnBlockProcedure.execute(world, player, player.getHeldItem(hand));
+        ItemStack stack = player.getHeldItem(hand);
+        if (player.capabilities.isCreativeMode && player.isSneaking()) {
+            if (world.isRemote) {
+                openConfigGui(player, hand);
+            }
+            return EnumActionResult.SUCCESS;
+        }
+
+        NoteRightclickedOnBlockProcedure.execute(world, player, stack);
         return world.isRemote ? EnumActionResult.SUCCESS : EnumActionResult.PASS;
+    }
+
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    private void openConfigGui(EntityPlayer player, EnumHand hand) {
+        net.minecraft.client.Minecraft.getMinecraft().displayGuiScreen(
+                new efw.client.gui.GuiNoteConfig(player, hand)
+        );
+    }
+
+    public static boolean isQuest(ItemStack stack) {
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey("efw_note")) {
+            NBTTagCompound sub = stack.getTagCompound().getCompoundTag("efw_note");
+            if (sub.hasKey("isQuest"))
+                return sub.getBoolean("isQuest");
+        }
+        return false;
+    }
+
+    public static void setNoteData(ItemStack stack, int noteId, int variant, boolean isQuest) {
+        NBTTagCompound nbt = ensureNoteNbt(stack);
+        nbt.setInteger("noteId", noteId);
+        nbt.setInteger("variant", variant);
+        nbt.setBoolean("isQuest", isQuest);
     }
 
     public static int getVariant(ItemStack stack) {

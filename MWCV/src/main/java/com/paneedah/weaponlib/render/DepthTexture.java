@@ -69,6 +69,9 @@ public class DepthTexture {
 		
 		// Check status
 		checkFramebufferStatus();
+
+		// Unbind depth texture so it never leaks into the fixed-function pipeline or HUD
+		GlStateManager.bindTexture(0);
 	}
 	
 	public void blitOn(Framebuffer source, boolean rebind) {

@@ -81,54 +81,79 @@ public class LaserBeamRenderer implements CustomRenderer {
             return;
         }
 
+        // Do not render laser beam if any GUI screen is open (e.g. inventory, chests, crafting, pause menu)
+        // EXCEPTION: GuiWeaponModding is the weapon modification screen where laser preview is intended
+        net.minecraft.client.gui.GuiScreen currentScreen = net.minecraft.client.Minecraft.getMinecraft().currentScreen;
+        boolean isModdingGui = (currentScreen != null && currentScreen.getClass().getName().contains("GuiWeaponModding"));
+        if (currentScreen != null && !isModdingGui) {
+            return;
+        }
+
         net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType type = renderContext
                 .getTransformType();
         if (type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.GUI
-                || type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.FIXED) {
+                || type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.FIXED
+                || type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.GROUND
+                || type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.HEAD
+                || type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.NONE) {
+            return;
+        }
+
+        // Do not render laser beam on holstered / back-mounted / unheld weapons (e.g. YDM's Weapon Master)
+        EntityLivingBase entity = renderContext.getPlayer();
+        if (entity != null && !isModdingGui) {
+            boolean isFirstPerson = (type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.FIRST_PERSON_RIGHT_HAND);
+            if (!isFirstPerson) {
+                ItemStack weapon = renderContext.getWeapon();
+                boolean isHeld = weapon != null && (
+                    (!entity.getHeldItemMainhand().isEmpty() && entity.getHeldItemMainhand().getItem() == weapon.getItem()) ||
+                    (!entity.getHeldItemOffhand().isEmpty() && entity.getHeldItemOffhand().getItem() == weapon.getItem())
+                );
+                if (!isHeld) {
+                    return;
+                }
+            }
+        } else if (entity == null && !isModdingGui) {
             return;
         }
 
         GlStateManager.pushMatrix();
-        GlStateManager.pushAttrib();
+
+        boolean lightmapWasEnabled = false;
+        boolean defaultWasEnabled = true;
+        boolean lightingWasEnabled = false;
+        boolean scissorWasEnabled = false;
 
         try {
             if (positioning != null) {
                 positioning.accept(renderContext.getPlayer(), renderContext.getWeapon());
             }
 
-            // ВАЖНО: GlStateManager кэширует enable/disable вызовы. Т.к. вызывающий код
-            // (WeaponRenderer.renderPostRenderers) оборачивает render() в СЫРОЙ
-            // GL11.glPushAttrib/glPopAttrib (мимо GlStateManager), реальное состояние GL
-            // после popAttrib может разойтись с тем, что кэш GlStateManager считает
-            // текущим — из-за чего последующий GlStateManager.enableBlend() иногда
-            // молча не шлёт настоящий glEnable(GL_BLEND) (кэш думает, что уже enabled).
-            // Форсируем реальный тумблер off->on, чтобы гарантировать фактический вызов.
+            lightingWasEnabled = GL11.glIsEnabled(GL11.GL_LIGHTING);
             GlStateManager.disableLighting();
             GL11.glDisable(GL11.GL_COLOR_MATERIAL);
             GlStateManager.disableFog();
             GlStateManager.disableRescaleNormal();
 
-            // ВАЖНО: Отключаем текстурирование на ОБОИХ юнитах (Unit 0 - диффуз, Unit 1 -
-            // лайтмап)
-            // В GUI активным может оставаться Lightmap unit, из-за чего текстура
-            // оружия/лайтмапа оставалась активной
-            // и перемножалась с вершинами, делая края луча черными.
+            // ВАЖНО: Отключаем текстурирование на ОБОИХ юнитах (Unit 0 - диффуз, Unit 1 - лайтмап)
+            // и запоминаем исходное состояние, чтобы восстановить в точности то, что было!
             GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.lightmapTexUnit);
+            lightmapWasEnabled = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
             GlStateManager.disableTexture2D();
+
             GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.defaultTexUnit);
+            defaultWasEnabled = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
             GlStateManager.disableTexture2D();
 
             GlStateManager.disableBlend();
             GlStateManager.enableBlend();
-            // Аддитивный блендинг (SRC_ALPHA, ONE): свечение луча складывается с фоном без
-            // затемнения краев
+            // Аддитивный блендинг (SRC_ALPHA, ONE): свечение луча складывается с фоном без затемнения краев
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
 
             // Отключаем альфа-тест для абсолютно плавного рассеивания луча в 0
             GlStateManager.disableAlpha();
 
-            // Depth Test: читаем буфер глубины (чтобы луч скрывался за моделью), но не
-            // пишем в него
+            // Depth Test: читаем буфер глубины (чтобы луч скрывался за моделью), но не пишем в него
             GlStateManager.enableDepth();
             GlStateManager.depthMask(false);
             GL11.glDepthFunc(GL11.GL_LEQUAL);
@@ -137,20 +162,18 @@ public class LaserBeamRenderer implements CustomRenderer {
             GlStateManager.shadeModel(GL11.GL_SMOOTH);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
-            boolean scissorWasEnabled = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+            scissorWasEnabled = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
             if (scissorWasEnabled) {
                 GL11.glDisable(GL11.GL_SCISSOR_TEST);
             }
 
             // ИСПРАВЛЕНИЕ: Настраиваем длину.
-            // В GuiWeaponModding.java используется THIRD_PERSON_LEFT_HAND для рендера 3D
-            // меню.
+            // В GuiWeaponModding.java используется THIRD_PERSON_LEFT_HAND для рендера 3D меню.
             boolean isMenu = (type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.THIRD_PERSON_LEFT_HAND);
             boolean isFirstPerson = (type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.FIRST_PERSON_RIGHT_HAND
                     || type == net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType.FIRST_PERSON_LEFT_HAND);
 
-            // Первое лицо: длинный (25.0f). Меню: короткий обрубок (1.0f). В руках от 3-го
-            // лица: средний (7.5f).
+            // Первое лицо: длинный (25.0f). Меню: короткий обрубок (2.5f). В руках от 3-го лица: средний (7.0f).
             float beamLength = isFirstPerson ? 25.0f : (isMenu ? 2.5f : 7.0f);
 
             float renderR = red;
@@ -189,17 +212,31 @@ public class LaserBeamRenderer implements CustomRenderer {
                     GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
-            // Восстанавливаем текстурные юниты
+            // Восстанавливаем текстурные юниты СТРОГО в их исходное состояние!
+            // Никогда не включаем lightmapTexUnit, если он был выключен (например в GUI)!
             GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.lightmapTexUnit);
-            GlStateManager.enableTexture2D();
-            GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.defaultTexUnit);
-            GlStateManager.enableTexture2D();
+            if (lightmapWasEnabled) {
+                GlStateManager.enableTexture2D();
+            } else {
+                GlStateManager.disableTexture2D();
+            }
 
-            GlStateManager.enableLighting();
+            GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.defaultTexUnit);
+            if (defaultWasEnabled) {
+                GlStateManager.enableTexture2D();
+            } else {
+                GlStateManager.disableTexture2D();
+            }
+
+            if (lightingWasEnabled) {
+                GlStateManager.enableLighting();
+            } else {
+                GlStateManager.disableLighting();
+            }
+
             GlStateManager.enableAlpha();
             GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
 
-            GlStateManager.popAttrib();
             GlStateManager.popMatrix();
         }
     }
@@ -215,7 +252,6 @@ public class LaserBeamRenderer implements CustomRenderer {
         Tessellator tes = Tessellator.getInstance();
         BufferBuilder bb = tes.getBuffer();
 
-        GlStateManager.pushAttrib();
         GlStateManager.color(0.05f, 0.05f, 0.05f, 1.0f);
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
 
@@ -230,8 +266,6 @@ public class LaserBeamRenderer implements CustomRenderer {
                     .color(0.05f, 0.05f, 0.05f, 1.0f).endVertex();
         }
         tes.draw();
-
-        GlStateManager.popAttrib();
     }
 
     private static void renderVolumetricLaser(float cx, float cy, float zStart, float zEnd, float r, float g, float b) {

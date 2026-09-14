@@ -12,23 +12,11 @@ public class HDRFramebuffer extends Framebuffer {
 
 	public HDRFramebuffer(int width, int height, boolean useDepthIn) {
 		super(width, height, useDepthIn);
-		this.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
-	}
-
-	@Override
-	public boolean isStencilEnabled() {
-		return true;
-	}
-
-	@Override
-	public synchronized boolean enableStencil() {
-		return false;
 	}
 	
 	@Override
 	public void createFramebuffer(int width, int height) {
-		this.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
-		this.framebufferWidth = width;
+		 this.framebufferWidth = width;
 	        this.framebufferHeight = height;
 	        this.framebufferTextureWidth = width;
 	        this.framebufferTextureHeight = height;

@@ -79,6 +79,8 @@ public class Bloom {
 	}
 
 	public static void doBloom() {
+		if (com.paneedah.mwc.proxies.ClientProxy.renderingPhase == com.paneedah.weaponlib.RenderingPhase.RENDER_PERSPECTIVE)
+			return;
 		if (shouldRecreateFBOs())
 			setupBloom();
 		renderHDRToBuffer();

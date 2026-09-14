@@ -20,6 +20,10 @@ public class HeadlampLayer implements LayerRenderer<AbstractClientPlayer> {
     public void doRenderLayer(AbstractClientPlayer player,
                               float limbSwing, float limbSwingAmount, float delta,
                               float age, float yaw, float pitch, float scale) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            return;
+        }
+
         if (player == net.minecraft.client.Minecraft.getMinecraft().player && 
             net.minecraft.client.Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
             return;

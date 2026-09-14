@@ -107,36 +107,56 @@ public class Item3DRenderer {
         GlStateManager.popMatrix();
     }
 
-    private static void renderRawItem(ItemStack stack, Minecraft mc) {
+    public static void renderPlacedInWorld(ItemStack stack, Minecraft mc) {
+        if (stack == null || stack.isEmpty()) return;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.disableCull();
+        // Standard entity and ModelBiped scale in Minecraft: scale(-1, -1, 1).
+        // This inverts Y while keeping positive determinant (det = +1, CCW winding),
+        // preventing outside faces from being culled as back-faces.
+        GlStateManager.scale(-1.0F, -1.0F, 1.0F);
+
+        renderRawItem(stack, mc, true);
+
+        GlStateManager.enableCull();
+        GlStateManager.popMatrix();
+    }
+
+    public static void renderRawItem(ItemStack stack, Minecraft mc) {
+        renderRawItem(stack, mc, false);
+    }
+
+    public static void renderRawItem(ItemStack stack, Minecraft mc, boolean inWorld) {
         String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString() : "";
 
         // 1. GeoModel Armor (ItemGeoArmor)
         if (stack.getItem() instanceof ItemGeoArmor) {
-            renderGeoArmor((ItemGeoArmor) stack.getItem(), stack, mc);
+            renderGeoArmor((ItemGeoArmor) stack.getItem(), stack, mc, inWorld);
         }
         // 2. CustomArmor (Survival Instinct ModelBiped)
         else if (stack.getItem() instanceof ItemCustomArmor) {
-            renderCustomArmor((ItemCustomArmor) stack.getItem(), stack, mc);
+            renderCustomArmor((ItemCustomArmor) stack.getItem(), stack, mc, inWorld);
         }
         // 3. Headlamp Bauble
         else if (stack.getItem() instanceof ItemHeadlamp) {
-            renderHeadlamp(mc);
+            renderHeadlamp(mc, inWorld);
         }
         // 4. Bracelet Bauble
         else if (stack.getItem() instanceof ItemBracelet) {
-            renderBracelet(mc);
+            renderBracelet(mc, inWorld);
         }
         // 5. Backpack
         else if (isBackpack(stack)) {
-            renderBackpack(stack, mc);
+            renderBackpack(stack, mc, inWorld);
         }
         // 6. Generic Armor (Vanilla or standard ItemArmor)
         else if (stack.getItem() instanceof ItemArmor) {
-            renderGenericArmor((ItemArmor) stack.getItem(), stack, mc);
+            renderGenericArmor((ItemArmor) stack.getItem(), stack, mc, inWorld);
         }
         // 7. MWC Weapon
         else if (isWeapon(stack)) {
-            renderWeapon(stack, mc);
+            renderWeapon(stack, mc, inWorld);
         }
         // 8. Standard Items / 2D Tools / Blocks in 3D
         else {
@@ -144,33 +164,29 @@ public class Item3DRenderer {
         }
     }
 
-    private static boolean isBackpack(ItemStack stack) {
+    public static boolean isBackpack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString() : "";
         return regName.equals("quark:backpack") || regName.contains("backpack");
     }
 
-    private static boolean isWeapon(ItemStack stack) {
+    public static boolean isWeapon(ItemStack stack) {
         if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
         String cls = stack.getItem().getClass().getName();
         return stack.getItem() instanceof com.paneedah.weaponlib.Weapon || cls.contains("weaponlib") || cls.contains("Weapon");
     }
 
-    private static void renderGeoArmor(ItemGeoArmor geoArmor, ItemStack stack, Minecraft mc) {
+    private static void renderGeoArmor(ItemGeoArmor geoArmor, ItemStack stack, Minecraft mc, boolean inWorld) {
         EntityEquipmentSlot slot = geoArmor.armorType;
         net.minecraft.entity.EntityLivingBase renderEntity = null;
         ModelBiped armorModel = geoArmor.getArmorModel(renderEntity, stack, slot, null);
         if (armorModel instanceof GeoArmorModel) {
             GeoArmorModel model = (GeoArmorModel) armorModel;
-            model.isSneak = false;
-            model.isRiding = false;
-            model.isChild = false;
-            model.rightArmPose = ModelBiped.ArmPose.EMPTY;
-            model.leftArmPose = ModelBiped.ArmPose.EMPTY;
+            model.resetBipedTransforms();
             model.currentSlot = slot;
 
             GlStateManager.pushMatrix();
-            adjustArmorSlotOffset(slot);
+            adjustArmorSlotOffset(slot, inWorld);
             String tex = geoArmor.getArmorTexture(stack, renderEntity, slot, null);
             if (tex != null) mc.getTextureManager().bindTexture(new ResourceLocation(tex));
             
@@ -190,12 +206,13 @@ public class Item3DRenderer {
         }
     }
 
-    private static void renderCustomArmor(ItemCustomArmor customArmor, ItemStack stack, Minecraft mc) {
+    private static void renderCustomArmor(ItemCustomArmor customArmor, ItemStack stack, Minecraft mc, boolean inWorld) {
         EntityEquipmentSlot slot = customArmor.armorType;
         ModelBiped model = customArmor.getArmorModel(null, stack, slot, null);
         if (model != null) {
+            resetGenericBiped(model);
             GlStateManager.pushMatrix();
-            adjustArmorSlotOffset(slot);
+            adjustArmorSlotOffset(slot, inWorld);
             String tex = customArmor.getArmorTexture(stack, null, slot, null);
             if (tex != null) mc.getTextureManager().bindTexture(new ResourceLocation(tex));
             
@@ -216,11 +233,14 @@ public class Item3DRenderer {
         }
     }
 
-    private static void renderHeadlamp(Minecraft mc) {
+    private static void renderHeadlamp(Minecraft mc, boolean inWorld) {
         GeoArmorModel model = HeadlampRenderer.getHeadlampModel();
         if (model != null) {
+            model.resetBipedTransforms();
             GlStateManager.pushMatrix();
-            GlStateManager.translate(0.0F, 1.5F, 0.0F); // Center headlamp
+            if (!inWorld) {
+                GlStateManager.translate(0.0F, 1.5F, 0.0F); // Center headlamp in GUI
+            }
             model.currentSlot = EntityEquipmentSlot.HEAD;
 
             mc.getTextureManager().bindTexture(HeadlampRenderer.getHeadlampTexture());
@@ -231,11 +251,16 @@ public class Item3DRenderer {
         }
     }
 
-    private static void renderBracelet(Minecraft mc) {
+    private static void renderBracelet(Minecraft mc, boolean inWorld) {
         GeoArmorModel model = BraceletInspectHandler.getNormalModel();
         if (model != null) {
+            model.resetBipedTransforms();
             GlStateManager.pushMatrix();
-            GlStateManager.translate(-0.375F, 1.05F, 0.0F); // Pivot align
+            if (inWorld) {
+                GlStateManager.translate(-0.375F, -0.65F, 0.0F);
+            } else {
+                GlStateManager.translate(-0.375F, 1.05F, 0.0F); // Pivot align in GUI
+            }
 
             mc.getTextureManager().bindTexture(BraceletInspectHandler.getBraceletTexture());
             if (model.bipedLeftArm != null) {
@@ -245,9 +270,13 @@ public class Item3DRenderer {
         }
     }
 
-    private static void renderBackpack(ItemStack stack, Minecraft mc) {
+    private static void renderBackpack(ItemStack stack, Minecraft mc, boolean inWorld) {
         GlStateManager.pushMatrix();
-        GlStateManager.translate(0.0F, 0.35F, -0.35F);
+        if (inWorld) {
+            GlStateManager.translate(0.0F, -0.75F, -0.2F);
+        } else {
+            GlStateManager.translate(0.0F, 0.35F, -0.35F);
+        }
 
         int color = ((ItemArmor) stack.getItem()).getColor(stack);
         float r = (float) (color >> 16 & 0xFF) / 255.0F;
@@ -264,12 +293,14 @@ public class Item3DRenderer {
         GlStateManager.popMatrix();
     }
 
-    private static void renderGenericArmor(ItemArmor armor, ItemStack stack, Minecraft mc) {
+    private static void renderGenericArmor(ItemArmor armor, ItemStack stack, Minecraft mc, boolean inWorld) {
         EntityEquipmentSlot slot = armor.armorType;
         ModelBiped model = ForgeHooksClient.getArmorModel(null, stack, slot, null);
         if (model == null) {
             model = new ModelBiped(slot == EntityEquipmentSlot.LEGS ? 0.5F : 1.0F);
         }
+
+        resetGenericBiped(model);
 
         model.bipedHead.showModel = slot == EntityEquipmentSlot.HEAD;
         model.bipedHeadwear.showModel = slot == EntityEquipmentSlot.HEAD;
@@ -280,7 +311,7 @@ public class Item3DRenderer {
         model.bipedLeftLeg.showModel = slot == EntityEquipmentSlot.LEGS || slot == EntityEquipmentSlot.FEET;
 
         GlStateManager.pushMatrix();
-        adjustArmorSlotOffset(slot);
+        adjustArmorSlotOffset(slot, inWorld);
 
         String defaultTex = String.format("minecraft:textures/models/armor/%s_layer_%d.png",
                 armor.getArmorMaterial().getName().replace("minecraft:", ""),
@@ -315,8 +346,88 @@ public class Item3DRenderer {
         GlStateManager.popMatrix();
     }
 
-    private static void renderWeapon(ItemStack stack, Minecraft mc) {
+    private static void resetGenericBiped(ModelBiped model) {
+        if (model == null) return;
+        if (model instanceof GeoArmorModel) {
+            ((GeoArmorModel) model).resetBipedTransforms();
+            return;
+        }
+        model.isSneak = false;
+        model.isRiding = false;
+        model.isChild = false;
+        model.rightArmPose = ModelBiped.ArmPose.EMPTY;
+        model.leftArmPose = ModelBiped.ArmPose.EMPTY;
+
+        if (model.bipedHead != null) {
+            model.bipedHead.setRotationPoint(0.0F, 0.0F, 0.0F);
+            model.bipedHead.rotateAngleX = 0.0F;
+            model.bipedHead.rotateAngleY = 0.0F;
+            model.bipedHead.rotateAngleZ = 0.0F;
+            model.bipedHead.offsetX = 0.0F;
+            model.bipedHead.offsetY = 0.0F;
+            model.bipedHead.offsetZ = 0.0F;
+        }
+        if (model.bipedHeadwear != null) {
+            model.bipedHeadwear.setRotationPoint(0.0F, 0.0F, 0.0F);
+            model.bipedHeadwear.rotateAngleX = 0.0F;
+            model.bipedHeadwear.rotateAngleY = 0.0F;
+            model.bipedHeadwear.rotateAngleZ = 0.0F;
+            model.bipedHeadwear.offsetX = 0.0F;
+            model.bipedHeadwear.offsetY = 0.0F;
+            model.bipedHeadwear.offsetZ = 0.0F;
+        }
+        if (model.bipedBody != null) {
+            model.bipedBody.setRotationPoint(0.0F, 0.0F, 0.0F);
+            model.bipedBody.rotateAngleX = 0.0F;
+            model.bipedBody.rotateAngleY = 0.0F;
+            model.bipedBody.rotateAngleZ = 0.0F;
+            model.bipedBody.offsetX = 0.0F;
+            model.bipedBody.offsetY = 0.0F;
+            model.bipedBody.offsetZ = 0.0F;
+        }
+        if (model.bipedRightArm != null) {
+            model.bipedRightArm.setRotationPoint(-5.0F, 2.0F, 0.0F);
+            model.bipedRightArm.rotateAngleX = 0.0F;
+            model.bipedRightArm.rotateAngleY = 0.0F;
+            model.bipedRightArm.rotateAngleZ = 0.0F;
+            model.bipedRightArm.offsetX = 0.0F;
+            model.bipedRightArm.offsetY = 0.0F;
+            model.bipedRightArm.offsetZ = 0.0F;
+        }
+        if (model.bipedLeftArm != null) {
+            model.bipedLeftArm.setRotationPoint(5.0F, 2.0F, 0.0F);
+            model.bipedLeftArm.rotateAngleX = 0.0F;
+            model.bipedLeftArm.rotateAngleY = 0.0F;
+            model.bipedLeftArm.rotateAngleZ = 0.0F;
+            model.bipedLeftArm.offsetX = 0.0F;
+            model.bipedLeftArm.offsetY = 0.0F;
+            model.bipedLeftArm.offsetZ = 0.0F;
+        }
+        if (model.bipedRightLeg != null) {
+            model.bipedRightLeg.setRotationPoint(-1.9F, 12.0F, 0.0F);
+            model.bipedRightLeg.rotateAngleX = 0.0F;
+            model.bipedRightLeg.rotateAngleY = 0.0F;
+            model.bipedRightLeg.rotateAngleZ = 0.0F;
+            model.bipedRightLeg.offsetX = 0.0F;
+            model.bipedRightLeg.offsetY = 0.0F;
+            model.bipedRightLeg.offsetZ = 0.0F;
+        }
+        if (model.bipedLeftLeg != null) {
+            model.bipedLeftLeg.setRotationPoint(1.9F, 12.0F, 0.0F);
+            model.bipedLeftLeg.rotateAngleX = 0.0F;
+            model.bipedLeftLeg.rotateAngleY = 0.0F;
+            model.bipedLeftLeg.rotateAngleZ = 0.0F;
+            model.bipedLeftLeg.offsetX = 0.0F;
+            model.bipedLeftLeg.offsetY = 0.0F;
+            model.bipedLeftLeg.offsetZ = 0.0F;
+        }
+    }
+
+    private static void renderWeapon(ItemStack stack, Minecraft mc, boolean inWorld) {
         GlStateManager.pushMatrix();
+        if (inWorld) {
+            GlStateManager.translate(0.0F, 0.15F, 0.2F);
+        }
         mc.getRenderItem().renderItem(stack, TransformType.THIRD_PERSON_LEFT_HAND);
         GlStateManager.popMatrix();
     }
@@ -336,20 +447,37 @@ public class Item3DRenderer {
         GlStateManager.popMatrix();
     }
 
-    private static void adjustArmorSlotOffset(EntityEquipmentSlot slot) {
-        switch (slot) {
-            case HEAD:
-                GlStateManager.translate(0.0F, 0.65F, 0.0F);
-                break;
-            case CHEST:
-                GlStateManager.translate(0.0F, 0.35F, 0.0F);
-                break;
-            case LEGS:
-                GlStateManager.translate(0.0F, -0.15F, 0.0F);
-                break;
-            case FEET:
-                GlStateManager.translate(0.0F, -0.6F, 0.0F);
-                break;
+    private static void adjustArmorSlotOffset(EntityEquipmentSlot slot, boolean inWorld) {
+        if (inWorld) {
+            switch (slot) {
+                case HEAD:
+                    // Bottom of helmet (neck) is at y=0. Sits directly on table surface!
+                    break;
+                case CHEST:
+                    // Waist is at y=12 (0.75 blocks down). In inverted Y space, -0.75F shifts waist up to 0:
+                    GlStateManager.translate(0.0F, -0.75F, 0.0F);
+                    break;
+                case LEGS:
+                case FEET:
+                    // Feet are at y=24 (1.5 blocks down). -1.5F shifts soles up to 0:
+                    GlStateManager.translate(0.0F, -1.5F, 0.0F);
+                    break;
+            }
+        } else {
+            switch (slot) {
+                case HEAD:
+                    GlStateManager.translate(0.0F, 0.65F, 0.0F);
+                    break;
+                case CHEST:
+                    GlStateManager.translate(0.0F, 0.35F, 0.0F);
+                    break;
+                case LEGS:
+                    GlStateManager.translate(0.0F, -0.15F, 0.0F);
+                    break;
+                case FEET:
+                    GlStateManager.translate(0.0F, -0.6F, 0.0F);
+                    break;
+            }
         }
     }
 }

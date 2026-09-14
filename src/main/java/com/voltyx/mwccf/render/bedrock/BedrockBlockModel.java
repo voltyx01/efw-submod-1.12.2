@@ -363,6 +363,11 @@ public class BedrockBlockModel {
         }
         if (anim == null) return;
 
+        resetAnimations();
+        blendAnimation(animName, time);
+    }
+
+    public void resetAnimations() {
         for (Bone bone : bonesByName.values()) {
             bone.animRot[0] = 0;
             bone.animRot[1] = 0;
@@ -370,13 +375,34 @@ public class BedrockBlockModel {
             bone.animPos[0] = 0;
             bone.animPos[1] = 0;
             bone.animPos[2] = 0;
+        }
+    }
 
-            BoneTrack track = anim.tracks.get(bone.name);
-            if (track != null) {
-                evaluateKeyframes(track.rotKeyframes, time, bone.animRot);
-                evaluateKeyframes(track.posKeyframes, time, bone.animPos);
+    public void blendAnimation(String animName, float time) {
+        Animation anim = animations.get(animName);
+        if (anim == null) return;
+
+        float[] tempRot = new float[3];
+        float[] tempPos = new float[3];
+
+        for (Map.Entry<String, BoneTrack> entry : anim.tracks.entrySet()) {
+            Bone bone = bonesByName.get(entry.getKey());
+            if (bone != null) {
+                BoneTrack track = entry.getValue();
+                evaluateKeyframes(track.rotKeyframes, time, tempRot);
+                evaluateKeyframes(track.posKeyframes, time, tempPos);
+                bone.animRot[0] += tempRot[0];
+                bone.animRot[1] += tempRot[1];
+                bone.animRot[2] += tempRot[2];
+                bone.animPos[0] += tempPos[0];
+                bone.animPos[1] += tempPos[1];
+                bone.animPos[2] += tempPos[2];
             }
         }
+    }
+
+    public Bone getBone(String name) {
+        return bonesByName.get(name);
     }
 
     public float getAnimationLength(String animName) {
@@ -417,9 +443,14 @@ public class BedrockBlockModel {
     }
 
     public void render(float scale) {
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(-1.0F, 1.0F, 1.0F);
+        GL11.glFrontFace(GL11.GL_CW);
         for (Bone root : rootBones) {
             renderBone(root, null, scale);
         }
+        GL11.glFrontFace(GL11.GL_CCW);
+        GlStateManager.popMatrix();
     }
 
     private void renderBone(Bone bone, Bone parent, float scale) {
@@ -491,37 +522,38 @@ public class BedrockBlockModel {
         buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_NORMAL);
 
         if (cube.hasPerFaceUV) {
-            // East (+X)
+            // East (+X in model space -> West face in world)
             FaceUV east = cube.faceUVMap.get("east");
             if (east != null) {
                 float u0 = east.u1 / tw, v0 = east.v1 / th;
                 float u1 = east.u2 / tw, v1 = east.v2 / th;
-                vertex(buf, x1, y1, z1, u0, v0, 1, 0, 0);
-                vertex(buf, x1, y1, z0, u1, v0, 1, 0, 0);
-                vertex(buf, x1, y0, z0, u1, v1, 1, 0, 0);
-                vertex(buf, x1, y0, z1, u0, v1, 1, 0, 0);
+                vertex(buf, x1, y1, z0, u0, v0, 1, 0, 0);
+                vertex(buf, x1, y1, z1, u1, v0, 1, 0, 0);
+                vertex(buf, x1, y0, z1, u1, v1, 1, 0, 0);
+                vertex(buf, x1, y0, z0, u0, v1, 1, 0, 0);
             }
 
-            // West (-X)
+            // West (-X in model space -> East face in world)
             FaceUV west = cube.faceUVMap.get("west");
             if (west != null) {
                 float u0 = west.u1 / tw, v0 = west.v1 / th;
                 float u1 = west.u2 / tw, v1 = west.v2 / th;
-                vertex(buf, x0, y1, z0, u0, v0, -1, 0, 0);
-                vertex(buf, x0, y1, z1, u1, v0, -1, 0, 0);
-                vertex(buf, x0, y0, z1, u1, v1, -1, 0, 0);
-                vertex(buf, x0, y0, z0, u0, v1, -1, 0, 0);
+                vertex(buf, x0, y1, z1, u0, v0, -1, 0, 0);
+                vertex(buf, x0, y1, z0, u1, v0, -1, 0, 0);
+                vertex(buf, x0, y0, z0, u1, v1, -1, 0, 0);
+                vertex(buf, x0, y0, z1, u0, v1, -1, 0, 0);
             }
 
-            // Up (+Y)
+            // Up (+Y) - Keyboard on terminal: z0 is bottom (spacebar near player), z1 is top (numbers near screen)
+            // Left is x0 (-X in world), Right is x1 (+X in world)
             FaceUV up = cube.faceUVMap.get("up");
             if (up != null) {
                 float u0 = up.u1 / tw, v0 = up.v1 / th;
                 float u1 = up.u2 / tw, v1 = up.v2 / th;
-                vertex(buf, x1, y1, z1, u1, v0, 0, 1, 0);
-                vertex(buf, x0, y1, z1, u0, v0, 0, 1, 0);
-                vertex(buf, x0, y1, z0, u0, v1, 0, 1, 0);
                 vertex(buf, x1, y1, z0, u1, v1, 0, 1, 0);
+                vertex(buf, x0, y1, z0, u0, v1, 0, 1, 0);
+                vertex(buf, x0, y1, z1, u0, v0, 0, 1, 0);
+                vertex(buf, x1, y1, z1, u1, v0, 0, 1, 0);
             }
 
             // Down (-Y)
@@ -540,10 +572,10 @@ public class BedrockBlockModel {
             if (north != null) {
                 float u0 = north.u1 / tw, v0 = north.v1 / th;
                 float u1 = north.u2 / tw, v1 = north.v2 / th;
-                vertex(buf, x1, y1, z0, u0, v0, 0, 0, -1);
-                vertex(buf, x0, y1, z0, u1, v0, 0, 0, -1);
-                vertex(buf, x0, y0, z0, u1, v1, 0, 0, -1);
-                vertex(buf, x1, y0, z0, u0, v1, 0, 0, -1);
+                vertex(buf, x0, y1, z0, u0, v0, 0, 0, -1);
+                vertex(buf, x1, y1, z0, u1, v0, 0, 0, -1);
+                vertex(buf, x1, y0, z0, u1, v1, 0, 0, -1);
+                vertex(buf, x0, y0, z0, u0, v1, 0, 0, -1);
             }
 
             // South (+Z)
@@ -551,10 +583,10 @@ public class BedrockBlockModel {
             if (south != null) {
                 float u0 = south.u1 / tw, v0 = south.v1 / th;
                 float u1 = south.u2 / tw, v1 = south.v2 / th;
-                vertex(buf, x0, y1, z1, u0, v0, 0, 0, 1);
-                vertex(buf, x1, y1, z1, u1, v0, 0, 0, 1);
-                vertex(buf, x1, y0, z1, u1, v1, 0, 0, 1);
-                vertex(buf, x0, y0, z1, u0, v1, 0, 0, 1);
+                vertex(buf, x1, y1, z1, u0, v0, 0, 0, 1);
+                vertex(buf, x0, y1, z1, u1, v0, 0, 0, 1);
+                vertex(buf, x0, y0, z1, u1, v1, 0, 0, 1);
+                vertex(buf, x1, y0, z1, u0, v1, 0, 0, 1);
             }
         } else {
             // Standard Box UV
@@ -563,12 +595,12 @@ public class BedrockBlockModel {
 
             float u0, v0, u1, v1;
 
-            // Up (+Y)
+            // Up (+Y) - Keyboard / top face
             u0 = (u + d) / tw; v0 = v / th; u1 = (u + d + w) / tw; v1 = (v + d) / th;
-            vertex(buf, x1, y1, z1, u1, v0, 0, 1, 0);
-            vertex(buf, x0, y1, z1, u0, v0, 0, 1, 0);
-            vertex(buf, x0, y1, z0, u0, v1, 0, 1, 0);
             vertex(buf, x1, y1, z0, u1, v1, 0, 1, 0);
+            vertex(buf, x0, y1, z0, u0, v1, 0, 1, 0);
+            vertex(buf, x0, y1, z1, u0, v0, 0, 1, 0);
+            vertex(buf, x1, y1, z1, u1, v0, 0, 1, 0);
 
             // Down (-Y)
             u0 = (u + d + w) / tw; v0 = v / th; u1 = (u + d + w + w) / tw; v1 = (v + d) / th;
@@ -579,31 +611,31 @@ public class BedrockBlockModel {
 
             // North (-Z)
             u0 = (u + d) / tw; v0 = (v + d) / th; u1 = (u + d + w) / tw; v1 = (v + d + h) / th;
-            vertex(buf, x1, y1, z0, u0, v0, 0, 0, -1);
-            vertex(buf, x0, y1, z0, u1, v0, 0, 0, -1);
-            vertex(buf, x0, y0, z0, u1, v1, 0, 0, -1);
-            vertex(buf, x1, y0, z0, u0, v1, 0, 0, -1);
+            vertex(buf, x0, y1, z0, u0, v0, 0, 0, -1);
+            vertex(buf, x1, y1, z0, u1, v0, 0, 0, -1);
+            vertex(buf, x1, y0, z0, u1, v1, 0, 0, -1);
+            vertex(buf, x0, y0, z0, u0, v1, 0, 0, -1);
 
             // South (+Z)
             u0 = (u + d + w + d) / tw; v0 = (v + d) / th; u1 = (u + d + w + d + w) / tw; v1 = (v + d + h) / th;
-            vertex(buf, x0, y1, z1, u0, v0, 0, 0, 1);
-            vertex(buf, x1, y1, z1, u1, v0, 0, 0, 1);
-            vertex(buf, x1, y0, z1, u1, v1, 0, 0, 1);
-            vertex(buf, x0, y0, z1, u0, v1, 0, 0, 1);
+            vertex(buf, x1, y1, z1, u0, v0, 0, 0, 1);
+            vertex(buf, x0, y1, z1, u1, v0, 0, 0, 1);
+            vertex(buf, x0, y0, z1, u1, v1, 0, 0, 1);
+            vertex(buf, x1, y0, z1, u0, v1, 0, 0, 1);
 
-            // West (-X)
+            // West (-X in model space -> East in world)
             u0 = u / tw; v0 = (v + d) / th; u1 = (u + d) / tw; v1 = (v + d + h) / th;
-            vertex(buf, x0, y1, z0, u0, v0, -1, 0, 0);
-            vertex(buf, x0, y1, z1, u1, v0, -1, 0, 0);
-            vertex(buf, x0, y0, z1, u1, v1, -1, 0, 0);
-            vertex(buf, x0, y0, z0, u0, v1, -1, 0, 0);
+            vertex(buf, x0, y1, z1, u0, v0, -1, 0, 0);
+            vertex(buf, x0, y1, z0, u1, v0, -1, 0, 0);
+            vertex(buf, x0, y0, z0, u1, v1, -1, 0, 0);
+            vertex(buf, x0, y0, z1, u0, v1, -1, 0, 0);
 
-            // East (+X)
+            // East (+X in model space -> West in world)
             u0 = (u + d + w) / tw; v0 = (v + d) / th; u1 = (u + d + w + d) / tw; v1 = (v + d + h) / th;
-            vertex(buf, x1, y1, z1, u0, v0, 1, 0, 0);
-            vertex(buf, x1, y1, z0, u1, v0, 1, 0, 0);
-            vertex(buf, x1, y0, z0, u1, v1, 1, 0, 0);
-            vertex(buf, x1, y0, z1, u0, v1, 1, 0, 0);
+            vertex(buf, x1, y1, z0, u0, v0, 1, 0, 0);
+            vertex(buf, x1, y1, z1, u1, v0, 1, 0, 0);
+            vertex(buf, x1, y0, z1, u1, v1, 1, 0, 0);
+            vertex(buf, x1, y0, z0, u0, v1, 1, 0, 0);
         }
 
         tessellator.draw();

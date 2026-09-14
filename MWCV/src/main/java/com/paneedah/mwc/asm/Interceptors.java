@@ -586,6 +586,9 @@ public class Interceptors {
        
      
         if(ModernConfigManager.enableAllShaders && ModernConfigManager.enableScreenShaders) {
+            if (com.paneedah.mwc.proxies.ClientProxy.renderingPhase == RenderingPhase.RENDER_PERSPECTIVE) {
+                return false;
+            }
         	GlStateManager.disableLighting();
     		GlStateManager.disableBlend();
     		

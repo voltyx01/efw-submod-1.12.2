@@ -255,6 +255,7 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 	private static int loweringFromSlot = -1;
 
 	private static int trackedHotbarSlot = -1;
+	private static ItemStack trackedHeldItem = null;
 
 	static boolean pendingDrawAfterLowering = false;
 	static long drawSoundStartTime = -1L;
@@ -314,6 +315,10 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 		loweringItemStack = (outgoingStack != null && !outgoingStack.isEmpty())
 				? outgoingStack.copy()
 				: null;
+
+		if (MC.getItemRenderer() != null) {
+			MC.getItemRenderer().resetEquippedProgress(net.minecraft.util.EnumHand.MAIN_HAND);
+		}
 
 		currentLowerDuration = 175L; // default
 		if (loweringItemStack != null && loweringItemStack.getItem() instanceof Weapon) {
@@ -379,16 +384,32 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 		}
 
 		final int newSlot = player.inventory.currentItem;
+		final ItemStack incomingStack = player.getHeldItemMainhand();
 
 		if (trackedHotbarSlot == -1) {
 
 			trackedHotbarSlot = newSlot;
+			trackedHeldItem = (incomingStack != null && !incomingStack.isEmpty()) ? incomingStack.copy() : null;
 
 			return;
 
 		}
 
-		if (trackedHotbarSlot == newSlot) {
+		final boolean slotChanged = (trackedHotbarSlot != newSlot);
+		boolean itemChanged = false;
+
+		final boolean prevEmpty = (trackedHeldItem == null || trackedHeldItem.isEmpty());
+		final boolean currEmpty = (incomingStack == null || incomingStack.isEmpty());
+
+		if (prevEmpty != currEmpty) {
+			itemChanged = true;
+		} else if (!prevEmpty && !currEmpty) {
+			if (trackedHeldItem.getItem() != incomingStack.getItem()) {
+				itemChanged = true;
+			}
+		}
+
+		if (!slotChanged && !itemChanged) {
 
 			return;
 
@@ -396,11 +417,10 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 
 		final int oldSlot = trackedHotbarSlot;
 
-		final ItemStack outgoingStack = player.inventory.getStackInSlot(oldSlot);
+		final ItemStack outgoingStack = slotChanged ? player.inventory.getStackInSlot(oldSlot) : trackedHeldItem;
 
 		trackedHotbarSlot = newSlot;
-
-		final ItemStack incomingStack = player.getHeldItemMainhand();
+		trackedHeldItem = (incomingStack != null && !incomingStack.isEmpty()) ? incomingStack.copy() : null;
 
 		final boolean incomingIsWeapon = incomingStack != null && !incomingStack.isEmpty()
 
@@ -7498,22 +7518,41 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 
 	public void renderPostRenderers(RenderContext<RenderableState> renderContext) {
 
+		if (this.deferredPost.isEmpty()) {
+			return;
+		}
+
+		boolean isFirstPerson = renderContext.getTransformType() == ItemCameraTransforms.TransformType.FIRST_PERSON_RIGHT_HAND
+				|| renderContext.getTransformType() == ItemCameraTransforms.TransformType.FIRST_PERSON_LEFT_HAND;
+
 		for (Pair<FloatBuffer, CustomRenderer<RenderableState>> pair : this.deferredPost) {
 
 			GL11.glPushMatrix();
 
 			GL11.glLoadMatrix(pair.getFirst());
 
-			GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
-
-			pair.getSecond().render(renderContext);
-
-			GL11.glPopAttrib();
-
-			GL11.glPopMatrix();
+			try {
+				pair.getSecond().render(renderContext);
+			} finally {
+				GL11.glPopMatrix();
+			}
 
 		}
 
+		// Ensure clean GL state after any post renderers ONLY in first-person view
+		if (isFirstPerson) {
+			GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+			GlStateManager.bindTexture(0);
+			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+			GlStateManager.enableTexture2D();
+			GlStateManager.enableDepth();
+			GlStateManager.depthMask(true);
+			GlStateManager.enableAlpha();
+			GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+			GlStateManager.enableBlend();
+			GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+			GlStateManager.enableCull();
+		}
 	}
 
 	public boolean hasRecoilPositioning() {
@@ -8463,19 +8502,37 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 						|| state == RenderableState.COMPOUND_RELOAD || state == RenderableState.COMPOUND_RELOAD_EMPTY
 						|| state == RenderableState.TACTICAL_RELOAD || state == RenderableState.LOAD_EMPTY
 						|| state == RenderableState.UNLOAD_EMPTY || state == RenderableState.LOAD_ITERATION
+						|| state == RenderableState.LOAD_ITERATION_COMPLETED || state == RenderableState.ALL_LOAD_ITERATIONS_COMPLETED
 						|| (state == RenderableState.ZOOMING && (fromState == RenderableState.RELOADING
 								|| fromState == RenderableState.UNLOADING
 								|| fromState == RenderableState.COMPOUND_RELOAD
 								|| fromState == RenderableState.COMPOUND_RELOAD_EMPTY
 								|| fromState == RenderableState.TACTICAL_RELOAD
 								|| fromState == RenderableState.LOAD_EMPTY
-								|| fromState == RenderableState.UNLOAD_EMPTY));
+								|| fromState == RenderableState.UNLOAD_EMPTY
+								|| fromState == RenderableState.LOAD_ITERATION
+								|| fromState == RenderableState.LOAD_ITERATION_COMPLETED
+								|| fromState == RenderableState.ALL_LOAD_ITERATIONS_COMPLETED));
 
-				boolean isAiming = mainWeaponInst != null && mainWeaponInst.isAimed();
+				boolean aimKeyHeld = false;
+				try {
+					int aimKeyCode = MC.gameSettings.keyBindUseItem.getKeyCode();
+					aimKeyHeld = aimKeyCode < 0
+							? org.lwjgl.input.Mouse.isButtonDown(aimKeyCode + 100)
+							: org.lwjgl.input.Keyboard.isKeyDown(aimKeyCode);
+				} catch (Throwable ignored) {}
+
+				boolean isAiming = mainWeaponInst != null && (mainWeaponInst.isAimed() 
+						|| (isReloadingState && mainWeaponInst.wasAimedBeforeReload 
+							&& (!com.paneedah.weaponlib.config.ModernConfigManager.holdToAim || aimKeyHeld)));
 
 				if (isReloadingState) {
 					if (isAiming) {
-						adsReloadBlendFactor += (1.0f - adsReloadBlendFactor) * 0.15f;
+						if (!adsBlendActive && adsReloadBlendFactor == 0f) {
+							adsReloadBlendFactor = 1.0f;
+						} else {
+							adsReloadBlendFactor += (1.0f - adsReloadBlendFactor) * 0.15f;
+						}
 						adsBlendActive = true;
 					} else if (adsBlendActive) {
 						adsReloadBlendFactor += (0.0f - adsReloadBlendFactor) * 0.10f;
@@ -9631,13 +9688,17 @@ public class WeaponRenderer extends ModelSource implements IBakedModel {
 				|| rhState == RenderableState.COMPOUND_RELOAD || rhState == RenderableState.COMPOUND_RELOAD_EMPTY
 				|| rhState == RenderableState.TACTICAL_RELOAD || rhState == RenderableState.LOAD_EMPTY
 				|| rhState == RenderableState.UNLOAD_EMPTY || rhState == RenderableState.LOAD_ITERATION
+				|| rhState == RenderableState.LOAD_ITERATION_COMPLETED || rhState == RenderableState.ALL_LOAD_ITERATIONS_COMPLETED
 				|| (rhState == RenderableState.ZOOMING && (rhFromState == RenderableState.RELOADING
 						|| rhFromState == RenderableState.UNLOADING
 						|| rhFromState == RenderableState.COMPOUND_RELOAD
 						|| rhFromState == RenderableState.COMPOUND_RELOAD_EMPTY
 						|| rhFromState == RenderableState.TACTICAL_RELOAD
 						|| rhFromState == RenderableState.LOAD_EMPTY
-						|| rhFromState == RenderableState.UNLOAD_EMPTY));
+						|| rhFromState == RenderableState.UNLOAD_EMPTY
+						|| rhFromState == RenderableState.LOAD_ITERATION
+						|| rhFromState == RenderableState.LOAD_ITERATION_COMPLETED
+						|| rhFromState == RenderableState.ALL_LOAD_ITERATIONS_COMPLETED));
 
 		if ((rhIsReloadingState || adsBlendActive) && adsBlendActive && rhRenderer != null && rhRenderer.getBuilder().firstPersonRightHandPositioningZooming != null) {
 			org.lwjgl.util.vector.Matrix4f beforeMatrix = MatrixHelper.captureMatrix();

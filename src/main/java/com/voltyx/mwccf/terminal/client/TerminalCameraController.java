@@ -250,9 +250,6 @@ public class TerminalCameraController {
         if (transitionProgress > 0.001f) {
             if (active && transitionProgress >= 1.0f) {
                 event.setCanceled(true);
-            } else {
-                float t = easeOutCubic(transitionProgress);
-                GlStateManager.translate(0.0F, -t * 1.5F, 0.0F);
             }
         }
     }
@@ -302,8 +299,25 @@ public class TerminalCameraController {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderGameOverlayPre(RenderGameOverlayEvent.Pre event) {
         if (active && transitionProgress > 0.3f) {
-            // Hide all vanilla HUD while viewing terminal
-            event.setCanceled(true);
+            if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
+                return;
+            }
+            switch (event.getType()) {
+                case CROSSHAIRS:
+                case HOTBAR:
+                case HEALTH:
+                case ARMOR:
+                case FOOD:
+                case HEALTHMOUNT:
+                case AIR:
+                case EXPERIENCE:
+                case CHAT:
+                case PLAYER_LIST:
+                    event.setCanceled(true);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

@@ -423,6 +423,95 @@ public class GeoArmorModel extends ModelBiped {
     public EntityEquipmentSlot currentSlot = EntityEquipmentSlot.HEAD;
     public ModelBiped syncedModel = null;
 
+    public void resetBipedTransforms() {
+        this.syncedModel = null;
+        this.isSneak = false;
+        this.isRiding = false;
+        this.isChild = false;
+        this.rightArmPose = ModelBiped.ArmPose.EMPTY;
+        this.leftArmPose = ModelBiped.ArmPose.EMPTY;
+
+        // Reset head
+        this.bipedHead.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.bipedHead.rotateAngleX = 0.0F;
+        this.bipedHead.rotateAngleY = 0.0F;
+        this.bipedHead.rotateAngleZ = 0.0F;
+        this.bipedHead.offsetX = 0.0F;
+        this.bipedHead.offsetY = 0.0F;
+        this.bipedHead.offsetZ = 0.0F;
+
+        this.bipedHeadwear.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.bipedHeadwear.rotateAngleX = 0.0F;
+        this.bipedHeadwear.rotateAngleY = 0.0F;
+        this.bipedHeadwear.rotateAngleZ = 0.0F;
+        this.bipedHeadwear.offsetX = 0.0F;
+        this.bipedHeadwear.offsetY = 0.0F;
+        this.bipedHeadwear.offsetZ = 0.0F;
+
+        // Reset body
+        this.bipedBody.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.bipedBody.rotateAngleX = 0.0F;
+        this.bipedBody.rotateAngleY = 0.0F;
+        this.bipedBody.rotateAngleZ = 0.0F;
+        this.bipedBody.offsetX = 0.0F;
+        this.bipedBody.offsetY = 0.0F;
+        this.bipedBody.offsetZ = 0.0F;
+
+        // Reset arms
+        this.bipedRightArm.setRotationPoint(-5.0F, 2.0F, 0.0F);
+        this.bipedRightArm.rotateAngleX = 0.0F;
+        this.bipedRightArm.rotateAngleY = 0.0F;
+        this.bipedRightArm.rotateAngleZ = 0.0F;
+        this.bipedRightArm.offsetX = 0.0F;
+        this.bipedRightArm.offsetY = 0.0F;
+        this.bipedRightArm.offsetZ = 0.0F;
+
+        this.bipedLeftArm.setRotationPoint(5.0F, 2.0F, 0.0F);
+        this.bipedLeftArm.rotateAngleX = 0.0F;
+        this.bipedLeftArm.rotateAngleY = 0.0F;
+        this.bipedLeftArm.rotateAngleZ = 0.0F;
+        this.bipedLeftArm.offsetX = 0.0F;
+        this.bipedLeftArm.offsetY = 0.0F;
+        this.bipedLeftArm.offsetZ = 0.0F;
+
+        if (this.bipedRightArmSlim != null) {
+            this.bipedRightArmSlim.setRotationPoint(-5.0F, 2.0F, 0.0F);
+            this.bipedRightArmSlim.rotateAngleX = 0.0F;
+            this.bipedRightArmSlim.rotateAngleY = 0.0F;
+            this.bipedRightArmSlim.rotateAngleZ = 0.0F;
+            this.bipedRightArmSlim.offsetX = 0.0F;
+            this.bipedRightArmSlim.offsetY = 0.0F;
+            this.bipedRightArmSlim.offsetZ = 0.0F;
+        }
+
+        if (this.bipedLeftArmSlim != null) {
+            this.bipedLeftArmSlim.setRotationPoint(5.0F, 2.0F, 0.0F);
+            this.bipedLeftArmSlim.rotateAngleX = 0.0F;
+            this.bipedLeftArmSlim.rotateAngleY = 0.0F;
+            this.bipedLeftArmSlim.rotateAngleZ = 0.0F;
+            this.bipedLeftArmSlim.offsetX = 0.0F;
+            this.bipedLeftArmSlim.offsetY = 0.0F;
+            this.bipedLeftArmSlim.offsetZ = 0.0F;
+        }
+
+        // Reset legs
+        this.bipedRightLeg.setRotationPoint(-1.9F, 12.0F, 0.0F);
+        this.bipedRightLeg.rotateAngleX = 0.0F;
+        this.bipedRightLeg.rotateAngleY = 0.0F;
+        this.bipedRightLeg.rotateAngleZ = 0.0F;
+        this.bipedRightLeg.offsetX = 0.0F;
+        this.bipedRightLeg.offsetY = 0.0F;
+        this.bipedRightLeg.offsetZ = 0.0F;
+
+        this.bipedLeftLeg.setRotationPoint(1.9F, 12.0F, 0.0F);
+        this.bipedLeftLeg.rotateAngleX = 0.0F;
+        this.bipedLeftLeg.rotateAngleY = 0.0F;
+        this.bipedLeftLeg.rotateAngleZ = 0.0F;
+        this.bipedLeftLeg.offsetX = 0.0F;
+        this.bipedLeftLeg.offsetY = 0.0F;
+        this.bipedLeftLeg.offsetZ = 0.0F;
+    }
+
     @Override
     public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, net.minecraft.entity.Entity entityIn) {
         if (entityIn != null) {

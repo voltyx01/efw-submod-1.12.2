@@ -637,6 +637,10 @@ public class PostProcessPipeline {
 		secondaryWorldBuffer.framebufferRender(MC.displayWidth, MC.displayHeight);
 		Shaders.postWorld.release();
 
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GlStateManager.bindTexture(0);
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
+
 		// Rebind the MC Framebuffer
 		MC.getFramebuffer().bindFramebuffer(false);
 
@@ -889,6 +893,9 @@ public class PostProcessPipeline {
 		if (!ModernConfigManager.enableScreenShaders)
 			return;
 
+		if (com.paneedah.mwc.proxies.ClientProxy.renderingPhase == com.paneedah.weaponlib.RenderingPhase.RENDER_PERSPECTIVE)
+			return;
+
 		if (ModernConfigManager.bloomEffect)
 			Bloom.doBloom();
 
@@ -952,6 +959,15 @@ public class PostProcessPipeline {
 		Bloom.renderFboTriangle(boof, boof.framebufferWidth, boof.framebufferHeight);
 
 		Shaders.post.release();
+
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 5);
+		GlStateManager.bindTexture(0);
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 4);
+		GlStateManager.bindTexture(0);
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0 + 3);
+		GlStateManager.bindTexture(0);
+		GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
+		GlStateManager.enableAlpha();
 
 		// drawRainBuffer();
 

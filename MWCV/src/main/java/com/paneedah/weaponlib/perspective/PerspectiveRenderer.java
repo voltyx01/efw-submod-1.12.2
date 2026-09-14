@@ -2,6 +2,8 @@ package com.paneedah.weaponlib.perspective;
 
 import com.paneedah.mwc.MWC;
 import com.paneedah.weaponlib.*;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.ITextureObject;
 import net.minecraft.util.ResourceLocation;
@@ -63,40 +65,38 @@ public class PerspectiveRenderer implements CustomRenderer<RenderableState> {
 
 		ClientModContext clientModContext = (ClientModContext) MWC.modContext;
 
-		
         Perspective<RenderableState> perspective = (Perspective<RenderableState>) clientModContext.getViewManager().getPerspective(renderContext.getPlayerItemInstance(), false);
 		if(perspective == null) {
 		    perspective = STATIC_TEXTURE_PERSPECTIVE;
 		}
 
 		float brightness = perspective.getBrightness(renderContext);
-		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
+		if (brightness <= 0.0f) {
+			brightness = 1.0f;
+		}
+		int texId = perspective.getTexture(renderContext);
 
-		
+		GlStateManager.pushMatrix();
 
-		
 		positioning.run();
-		
-		
-		
-		//GL11.glBindTexture(GL11.GL_TEXTURE_2D, framebuffer.framebufferTexture);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, perspective.getTexture(renderContext));
-		MC.entityRenderer.disableLightmap();
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		//GL11.glDepthMask(true);
-		GL11.glDisable(GL11.GL_LIGHTING);
-		GL11.glDisable(GL11.GL_ALPHA_TEST);
-		GL11.glDisable(GL11.GL_BLEND);
 
-		
-		
-	
-		
-		
-		GL11.glColor4f(brightness, brightness, brightness, 1f);
-		
-	
+		GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+		if (texId > 0) {
+			GlStateManager.bindTexture(texId);
+		} else {
+			GlStateManager.bindTexture(0);
+		}
+
+		GlStateManager.enableDepth();
+		GlStateManager.depthMask(true);
+		GlStateManager.disableLighting();
+		GlStateManager.enableAlpha();
+		GlStateManager.alphaFunc(GL11.GL_GREATER, 0.0f);
+		GlStateManager.enableBlend();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+
+		GlStateManager.color(brightness, brightness, brightness, 1.0F);
+
 		model.render(renderContext.getPlayer(),
 				renderContext.getLimbSwing(),
 				renderContext.getFlimbSwingAmount(),
@@ -105,9 +105,20 @@ public class PerspectiveRenderer implements CustomRenderer<RenderableState> {
 				renderContext.getHeadPitch(),
 				renderContext.getScale());
 
+		OpenGlHelper.glUseProgram(0);
 
-        MC.entityRenderer.enableLightmap();
-		GL11.glPopAttrib();
-		GL11.glPopMatrix();
+		// Clean up GL state using GlStateManager so internal caches remain in sync with hardware
+		GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+		GlStateManager.bindTexture(0);
+		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.enableDepth();
+		GlStateManager.depthMask(true);
+		GlStateManager.enableAlpha();
+		GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+		GlStateManager.enableBlend();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		GlStateManager.enableCull();
+
+		GlStateManager.popMatrix();
 	}
 }

@@ -325,8 +325,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                     headPitch = this.rotLerpRad(this.swimAnimation, this.bipedHead.rotateAngleX,
                             ((float) -Math.PI / 4F)) / 0.017453292F;
                 } else {
-                    headPitch = this.rotLerpRad(this.swimAnimation, this.bipedHead.rotateAngleX,
-                            headPitch * ((float) Math.PI / 180F)) / 0.017453292F;
+                    // Crawling on land: do NOT feed back this.bipedHead.rotateAngleX!
+                    // It causes a feedback loop that multiplies head rotation every frame.
+                    headPitch = ((EntityLivingBase) entityIn).rotationPitch;
                 }
             }
         }
@@ -558,8 +559,14 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 && (activeStack.getItemUseAction() == EnumAction.EAT 
                  || activeStack.getItemUseAction() == EnumAction.DRINK);
 
+        // Detect crawling: lie/crawl animations already handle body posture, so we must
+        // NOT apply the vanilla sneak Y-offset on top of them (causes head/arm tilt bugs).
+        String currentAnimForCrawlCheck = ap.getCurrentAnimationName();
+        boolean isCrawlingAnim = (currentAnimForCrawlCheck != null && (currentAnimForCrawlCheck.contains("lie") || currentAnimForCrawlCheck.contains("crawl")))
+                || player.height < 1.0F;
+
         if ((ap.isPlaying() || ap.getWeight() > 0f) && !isConsumingItem) {
-            if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+            if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
                 // руки сюда больше не трогаем!
                 this.bipedRightLeg.rotationPointY -= 3.0F;
                 this.bipedLeftLeg.rotationPointY -= 3.0F;
@@ -617,7 +624,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                                  || (fadeActionName != null && (fadeActionName.startsWith("pistol_") || fadeActionName.startsWith("rifle_")));
             boolean isHoldingWeapon = isMWCWeapon || hasWeaponAnim || currBow || prevBow;
 
-            float armPitchWeight = ap.getArmPitchTrackingWeight(pt, isHoldingWeapon);
+            float armPitchWeight = isCrawlingAnim ? 0.0f : ap.getArmPitchTrackingWeight(pt, isHoldingWeapon);
 
             float aimWeight = 0.0f;
             if (actionName != null && actionName.contains("aim")) {
@@ -645,11 +652,11 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
 
              if (!disableRightArmAnim) {
-                if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen) this.bipedRightArm.rotationPointY -= 3.0F;
+                if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) this.bipedRightArm.rotationPointY -= 3.0F;
                 applyBone(this.bipedRightArm, AnimationApplicator.getOverlayForBone(this.bipedRightArm, model), ap, "rightArm", pt);
             }
             if (!disableLeftArmAnim) {
-                if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen) this.bipedLeftArm.rotationPointY -= 3.0F;
+                if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) this.bipedLeftArm.rotationPointY -= 3.0F;
                 applyBone(this.bipedLeftArm, AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model), ap, "leftArm", pt);
             }
 
@@ -659,10 +666,10 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 float torchWeightRight = torchState.prevRight + (torchState.right - torchState.prevRight) * pt;
                 float torchWeightLeft = torchState.prevLeft + (torchState.left - torchState.prevLeft) * pt;
 
-                boolean isCrawlingOrRolling = (actionName != null && (actionName.contains("roll") || actionName.contains("lie")))
-                        || (fadeActionName != null && (fadeActionName.contains("roll") || fadeActionName.contains("lie")))
-                        || (animName != null && (animName.contains("lie") || animName.contains("roll")))
-                        || currRoll || prevRoll;
+                boolean isCrawlingOrRolling = (actionName != null && (actionName.contains("roll") || actionName.contains("lie") || actionName.contains("crawl")))
+                        || (fadeActionName != null && (fadeActionName.contains("roll") || fadeActionName.contains("lie") || fadeActionName.contains("crawl")))
+                        || (animName != null && (animName.contains("lie") || animName.contains("roll") || animName.contains("crawl")))
+                        || isCrawlingAnim || currRoll || prevRoll;
 
                 if (!isCrawlingOrRolling) {
                     float torchRotX = -1.35F + vanillaHeadPitch * 0.6F;
@@ -691,10 +698,19 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 this.bipedHead.rotateAngleZ = 0;
                 applyBone(this.bipedHead, AnimationApplicator.getOverlayForBone(this.bipedHead, model), ap, "head", pt);
                 
-                // Add vanilla tracking back
-                this.bipedHead.rotateAngleX += headX;
-                this.bipedHead.rotateAngleY += headY;
-                this.bipedHead.rotateAngleZ += headZ;
+                if (isCrawlingAnim) {
+                    // Bedrock JSON lie animation already has the -77.5° angle for horizontal body.
+                    // Only add the player's camera pitch clamped so head looks slightly up/down with mouse!
+                    float pitchOffset = Math.max(-0.4f, Math.min(0.4f, player.rotationPitch * 0.017453292F));
+                    this.bipedHead.rotateAngleX += pitchOffset;
+                    this.bipedHead.rotateAngleY += headY;
+                    this.bipedHead.rotateAngleZ += headZ;
+                } else {
+                    // Add vanilla tracking back
+                    this.bipedHead.rotateAngleX += headX;
+                    this.bipedHead.rotateAngleY += headY;
+                    this.bipedHead.rotateAngleZ += headZ;
+                }
             }
 
             // Pitch Arms if required (smoothly scaled during crossfade)

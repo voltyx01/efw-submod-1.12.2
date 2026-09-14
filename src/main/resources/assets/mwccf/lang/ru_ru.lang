@@ -569,6 +569,8 @@ effect.mwccf.adrenaline_effect=Адреналин
 # Notes & Diary
 item.note.name=Записка
 item.c_diary.name=Дневник Собирателя
+tooltip.mwccf.note_to_diary=§7[ПКМ] Собрать в Дневник Собирателя
+tooltip.mwccf.note_creative_config=§e[Shift + ПКМ] Настройка записки (Креатив)
 itemGroup.efw_tab=Записки и Дневник
 ge.name=Hydrangea Hedge
 tile.otbwg.shrub.name=Shrub
@@ -744,3 +746,19 @@ itemGroup.efw_tab=Записки и Дневник
 
 gui.mwccf.looting=Обыск...
 tile.mwccf.terminal.name=Настенный терминал
+tile.mwccf.antenna.name=Сейф
+
+# Flickering Lamps
+tile.mwccf.flickering_lamp_soft.name=Мягко мерцающая лампа
+tile.mwccf.flickering_lamp_broken.name=Сбоящая лампа
+tile.mwccf.flickering_lamp_dying.name=Угасающая лампа
+tooltip.mwccf.flickering_lamp_soft.desc=Мягко мерцает с редкими просадками напряжения.
+tooltip.mwccf.flickering_lamp_broken.desc=Нестабильно мигает, периодически почти гаснет.
+tooltip.mwccf.flickering_lamp_dying.desc=Почти всё время выключена, редко даёт серию вспышек.
+tooltip.mwccf.flickering_lamp.redstone=Редстоун-сигнал выключает лампу.
+
+# Placed Item & Placer Tool
+tile.mwccf.placed_item.name=Размещённый предмет
+item.mwccf.placer_tool.name=Установщик предметов
+item.mwccf.zone_tool.name=Разметчик защитных зон
+
