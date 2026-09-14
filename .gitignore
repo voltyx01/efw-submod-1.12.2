@@ -2,6 +2,9 @@
 # Gradle & Java build artifacts
 # ================================
 .gradle/
+.gradle_home/
+.gradle_compile/
+wrapper/
 build/
 bin/
 out/
