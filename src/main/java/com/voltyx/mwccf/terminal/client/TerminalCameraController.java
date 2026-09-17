@@ -85,6 +85,8 @@ public class TerminalCameraController {
 
         lastFrameTime = System.nanoTime();
         TerminalSession.getInstance().reset();
+        TerminalSession.getInstance().setModuleInstalled(terminal.hasInternetModule());
+        TerminalSession.getInstance().setModuleUsers(terminal.getModuleUsers());
     }
 
     public static void close() {
@@ -152,10 +154,7 @@ public class TerminalCameraController {
         mc.entityRenderer.setupOverlayRendering();
 
         ScaledResolution res = new ScaledResolution(mc);
-        String hint = "[ESC / ПКМ] Отойти от терминала";
-        int w = mc.fontRenderer.getStringWidth(hint);
-        int x = (res.getScaledWidth() - w) / 2;
-        int y = res.getScaledHeight() - 25;
+        TerminalSession session = TerminalSession.getInstance();
 
         GlStateManager.pushMatrix();
         GlStateManager.enableBlend();
@@ -165,8 +164,15 @@ public class TerminalCameraController {
                 GlStateManager.SourceFactor.ONE,
                 GlStateManager.DestFactor.ZERO);
         GlStateManager.disableAlpha();
+
+        // Bottom exit hint
+        String hint = "[ESC / ПКМ] Отойти от терминала";
+        int w = mc.fontRenderer.getStringWidth(hint);
+        int x = (res.getScaledWidth() - w) / 2;
+        int y = res.getScaledHeight() - 25;
         net.minecraft.client.gui.Gui.drawRect(x - 8, y - 4, x + w + 8, y + mc.fontRenderer.FONT_HEIGHT + 4, 0xCC07150A);
         mc.fontRenderer.drawStringWithShadow(hint, x, y, 0xFF44FFAA);
+
         GlStateManager.enableAlpha();
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
@@ -299,24 +305,8 @@ public class TerminalCameraController {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderGameOverlayPre(RenderGameOverlayEvent.Pre event) {
         if (active && transitionProgress > 0.3f) {
-            if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
-                return;
-            }
-            switch (event.getType()) {
-                case CROSSHAIRS:
-                case HOTBAR:
-                case HEALTH:
-                case ARMOR:
-                case FOOD:
-                case HEALTHMOUNT:
-                case AIR:
-                case EXPERIENCE:
-                case CHAT:
-                case PLAYER_LIST:
-                    event.setCanceled(true);
-                    break;
-                default:
-                    break;
+            if (event.isCancelable()) {
+                event.setCanceled(true);
             }
         }
     }

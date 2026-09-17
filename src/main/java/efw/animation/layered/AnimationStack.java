@@ -1,54 +1,69 @@
 package efw.animation.layered;
 
-import efw.animation.layered.modifier.ModifierLayer;
 import efw.animation.layered.math.Vec3f;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class AnimationStack implements IAnimation {
-    private final List<ModifierLayer<?>> layers = new ArrayList<>();
+    public static class Entry {
+        public final int priority;
+        public final IAnimation layer;
 
-    public void addLayer(int index, ModifierLayer<?> layer) {
-        this.layers.add(index, layer);
+        public Entry(int priority, IAnimation layer) {
+            this.priority = priority;
+            this.layer = layer;
+        }
     }
 
-    public void addLayer(ModifierLayer<?> layer) {
-        this.layers.add(layer);
+    private final List<Entry> layers = new ArrayList<>();
+
+    public void addAnimLayer(int priority, IAnimation layer) {
+        int search;
+        for (search = 0; search < this.layers.size() && this.layers.get(search).priority <= priority; ++search) {
+        }
+        this.layers.add(search, new Entry(priority, layer));
+    }
+
+    public void addLayer(int index, IAnimation layer) {
+        addAnimLayer(index * 100, layer);
+    }
+
+    public void addLayer(IAnimation layer) {
+        addAnimLayer(0, layer);
     }
 
     public void removeLayer(int index) {
-        this.layers.remove(index);
+        if (index >= 0 && index < this.layers.size()) {
+            this.layers.remove(index);
+        }
     }
 
-    public void removeLayer(ModifierLayer<?> layer) {
-        this.layers.remove(layer);
+    public void removeLayer(IAnimation layer) {
+        this.layers.removeIf(entry -> entry.layer == layer);
     }
 
     @Override
     public void tick() {
         for (int i = 0; i < layers.size(); i++) {
-            ModifierLayer<?> layer = layers.get(i);
-            if (layer.canRemove()) {
-                layers.remove(i);
-                i--;
-            } else {
-                layer.tick();
+            Entry entry = layers.get(i);
+            if (entry.layer.isActive()) {
+                entry.layer.tick();
             }
         }
     }
 
     @Override
     public void setupAnim(float tickDelta) {
-        for (ModifierLayer<?> layer : layers) {
-            layer.setupAnim(tickDelta);
+        for (Entry entry : layers) {
+            entry.layer.setupAnim(tickDelta);
         }
     }
 
     @Override
     public boolean isActive() {
-        for (ModifierLayer<?> layer : layers) {
-            if (layer.isActive()) {
+        for (Entry entry : layers) {
+            if (entry.layer.isActive()) {
                 return true;
             }
         }
@@ -58,9 +73,9 @@ public class AnimationStack implements IAnimation {
     @Override
     public Vec3f get3DTransform(String modelName, TransformType type, float tickDelta, Vec3f value0) {
         Vec3f current = value0;
-        for (ModifierLayer<?> layer : layers) {
-            if (layer.isActive()) {
-                current = layer.get3DTransform(modelName, type, tickDelta, current);
+        for (Entry entry : layers) {
+            if (entry.layer.isActive()) {
+                current = entry.layer.get3DTransform(modelName, type, tickDelta, current);
             }
         }
         return current;

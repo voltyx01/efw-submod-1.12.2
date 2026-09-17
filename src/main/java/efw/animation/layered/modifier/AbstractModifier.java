@@ -6,6 +6,23 @@ import efw.animation.layered.math.Vec3f;
 
 public abstract class AbstractModifier implements IAnimation {
     protected IAnimation animation;
+    protected ModifierLayer<?> host;
+
+    public void setHost(ModifierLayer<?> host) {
+        this.host = host;
+    }
+
+    public ModifierLayer<?> getHost() {
+        return this.host;
+    }
+
+    public void setAnim(IAnimation animation) {
+        this.animation = animation;
+    }
+
+    public IAnimation getAnim() {
+        return this.animation;
+    }
 
     public void setAnimation(IAnimation animation) {
         this.animation = animation;

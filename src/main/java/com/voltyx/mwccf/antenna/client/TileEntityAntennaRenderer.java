@@ -143,9 +143,40 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
         int prevLightY = (int) OpenGlHelper.lastBrightnessY;
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
         GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GlStateManager.enableDepth();
         GlStateManager.depthMask(false);
+        GlStateManager.disableCull();
 
+        // 1. Render realistic bloody finger marks / wear stains over buttons 3, 6, 8, 0
+        GlStateManager.disableTexture2D();
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buf = tess.getBuffer();
+        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+
+        for (int i = 0; i < BUTTON_NAMES.length; i++) {
+            String label = BUTTON_LABELS[i];
+            if (!isCodeButton(label)) continue;
+
+            String btnName = BUTTON_NAMES[i];
+            float[] coords = BUTTON_COORDS[i];
+            float bx = coords[0] / 16.0F;
+            float by = coords[1] / 16.0F;
+            float bz = coords[2] / 16.0F;
+
+            BedrockBlockModel.Bone bone = MODEL.getBone(btnName);
+            if (bone != null) {
+                bz += (bone.animPos[2] / 16.0F);
+            }
+
+            // zFace sits exactly on top of button front surface facing -Z
+            float zFace = bz - 0.0006F;
+            addBloodStainQuads(buf, label, bx, by, zFace);
+        }
+        tess.draw();
+        GlStateManager.enableTexture2D();
+
+        // 2. Render Button Labels (1..9, C, 0, K) with bloody/worn styling for code digits
         for (int i = 0; i < BUTTON_NAMES.length; i++) {
             String btnName = BUTTON_NAMES[i];
             String label = BUTTON_LABELS[i];
@@ -162,14 +193,21 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
             }
 
             GlStateManager.pushMatrix();
-            GlStateManager.translate(bx, by, bz);
+            // Text floats slightly in front of blood stain
+            GlStateManager.translate(bx, by, bz - 0.0010F);
             GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
 
             float textScale = 0.0034F;
             GlStateManager.scale(textScale, -textScale, textScale);
 
             int strW = fr.getStringWidth(label);
-            fr.drawString(label, -strW / 2, -4, 0xFFC8C8C8);
+            if (isCodeButton(label)) {
+                // Dark dried blood shadow + worn crimson stained text
+                fr.drawString(label, -strW / 2 + 1, -3, 0xFF360606);
+                fr.drawString(label, -strW / 2, -4, 0xFFA42020);
+            } else {
+                fr.drawString(label, -strW / 2, -4, 0xFFC8C8C8);
+            }
 
             GlStateManager.popMatrix();
         }
@@ -179,6 +217,44 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
         GlStateManager.enableLighting();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.popMatrix();
+    }
+
+    private static boolean isCodeButton(String label) {
+        return "3".equals(label) || "6".equals(label) || "8".equals(label) || "0".equals(label);
+    }
+
+    private static void addBloodStainQuads(BufferBuilder buf, String label, float bx, float by, float z) {
+        float p = 1.0F / 16.0F; // 1 model pixel = 0.0625 world units
+
+        if ("3".equals(label)) {
+            // Button 3: smeared bloody thumbprint, dark dried blood with deep crimson center
+            drawFrontQuad(buf, bx - 0.35F * p, bx + 0.44F * p, by - 0.40F * p, by + 0.44F * p, z, 0.28F, 0.03F, 0.03F, 0.88F);
+            drawFrontQuad(buf, bx - 0.15F * p, bx + 0.36F * p, by - 0.25F * p, by + 0.35F * p, z, 0.50F, 0.06F, 0.06F, 0.82F);
+            drawFrontQuad(buf, bx - 0.05F * p, bx + 0.24F * p, by - 0.10F * p, by + 0.22F * p, z, 0.68F, 0.08F, 0.08F, 0.70F);
+        } else if ("6".equals(label)) {
+            // Button 6: diagonal blood swipe across the button and a small trickle below
+            drawFrontQuad(buf, bx - 0.42F * p, bx + 0.42F * p, by - 0.42F * p, by + 0.35F * p, z, 0.26F, 0.03F, 0.03F, 0.86F);
+            drawFrontQuad(buf, bx - 0.30F * p, bx + 0.28F * p, by - 0.30F * p, by + 0.18F * p, z, 0.48F, 0.05F, 0.05F, 0.80F);
+            drawFrontQuad(buf, bx - 0.12F * p, bx + 0.08F * p, by - 0.58F * p, by - 0.40F * p, z, 0.32F, 0.04F, 0.04F, 0.75F);
+        } else if ("8".equals(label)) {
+            // Button 8: heavy bloody fingerprint covering key with blood drip
+            drawFrontQuad(buf, bx - 0.44F * p, bx + 0.44F * p, by - 0.44F * p, by + 0.44F * p, z, 0.30F, 0.03F, 0.03F, 0.92F);
+            drawFrontQuad(buf, bx - 0.30F * p, bx + 0.30F * p, by - 0.26F * p, by + 0.30F * p, z, 0.55F, 0.06F, 0.06F, 0.88F);
+            drawFrontQuad(buf, bx - 0.16F * p, bx + 0.16F * p, by - 0.12F * p, by + 0.14F * p, z, 0.72F, 0.08F, 0.08F, 0.72F);
+            drawFrontQuad(buf, bx - 0.06F * p, bx + 0.06F * p, by - 0.65F * p, by - 0.44F * p, z, 0.36F, 0.04F, 0.04F, 0.85F);
+        } else if ("0".equals(label)) {
+            // Button 0: worn bloody smudge with edge splatter
+            drawFrontQuad(buf, bx - 0.40F * p, bx + 0.38F * p, by - 0.38F * p, by + 0.42F * p, z, 0.27F, 0.03F, 0.03F, 0.86F);
+            drawFrontQuad(buf, bx - 0.22F * p, bx + 0.22F * p, by - 0.18F * p, by + 0.26F * p, z, 0.50F, 0.05F, 0.05F, 0.82F);
+            drawFrontQuad(buf, bx + 0.24F * p, bx + 0.42F * p, by - 0.36F * p, by - 0.22F * p, z, 0.34F, 0.04F, 0.04F, 0.68F);
+        }
+    }
+
+    private static void drawFrontQuad(BufferBuilder buf, float x0, float x1, float y0, float y1, float z, float r, float g, float b, float a) {
+        buf.pos(x0, y0, z).color(r, g, b, a).endVertex();
+        buf.pos(x1, y0, z).color(r, g, b, a).endVertex();
+        buf.pos(x1, y1, z).color(r, g, b, a).endVertex();
+        buf.pos(x0, y1, z).color(r, g, b, a).endVertex();
     }
 
     private void renderDisplayAndIndicators(TileEntityAntenna te, float partialTicks) {

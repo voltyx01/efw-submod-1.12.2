@@ -106,6 +106,21 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 				domain + ":" + folderPath + "/pistol_default.player_animation.json", "pistol_");
 		efw.animation.AnimationRegistry.loadFromResource(rm,
 				domain + ":" + folderPath + "/rifle_default.player_animation.json", "rifle_");
+
+		// Register unarmed prone clips: use pistol_lie / pistol_lie_move animations.
+		efw.animation.AnimationClip pistolLieClip = efw.animation.AnimationRegistry.getClip("pistol_lie");
+		if (pistolLieClip != null) {
+			// Alias "lie" -> pistol_lie
+			efw.animation.AnimationRegistry.register(new efw.animation.AnimationClip(
+					"lie", pistolLieClip.length, pistolLieClip.loop, pistolLieClip.bones));
+		}
+
+		efw.animation.AnimationClip pistolLieMoveClip = efw.animation.AnimationRegistry.getClip("pistol_lie_move");
+		if (pistolLieMoveClip != null) {
+			// Alias "lie_move" -> pistol_lie_move
+			efw.animation.AnimationRegistry.register(new efw.animation.AnimationClip(
+					"lie_move", pistolLieMoveClip.length, pistolLieMoveClip.loop, pistolLieMoveClip.bones));
+		}
 	}
 
 	@Override
@@ -135,11 +150,15 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.geo.HeadlampKeyHandler());
 		com.voltyx.mwccf.geo.HeadlampKeyHandler.init();
 		
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.walkietalkie.WalkieTalkieKeyHandler());
+		com.voltyx.mwccf.walkietalkie.WalkieTalkieKeyHandler.init();
+		
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityFridge.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityFridgeRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityMicrowaveRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new com.voltyx.mwccf.terminal.client.TileEntityTerminalRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.block.lamp.TileEntityFlickeringLamp.class, new com.voltyx.mwccf.block.lamp.TileEntityFlickeringLampRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new com.voltyx.mwccf.antenna.client.TileEntityAntennaRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.radio.TileEntityOldRadio.class, new com.voltyx.mwccf.radio.client.TileEntityOldRadioRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityPlacedItem.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityPlacedItemRenderer());
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.terminal.client.TerminalCameraController());

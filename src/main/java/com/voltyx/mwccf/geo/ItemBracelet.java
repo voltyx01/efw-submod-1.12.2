@@ -56,17 +56,25 @@ public class ItemBracelet extends Item implements IBauble {
                 itemstack.setTagCompound(tag);
             }
 
-            int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-            if (isActive && charge > 0) {
-                charge--;
-                tag.setInteger("battery_charge", charge);
+            if (player.ticksExisted % 20 == 0) {
+                int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
+                if (isActive && charge > 0) {
+                    charge = Math.max(0, charge - 20);
+                    tag.setInteger("battery_charge", charge);
 
-                // Auto-injector check every 20 ticks (1 sec)
-                if (player.ticksExisted % 20 == 0 && player instanceof EntityPlayer) {
-                    checkAndInjectMorphine(tag, (EntityPlayer) player);
+                    // Auto-injector check every 20 ticks (1 sec)
+                    if (player instanceof EntityPlayer) {
+                        checkAndInjectMorphine(tag, (EntityPlayer) player);
+                    }
                 }
             }
         }
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        if (slotChanged) return true;
+        return oldStack.getItem() != newStack.getItem();
     }
 
     private void checkAndInjectMorphine(NBTTagCompound tag, EntityPlayer player) {

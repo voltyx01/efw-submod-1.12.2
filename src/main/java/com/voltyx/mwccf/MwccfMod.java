@@ -112,6 +112,7 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.zone.network.PacketCreateZone.Handler.class, com.voltyx.mwccf.zone.network.PacketCreateZone.class, 23, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.zone.network.PacketDeleteZoneAt.Handler.class, com.voltyx.mwccf.zone.network.PacketDeleteZoneAt.class, 24, Side.SERVER);
 		PACKET_HANDLER.registerMessage(efw.network.PacketConfigureNote.Handler.class, efw.network.PacketConfigureNote.class, 25, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.walkietalkie.PacketToggleWalkieTalkie.Handler.class, com.voltyx.mwccf.walkietalkie.PacketToggleWalkieTalkie.class, 26, Side.SERVER);
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.QuestZoneEventHandler());
 
@@ -303,6 +304,7 @@ public class MwccfMod {
 		event.getRegistry().register(com.voltyx.mwccf.item.ItemAdrenaline.INSTANCE);
 		event.getRegistry().register(com.voltyx.mwccf.item.ItemMorphineSyringe.INSTANCE);
 		event.getRegistry().register(com.voltyx.mwccf.item.ItemSyringe.INSTANCE);
+		event.getRegistry().register(com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie.INSTANCE);
 
 		event.getRegistry().register(new net.minecraft.item.ItemBlock(com.voltyx.mwccf.mcore.MCoreBlocks.STEEL_BLOCK)
 				.setRegistryName(com.voltyx.mwccf.mcore.MCoreBlocks.STEEL_BLOCK.getRegistryName()));
@@ -361,6 +363,9 @@ public class MwccfMod {
 							"inventory"));
 		net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation(com.voltyx.mwccf.item.ItemSyringe.INSTANCE, 0,
 					new net.minecraft.client.renderer.block.model.ModelResourceLocation(com.voltyx.mwccf.item.ItemSyringe.INSTANCE.getRegistryName(),
+							"inventory"));
+		net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation(com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie.INSTANCE, 0,
+					new net.minecraft.client.renderer.block.model.ModelResourceLocation(com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie.INSTANCE.getRegistryName(),
 							"inventory"));
 		Item[] blockItems = {
 				Item.getItemFromBlock(com.voltyx.mwccf.mcore.MCoreBlocks.STEEL_BLOCK),

@@ -206,6 +206,9 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
                 int step = session.getBootStep();
                 for (int i = 0; i < step && i < TerminalSession.BOOT_LINES.length; i++) {
                     TerminalSession.ConsoleLine bl = TerminalSession.BOOT_LINES[i];
+                    if (i == 2 && session.hasModule()) {
+                        bl = new TerminalSession.ConsoleLine("OK", 0xFF00FF66, "Network interface eth0: link UP", 0xFF44FFAA);
+                    }
                     if (bl.tag != null) {
                         curY = drawStatusLine(fr, (int) startX, curY, bl.tag, bl.tagColor, bl.text, bl.textColor, fade, maxW);
                     } else {
@@ -234,6 +237,56 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
 
                 String prompt = "root@mw-terminal:~# " + session.getInputBuffer() + cursor;
                 curY = drawWrappedString(fr, prompt, (int) startX, curY, 0xFF44FFAA, fade, maxW);
+            } else if (stage == TerminalSession.Stage.CHAT_MENU) {
+                if (session.getSubMenu() == TerminalSession.ChatSubMenu.GROUPS) {
+                    curY = drawWrappedString(fr, "=== Groups ===", (int) startX, curY, 0xFF55FFBB, fade, maxW);
+                    curY += 2;
+                    for (int i = 0; i < TerminalSession.GROUPS_MENU_ITEMS.length; i++) {
+                        boolean sel = (i == session.getGroupsMenuIndex());
+                        String prefix = sel ? "> " : "  ";
+                        int col = sel ? 0xFF00FF66 : 0xFF44FFAA;
+                        curY = drawWrappedString(fr, prefix + TerminalSession.GROUPS_MENU_ITEMS[i], (int) startX, curY, col, fade, maxW);
+                    }
+                } else if (session.getSubMenu() == TerminalSession.ChatSubMenu.PRIVATE) {
+                    curY = drawWrappedString(fr, "=== Private Chats ===", (int) startX, curY, 0xFF55FFBB, fade, maxW);
+                    curY += 2;
+                    java.util.List<String> users = session.getModuleUsers();
+                    for (int i = 0; i < users.size(); i++) {
+                        boolean sel = (i == session.getPrivateMenuIndex());
+                        String prefix = sel ? "> " : "  ";
+                        int col = sel ? 0xFF00FF66 : 0xFF44FFAA;
+                        curY = drawWrappedString(fr, prefix + users.get(i), (int) startX, curY, col, fade, maxW);
+                    }
+                } else {
+                    curY = drawWrappedString(fr, "=== Terminal Network Chat ===", (int) startX, curY, 0xFF55FFBB, fade, maxW);
+                    curY += 2;
+                    for (int i = 0; i < TerminalSession.CHAT_MENU_ITEMS.length; i++) {
+                        boolean sel = (i == session.getChatMenuIndex());
+                        String prefix = sel ? "> " : "  ";
+                        int col = sel ? 0xFF00FF66 : 0xFF44FFAA;
+                        curY = drawWrappedString(fr, prefix + TerminalSession.CHAT_MENU_ITEMS[i], (int) startX, curY, col, fade, maxW);
+                    }
+                }
+                curY += 2;
+                String nav = session.getSubMenu() != TerminalSession.ChatSubMenu.MAIN
+                        ? "[Up/Down] Select  [Enter] Open  [Esc] Back"
+                        : "[Up/Down] Select  [Enter] Open  [Esc] Close";
+                curY = drawWrappedString(fr, nav, (int) startX, curY, 0xFF888888, fade, maxW);
+            } else if (stage == TerminalSession.Stage.APP_CHAT) {
+                curY = drawWrappedString(fr, "=== " + session.getCurrentChatRoom() + " ===", (int) startX, curY, 0xFF55FFBB, fade, maxW);
+                curY = drawWrappedString(fr, "[Ctrl+C] Exit  |  [Esc] Back  |  eth0: UP", (int) startX, curY, 0xFF448866, fade, maxW);
+                curY += 1;
+
+                for (TerminalSession.ConsoleLine cl : session.getChatMessages()) {
+                    if (cl.tag != null) {
+                        curY = drawStatusLine(fr, (int) startX, curY, cl.tag, cl.tagColor, cl.text, cl.textColor, fade, maxW);
+                    } else {
+                        curY = drawWrappedString(fr, cl.text, (int) startX, curY, cl.textColor, fade, maxW);
+                    }
+                }
+
+                String prompt = "> " + session.getInputBuffer() + cursor;
+                curY = drawWrappedString(fr, prompt, (int) startX, curY, 0xFF00FF66, fade, maxW);
             }
 
             GlStateManager.popMatrix();

@@ -27,7 +27,8 @@ public class ItemInspectKeyHandler {
 
             Minecraft mc = Minecraft.getMinecraft();
             if (mc.currentScreen == null || mc.currentScreen instanceof GuiItemInspect
-                    || mc.currentScreen instanceof GuiWeaponModding) {
+                    || mc.currentScreen instanceof GuiWeaponModding
+                    || mc.currentScreen instanceof com.voltyx.mwccf.walkietalkie.WalkieTalkieGui) {
                 return;
             }
 
@@ -108,6 +109,13 @@ public class ItemInspectKeyHandler {
                     event.setCanceled(true);
                     return;
                 }
+
+                // [X] Configure Walkie-Talkie
+                if (key == Keyboard.KEY_X && stack.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie) {
+                    mc.displayGuiScreen(new com.voltyx.mwccf.walkietalkie.WalkieTalkieGui(stack, mc.currentScreen));
+                    event.setCanceled(true);
+                    return;
+                }
             }
         }
     }
@@ -151,6 +159,10 @@ public class ItemInspectKeyHandler {
 
             if (stack.getItem() instanceof efw.item.ManualItem) {
                 event.getToolTip().add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.use_manual"));
+            }
+
+            if (stack.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie) {
+                event.getToolTip().add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.walkie_talkie.configure"));
             }
 
             if (stack.getItem() instanceof efw.item.NoteItem) {

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:radio_board"
+    },
+    {
+      "item": "mwccf:walkie_talkie_case"
+    },
+    {
+      "item": "mwccf:microphone_part"
+    }
+  ],
+  "result": {
+    "item": "mwccf:walkie_talkie",
+    "count": 1
+  }
+}

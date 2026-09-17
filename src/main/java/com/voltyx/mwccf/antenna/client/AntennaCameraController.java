@@ -376,24 +376,8 @@ public class AntennaCameraController {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderGameOverlayPre(RenderGameOverlayEvent.Pre event) {
         if (active && transitionProgress > 0.3f) {
-            if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
-                return;
-            }
-            switch (event.getType()) {
-                case CROSSHAIRS:
-                case HOTBAR:
-                case HEALTH:
-                case ARMOR:
-                case FOOD:
-                case HEALTHMOUNT:
-                case AIR:
-                case EXPERIENCE:
-                case CHAT:
-                case PLAYER_LIST:
-                    event.setCanceled(true);
-                    break;
-                default:
-                    break;
+            if (event.isCancelable()) {
+                event.setCanceled(true);
             }
         }
     }

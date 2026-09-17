@@ -18,10 +18,11 @@ public class TileEntityAntenna extends TileEntity implements ITickable {
 
     private boolean isOpen = false;
     private boolean isUnlocked = false;
+    private boolean isLooted = false;
     private float doorAnimTime = 0.0f;
     private float prevDoorAnimTime = 0.0f;
 
-    private String pinCode = "1234";
+    private String pinCode = "3608";
     private UUID activePlayerUUID = null;
 
     // Track active button press animation timers (buttonName -> remainingTime)
@@ -33,6 +34,20 @@ public class TileEntityAntenna extends TileEntity implements ITickable {
 
     public boolean isUnlocked() {
         return isUnlocked;
+    }
+
+    public boolean isLooted() {
+        return isLooted;
+    }
+
+    public void setLooted(boolean looted) {
+        if (this.isLooted != looted) {
+            this.isLooted = looted;
+            markDirty();
+            if (world != null && !world.isRemote) {
+                world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+            }
+        }
     }
 
     public void setOpen(boolean open) {
@@ -132,6 +147,7 @@ public class TileEntityAntenna extends TileEntity implements ITickable {
         super.writeToNBT(compound);
         compound.setBoolean("IsOpen", isOpen);
         compound.setBoolean("IsUnlocked", isUnlocked);
+        compound.setBoolean("IsLooted", isLooted);
         compound.setFloat("DoorAnimTime", doorAnimTime);
         compound.setString("PinCode", pinCode);
         if (activePlayerUUID != null) {
@@ -145,10 +161,16 @@ public class TileEntityAntenna extends TileEntity implements ITickable {
         super.readFromNBT(compound);
         this.isOpen = compound.getBoolean("IsOpen");
         this.isUnlocked = compound.getBoolean("IsUnlocked");
+        this.isLooted = compound.getBoolean("IsLooted");
         this.doorAnimTime = compound.getFloat("DoorAnimTime");
         this.prevDoorAnimTime = this.doorAnimTime;
         if (compound.hasKey("PinCode")) {
             this.pinCode = compound.getString("PinCode");
+            if ("1234".equals(this.pinCode)) {
+                this.pinCode = "3608";
+            }
+        } else {
+            this.pinCode = "3608";
         }
         if (compound.hasUniqueId("ActivePlayer")) {
             this.activePlayerUUID = compound.getUniqueId("ActivePlayer");

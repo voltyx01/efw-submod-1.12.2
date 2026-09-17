@@ -26,6 +26,7 @@ public class FurnitureBlocks {
     public static Block WORKBENCH;
     public static Block TERMINAL;
     public static Block ANTENNA;
+    public static Block OLD_RADIO;
     public static Block PLACED_ITEM;
     public static Item PLACER_TOOL;
     public static Item ZONE_TOOL;
@@ -111,6 +112,7 @@ public class FurnitureBlocks {
 
         TERMINAL = registerBlock(new com.voltyx.mwccf.terminal.BlockTerminal("terminal"));
         ANTENNA = registerBlock(new com.voltyx.mwccf.antenna.BlockAntenna("antenna"));
+        OLD_RADIO = registerBlock(new com.voltyx.mwccf.radio.BlockOldRadio());
 
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityFridge.class, new ResourceLocation("mwccf", "fridge"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityStove.class, new ResourceLocation("mwccf", "stove"));
@@ -120,6 +122,7 @@ public class FurnitureBlocks {
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityWashingMachine.class, new ResourceLocation("mwccf", "washing_machine"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new ResourceLocation("mwccf", "terminal"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new ResourceLocation("mwccf", "antenna"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.radio.TileEntityOldRadio.class, new ResourceLocation("mwccf", "old_radio"));
 
         PLACED_ITEM = registerBlock(new BlockPlacedItem("placed_item"));
         PLACER_TOOL = registerItem(new com.voltyx.mwccf.item.ItemPlacerTool("placer_tool"));

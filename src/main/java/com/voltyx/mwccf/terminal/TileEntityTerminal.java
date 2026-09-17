@@ -14,6 +14,8 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
     public static final float ANIM_MAX_TIME = 0.5f;
 
     private boolean isOpen = false;
+    private boolean hasInternetModule = false;
+    private java.util.List<String> moduleUsers = new java.util.ArrayList<>();
     private float animTime = 0.0f;
     private float prevAnimTime = 0.0f;
 
@@ -21,6 +23,29 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
 
     public boolean isOpen() {
         return isOpen;
+    }
+
+    public boolean hasInternetModule() {
+        return hasInternetModule;
+    }
+
+    public java.util.List<String> getModuleUsers() {
+        return moduleUsers;
+    }
+
+    public void installInternetModule(String playerName) {
+        this.hasInternetModule = true;
+        if (playerName != null && !moduleUsers.contains(playerName)) {
+            moduleUsers.add(playerName);
+        }
+        markDirty();
+        if (world != null && !world.isRemote) {
+            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        }
+    }
+
+    public void installInternetModule() {
+        installInternetModule(null);
     }
 
     public void setOpen(boolean open) {
@@ -83,10 +108,16 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
         super.writeToNBT(compound);
         compound.setBoolean("IsOpen", isOpen);
+        compound.setBoolean("HasInternetModule", hasInternetModule);
         compound.setFloat("AnimTime", animTime);
         if (activePlayerUUID != null) {
             compound.setUniqueId("ActivePlayer", activePlayerUUID);
         }
+        net.minecraft.nbt.NBTTagList userList = new net.minecraft.nbt.NBTTagList();
+        for (String user : moduleUsers) {
+            userList.appendTag(new net.minecraft.nbt.NBTTagString(user));
+        }
+        compound.setTag("ModuleUsers", userList);
         return compound;
     }
 
@@ -94,12 +125,20 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
     public void readFromNBT(NBTTagCompound compound) {
         super.readFromNBT(compound);
         this.isOpen = compound.getBoolean("IsOpen");
+        this.hasInternetModule = compound.getBoolean("HasInternetModule");
         this.animTime = compound.getFloat("AnimTime");
         this.prevAnimTime = this.animTime;
         if (compound.hasUniqueId("ActivePlayer")) {
             this.activePlayerUUID = compound.getUniqueId("ActivePlayer");
         } else {
             this.activePlayerUUID = null;
+        }
+        this.moduleUsers.clear();
+        if (compound.hasKey("ModuleUsers", 9)) {
+            net.minecraft.nbt.NBTTagList userList = compound.getTagList("ModuleUsers", 8);
+            for (int i = 0; i < userList.tagCount(); i++) {
+                this.moduleUsers.add(userList.getStringTagAt(i));
+            }
         }
     }
 

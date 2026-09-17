@@ -1,60 +1,98 @@
 package efw.animation;
 
 import efw.animation.layered.AnimationStack;
+import efw.animation.layered.IAnimation;
 import efw.animation.layered.KeyframeAnimationPlayer;
 import efw.animation.layered.TransformType;
+import efw.animation.layered.math.Ease;
 import efw.animation.layered.math.Vec3f;
 import efw.animation.layered.modifier.AbstractFadeModifier;
-import efw.animation.layered.math.Ease;
+import efw.animation.layered.modifier.AdjustmentModifier;
 import efw.animation.layered.modifier.ModifierLayer;
-import efw.animation.layered.IAnimation;
+import net.minecraft.entity.player.EntityPlayer;
+
+import java.util.Optional;
 
 public class AnimationPlayer {
 
     private final AnimationStack stack;
     private final ModifierLayer<IAnimation> baseLayer;
     private final ModifierLayer<IAnimation> actionLayer;
+    private final ModifierLayer<IAnimation> rollLayer;
+
+    private EntityPlayer player;
+    private float lastTickDelta = 0.0f;
 
     // Helper states for API compatibility
     private AnimationClip currentClip;
     private AnimationClip actionClip;
     private AnimationClip previousActionClip;
+    private AnimationClip rollClip;
     private boolean playing = false;
     private boolean actionFadingOut = false;
+    private boolean rollFadingOut = false;
     private float actionSpeed = 1.0f;
     private float lastSpeedMult = 1.0f;
-    private float fadeWeight = 0f; // Mocked for compatibility
+    private float fadeWeight = 0f;
     public float rollYawOffset = 0.0f;
     public float rollFade = 0.0f;
     public boolean isHoldingWeapon = false;
-
-    // Сглаженный вес прицеливания рук для оружия — плавная смена между аимом/холдом и перезарядкой/бегом.
-    private float prevArmPitchWeight = 0.0f;
-    private float armPitchWeight = 0.0f;
-    private float targetArmPitchWeight = 0.0f;
     public AnimationClip lastWeaponClip = null;
 
-    // Roll arm transition to weapon running pose
-    private float rollArmRunWeight = 0.0f;
-    private float prevRollArmRunWeight = 0.0f;
-    private int rollTicks = 0;
+    private float currentArmPitchWeight = 0.0f;
+    private float prevArmPitchWeight = 0.0f;
+    private float currentSneakOffsetWeight = 0.0f;
+    private float prevSneakOffsetWeight = 0.0f;
+    private float currentWeaponSneakWeight = 0.0f;
+    private float prevWeaponSneakWeight = 0.0f;
+    private float currentRollLookWeight = 1.0f;
+    private float prevRollLookWeight = 1.0f;
+    private boolean snapped = false;
+    private boolean actionSnapped = false;
+    private String lastClipName = null;
 
-    private AnimationClip cachedNormalClip = null;
-    private KeyframeAnimationPlayer cachedNormalPlayer = null;
-    private AnimationClip cachedRunClip = null;
-    private KeyframeAnimationPlayer cachedRunPlayer = null;
-
-    public AnimationPlayer() {
+    public AnimationPlayer(EntityPlayer player) {
+        this.player = player;
         this.stack = new AnimationStack();
         this.baseLayer = new ModifierLayer<>();
         this.actionLayer = new ModifierLayer<>();
+        this.rollLayer = new ModifierLayer<>();
 
-        this.stack.addLayer(0, this.baseLayer);
-        this.stack.addLayer(1, this.actionLayer);
+        this.stack.addAnimLayer(0, this.baseLayer);
+        this.stack.addAnimLayer(100, this.actionLayer);
+        this.stack.addAnimLayer(1000, this.rollLayer);
+    }
+
+    public AnimationPlayer() {
+        this(null);
+    }
+
+    public void setPlayer(EntityPlayer player) {
+        this.player = player;
+        if (player != null && this.currentWeaponSneakWeight == 0.0f && this.isHoldingWeapon) {
+            this.currentWeaponSneakWeight = 1.0f;
+            this.prevWeaponSneakWeight = 1.0f;
+        }
+    }
+
+    public EntityPlayer getPlayer() {
+        return this.player;
     }
 
     public AnimationStack getStack() {
         return stack;
+    }
+
+    public ModifierLayer<IAnimation> getBaseLayer() {
+        return baseLayer;
+    }
+
+    public ModifierLayer<IAnimation> getActionLayer() {
+        return actionLayer;
+    }
+
+    public ModifierLayer<IAnimation> getRollLayer() {
+        return rollLayer;
     }
 
     public void setAction(AnimationClip clip, float time, float speed) {
@@ -67,13 +105,6 @@ public class AnimationPlayer {
             this.lastWeaponClip = clip;
         }
 
-        if (clip.name != null && "roll".equals(clip.name)) {
-            this.rollTicks = 0;
-        }
-
-        boolean wasRoll = (this.actionClip != null && "roll".equals(this.actionClip.name))
-                || (this.previousActionClip != null && "roll".equals(this.previousActionClip.name));
-
         if (this.actionClip != null && this.actionClip != clip) {
             this.previousActionClip = this.actionClip;
         }
@@ -81,32 +112,27 @@ public class AnimationPlayer {
         this.actionSpeed = speed;
         this.actionFadingOut = false;
 
-        KeyframeAnimationPlayer player = new KeyframeAnimationPlayer(clip);
-        player.setSpeed(speed);
+        KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
+        playerAnim.setSpeed(speed);
 
-        IAnimation oldAnim = this.actionLayer.getAnimation();
         int blendTicks = getActionBlendTicks(clip.name);
-        if (wasRoll && this.isHoldingWeapon) {
-            blendTicks = 0;
-            this.previousActionClip = null;
+        if (this.actionSnapped || blendTicks <= 0) {
+            this.actionSnapped = false;
+            this.actionLayer.setAnimation(playerAnim);
+        } else {
+            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), playerAnim, true);
         }
-        AbstractFadeModifier fadeModifier = AbstractFadeModifier.standardFadeInDelayed(blendTicks, Ease::inOutSine);
-        fadeModifier.setAnimation(player);
-        if (oldAnim != null) {
-            fadeModifier.setBeginAnimation(oldAnim);
-        }
-        this.actionLayer.setAnimation(fadeModifier);
     }
 
     public void stopAction(int blendTicks) {
         if (this.actionFadingOut) {
             return;
         }
-        IAnimation oldAnim = this.actionLayer.getAnimation();
-        if (oldAnim != null) {
-            AbstractFadeModifier fadeOut = AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine);
-            fadeOut.setBeginAnimation(oldAnim);
-            this.actionLayer.setAnimation(fadeOut);
+        if (this.actionLayer.isActive()) {
+            if (this.actionClip != null) {
+                this.previousActionClip = this.actionClip;
+            }
+            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), null, true);
             this.actionFadingOut = true;
         } else {
             this.actionLayer.setAnimation(null);
@@ -127,9 +153,7 @@ public class AnimationPlayer {
         this.actionClip = null;
         this.actionLayer.setAnimation(null);
         this.actionFadingOut = false;
-        this.rollArmRunWeight = 0.0f;
-        this.prevRollArmRunWeight = 0.0f;
-        this.rollTicks = 0;
+        this.actionSnapped = true;
     }
 
     public void cancelAction() {
@@ -140,10 +164,64 @@ public class AnimationPlayer {
         // Handled internally
     }
 
+    public void playRoll(AnimationClip clip, float speed) {
+        if (clip == null) return;
+        this.rollClip = clip;
+        this.rollFadingOut = false;
+        KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
+        playerAnim.setSpeed(speed);
+        this.rollLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease::inOutSine), playerAnim, true);
+    }
+
+    public void stopRoll(int blendTicks) {
+        if (this.rollLayer.isActive() && !this.rollFadingOut) {
+            this.rollFadingOut = true;
+            this.rollLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), null, true);
+        }
+    }
+
+    public boolean isRollPlaying() {
+        return this.rollLayer.isActive();
+    }
+
+    public boolean isRollFadingOut() {
+        return this.rollFadingOut;
+    }
+
+    public boolean isRollActive(float pt) {
+        return this.rollLayer.isActive();
+    }
+
+    public KeyframeAnimationPlayer getRollPlayer() {
+        return findRollPlayer(this.rollLayer.getAnimation());
+    }
+
+    private KeyframeAnimationPlayer findRollPlayer(IAnimation anim) {
+        if (anim == null) return null;
+        if (anim instanceof KeyframeAnimationPlayer) {
+            return (KeyframeAnimationPlayer) anim;
+        } else if (anim instanceof AbstractFadeModifier) {
+            AbstractFadeModifier fm = (AbstractFadeModifier) anim;
+            KeyframeAnimationPlayer found = findRollPlayer(fm.getBeginAnimation());
+            if (found != null) return found;
+            return findRollPlayer(fm.getAnimation());
+        }
+        return null;
+    }
+
+    public float getRollProgress(float tickDelta) {
+        KeyframeAnimationPlayer rp = getRollPlayer();
+        if (rp != null) {
+            return rp.getProgress();
+        }
+        return this.rollLayer.isActive() ? 0.5f : 1.0f;
+    }
+
     public void snap() {
         this.playing = false;
         this.currentClip = null;
         this.baseLayer.setAnimation(null);
+        this.snapped = true;
     }
 
     public void play(AnimationClip clip) {
@@ -154,296 +232,197 @@ public class AnimationPlayer {
         if (clip == currentClip && playing)
             return;
 
-        String oldClipName = this.currentClip != null ? this.currentClip.name : null;
+        String oldClipName = this.currentClip != null ? this.currentClip.name : this.lastClipName;
         this.currentClip = clip;
+        this.lastClipName = clip != null ? clip.name : null;
         this.playing = true;
 
-        KeyframeAnimationPlayer player = new KeyframeAnimationPlayer(clip);
-        player.setSpeed(speed);
+        KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
+        playerAnim.setSpeed(speed);
 
         int blendTicks = getPoseBlendTicks(clip.name, oldClipName);
-        // standardFadeInDelayed: первый tick() не сдвигает time,
-        // чтобы первый рендер-кадр видел progress≈0 (полный ease-curve).
-        AbstractFadeModifier fadeModifier = AbstractFadeModifier.standardFadeInDelayed(blendTicks, Ease::inOutSine);
-        fadeModifier.setAnimation(player);
-
-        IAnimation oldAnim = this.baseLayer.getAnimation();
-        if (oldAnim != null) {
-            fadeModifier.setBeginAnimation(oldAnim);
+        if (this.snapped || blendTicks <= 0) {
+            this.snapped = false;
+            this.baseLayer.setAnimation(playerAnim);
+        } else {
+            this.baseLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), playerAnim, true);
         }
-
-        this.baseLayer.setAnimation(fadeModifier);
     }
 
     public void stop() {
         this.playing = false;
-        // To fade out base layer:
         IAnimation oldAnim = this.baseLayer.getAnimation();
         if (oldAnim != null && oldAnim.isActive()) {
-            // Уходим "в никуда" — otherClipName = null, поэтому lie -> ничего мгновенно.
             int blendTicks = getPoseBlendTicks(this.currentClip != null ? this.currentClip.name : null, null);
-            AbstractFadeModifier fadeOut = AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine);
-            fadeOut.setBeginAnimation(oldAnim);
-            // No inner animation, so it fades to nothing
-            this.baseLayer.setAnimation(fadeOut);
+            if (blendTicks <= 0) {
+                this.baseLayer.setAnimation(null);
+            } else {
+                this.baseLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), null, true);
+            }
+        }
+    }
+
+    private void updateAnimationSpeed(IAnimation anim, float speed) {
+        if (anim == null) return;
+        if (anim instanceof KeyframeAnimationPlayer) {
+            ((KeyframeAnimationPlayer) anim).setSpeed(speed);
+        } else if (anim instanceof efw.animation.layered.modifier.AbstractModifier) {
+            updateAnimationSpeed(((efw.animation.layered.modifier.AbstractModifier) anim).getAnimation(), speed);
+            if (anim instanceof efw.animation.layered.modifier.AbstractFadeModifier) {
+                updateAnimationSpeed(((efw.animation.layered.modifier.AbstractFadeModifier) anim).getBeginAnimation(), speed);
+            }
         }
     }
 
     public void tick(float speedMult) {
         this.lastSpeedMult = speedMult;
-        
-        // Propagate speed multiplier to the KeyframeAnimationPlayers
-        if (this.baseLayer.getAnimation() instanceof AbstractFadeModifier) {
-            AbstractFadeModifier fm = (AbstractFadeModifier) this.baseLayer.getAnimation();
-            if (fm.getAnimation() instanceof KeyframeAnimationPlayer) {
-                ((KeyframeAnimationPlayer) fm.getAnimation()).setSpeed(speedMult);
+
+        updateAnimationSpeed(this.baseLayer.getAnimation(), speedMult);
+
+        KeyframeAnimationPlayer rp = getRollPlayer();
+        if (rp != null && rp.isActive() && !this.rollFadingOut) {
+            // roll.json: somersault rotation completes at tick 10 (out of 13), progress ~0.77.
+            // Start the 8-tick smooth rise fadeout from the crouched roll landing.
+            if (rp.getProgress() >= 0.77f) {
+                stopRoll(8);
             }
-        } else if (this.baseLayer.getAnimation() instanceof KeyframeAnimationPlayer) {
-            ((KeyframeAnimationPlayer) this.baseLayer.getAnimation()).setSpeed(speedMult);
         }
 
         this.stack.tick();
 
-        this.prevArmPitchWeight = this.armPitchWeight;
-        this.armPitchWeight += (this.targetArmPitchWeight - this.armPitchWeight) * 0.25f;
-
-        this.prevRollArmRunWeight = this.rollArmRunWeight;
-        boolean isRollPlaying = "roll".equals(getCurrentActionName()) || (actionFadingOut && "roll".equals(getFadeActionName()));
-        if (isRollPlaying && this.isHoldingWeapon) {
-            this.rollTicks++;
-            // The 360° somersault takes ~10 ticks. Keep arms firmly tucked in run pose for 10 ticks,
-            // then smoothly un-tuck over 5 ticks (ticks 11-15) as the character rises upright.
-            float target = (this.rollTicks <= 10) ? 1.0f : 0.0f;
-            if (this.rollArmRunWeight < target) {
-                this.rollArmRunWeight = Math.min(target, this.rollArmRunWeight + 0.35f);
-            } else if (this.rollArmRunWeight > target) {
-                this.rollArmRunWeight = Math.max(target, this.rollArmRunWeight - 0.20f);
-            }
-        } else {
-            this.rollTicks = 0;
-            this.rollArmRunWeight = Math.max(0.0f, this.rollArmRunWeight - 0.20f);
-        }
-
-        if (this.actionLayer.getAnimation() != null && this.actionFadingOut && !this.actionLayer.getAnimation().isActive()) {
-            this.actionLayer.setAnimation(null);
-            if (this.actionClip != null) {
-                this.previousActionClip = this.actionClip;
-            }
+        if (this.actionFadingOut && !this.actionLayer.isActive()) {
             this.actionClip = null;
             this.actionFadingOut = false;
         }
+        if (this.rollFadingOut && !this.rollLayer.isActive()) {
+            this.rollClip = null;
+            this.rollFadingOut = false;
+        }
+
+        // Smooth arm pitch tracking weight
+        this.prevArmPitchWeight = this.currentArmPitchWeight;
+        boolean isRollingNow = isRollPlaying();
+        String actionName = getCurrentActionName();
+        boolean actionBlocksPitch = actionName != null && (actionName.contains("reload") || actionName.contains("run") || actionName.contains("sprint"));
+        float targetArmPitch = (this.isHoldingWeapon && !isRollingNow && !actionBlocksPitch) ? 1.0f : 0.0f;
+        this.currentArmPitchWeight += (targetArmPitch - this.currentArmPitchWeight) * 0.25f;
+        if (Math.abs(targetArmPitch - this.currentArmPitchWeight) < 0.01f) {
+            this.currentArmPitchWeight = targetArmPitch;
+        }
+
+        // Smooth head/arm look unlock after roll
+        this.prevRollLookWeight = this.currentRollLookWeight;
+        float targetRollLook = isRollingNow ? 0.0f : 1.0f;
+        this.currentRollLookWeight += (targetRollLook - this.currentRollLookWeight) * 0.15f;
+        if (Math.abs(targetRollLook - this.currentRollLookWeight) < 0.01f) {
+            this.currentRollLookWeight = targetRollLook;
+        }
+
+        // Smooth sneak offset weight (for smooth Y transition when entering/exiting sneak)
+        this.prevSneakOffsetWeight = this.currentSneakOffsetWeight;
+        boolean isSneakingNow = this.player != null && this.player.isSneaking();
+        float targetSneak = isSneakingNow ? 1.0f : 0.0f;
+        this.currentSneakOffsetWeight += (targetSneak - this.currentSneakOffsetWeight) * 0.25f;
+        if (Math.abs(targetSneak - this.currentSneakOffsetWeight) < 0.01f) {
+            this.currentSneakOffsetWeight = targetSneak;
+        }
+
+        // Smooth weapon hold weight (for smooth arm/head Y transition between weapon and unarmed)
+        this.prevWeaponSneakWeight = this.currentWeaponSneakWeight;
+        float targetWeaponSneak = this.isHoldingWeapon ? 1.0f : 0.0f;
+        this.currentWeaponSneakWeight += (targetWeaponSneak - this.currentWeaponSneakWeight) * 0.2f;
+        if (Math.abs(targetWeaponSneak - this.currentWeaponSneakWeight) < 0.01f) {
+            this.currentWeaponSneakWeight = targetWeaponSneak;
+        }
     }
 
-
-    // Используется для БАЗОВОГО слоя (play()/stop()) — целиком поза тела (lie, walking, running...).
-    // Тут работает правило "лежа <-> не лежа = мгновенно".
     private int getPoseBlendTicks(String animName, String otherClipName) {
-        boolean isLie = animName != null && animName.contains("lie");
-        boolean otherIsLie = otherClipName != null && otherClipName.contains("lie");
-        if ((isLie || otherIsLie) && !(isLie && otherIsLie)) {
-            return 0;       // Переход лежа <-> не лежа — мгновенно
+        boolean isCrawl1 = animName != null && (animName.contains("lie") || animName.contains("crawl"));
+        boolean isCrawl2 = otherClipName != null && (otherClipName.contains("lie") || otherClipName.contains("crawl"));
+        if ((isCrawl1 || isCrawl2) && !(isCrawl1 && isCrawl2)) {
+            return 0;
         }
         return getActionBlendTicks(animName);
     }
 
-    // Используется для ЭКШЕН-слоя (setAction()/stopAction()) — reload/fire/aim/hold и т.д.,
-    // которые накладываются ПОВЕРХ текущей позы. Правило "лежа <-> не лежа" сюда не относится:
-    // lie_reload — это такой же экшен, как reload_upper, просто под позу "лёжа".
     private int getActionBlendTicks(String animName) {
+        if (isRollPlaying()) {
+            return 3;
+        }
         if (animName != null && animName.contains("lie_reload")) {
-            return 10;  // Оружие лежа: плавный бленд перезарядки — так же, как reload_upper стоя
+            return 10;
         }
         if (animName != null && (animName.contains("pistol") || animName.contains("rifle"))) {
-            return 10;  // Оружие: плавный вход в холд-анимации
+            if (animName.endsWith("run_upper")) {
+                return 4;
+            }
+            return 8;
         }
         if ("roll".equals(animName)) {
-            return 3;   // Кувырок: не меняем — выход всё равно stopAction(12)
+            return 8;
         }
         if ("idle_standing".equals(animName) || animName != null && animName.startsWith("idle_")) {
-            return 10;  // Идл: плавный переход
+            return 10;
         }
         if (animName != null && (animName.startsWith("walking") || animName.equals("running"))) {
-            return 8;   // Ходьба / бег
+            return 8;
         }
         if (animName != null && (animName.equals("axe") || animName.equals("pickaxe")
                 || animName.equals("shovel") || animName.equals("hoe"))) {
-            return 3;   // Инструменты: быстро, но с лёгким плавным стартом
+            return 3;
         }
         if (animName != null && (animName.contains("sword_attack") || animName.contains("fist_attack"))) {
-            return 4;   // Удар: было 1 (мгновенный снап), теперь видный вход
+            return 4;
         }
-        return 6;   // Остальное (прежне 4)
+        return 6;
     }
 
-    // New methods for layered integration
+    public void setupAnim(float tickDelta) {
+        this.lastTickDelta = tickDelta;
+        this.stack.setupAnim(tickDelta);
+    }
+
     public Vec3f get3DTransform(String modelName, TransformType type, float tickDelta, Vec3f value0) {
-        Vec3f current = value0;
-        
-        if (baseLayer.getAnimation() != null) {
-            current = baseLayer.get3DTransform(modelName, type, tickDelta, value0);
+        this.lastTickDelta = tickDelta;
+        if (this.isRollPlaying() && this.isHoldingWeapon && ("rightArm".equals(modelName) || "leftArm".equals(modelName))) {
+            // When holding a weapon during roll, actionLayer (rifle_run_upper / pistol_run_upper)
+            // holds the weapon folded across chest. Do not let roll.json tumble keyframes overwrite arms!
+            Vec3f current = value0;
+            if (this.baseLayer.isActive()) {
+                current = this.baseLayer.get3DTransform(modelName, type, tickDelta, current);
+            }
+            if (this.actionLayer.isActive()) {
+                current = this.actionLayer.get3DTransform(modelName, type, tickDelta, current);
+            }
+            return current;
         }
-        
-        boolean isArm = "rightArm".equals(modelName) || "leftArm".equals(modelName) || "right_arm".equals(modelName) || "left_arm".equals(modelName);
-        boolean isTorso = "torso".equals(modelName);
-        boolean isHead = "head".equals(modelName);
-        // Arms and torso always use weapon pose blending during roll.
-        // Head ONLY uses weapon pose blending for POSITION (keeps it perfectly seated on neck/torso at z = -1.0 without shifting backward or snapping),
-        // while head ROTATION is left completely to roll.json so that rotation behaves visually 1:1 like in a normal roll.
-        boolean isUpperBodyWeaponBone = isArm || isTorso || (isHead && type == TransformType.POSITION);
-        boolean isLeg = "rightLeg".equals(modelName) || "leftLeg".equals(modelName) || "right_leg".equals(modelName) || "left_leg".equals(modelName);
-        String actionName = getCurrentActionName();
-        if (actionName == null) {
-            actionName = getFadeActionName();
-        }
-        boolean isRoll = actionName != null && actionName.equals("roll");
-        boolean isFullBodyAction = actionName != null && (isRoll || actionName.endsWith("_lower") || actionName.contains("lie"));
-        
-        if (isUpperBodyWeaponBone && isHoldingWeapon && (isRoll || this.rollArmRunWeight > 0.001f || this.prevRollArmRunWeight > 0.001f)) {
-            String prefix = "rifle_";
-            if (this.lastWeaponClip != null && this.lastWeaponClip.name != null) {
-                if (this.lastWeaponClip.name.startsWith("pistol_")) prefix = "pistol_";
-                else if (this.lastWeaponClip.name.startsWith("rifle_")) prefix = "rifle_";
-                else {
-                    int idx = this.lastWeaponClip.name.indexOf('_');
-                    if (idx != -1) prefix = this.lastWeaponClip.name.substring(0, idx + 1);
-                }
-            }
-
-            AnimationClip runClip = efw.animation.AnimationRegistry.getClip(prefix + "run_upper");
-            if (runClip == null) {
-                runClip = efw.animation.AnimationRegistry.getClip("rifle_run_upper");
-            }
-
-            AnimationClip normalClip = this.lastWeaponClip;
-            if (normalClip == null) {
-                normalClip = efw.animation.AnimationRegistry.getClip(prefix + "hold_upper");
-                if (normalClip == null) normalClip = efw.animation.AnimationRegistry.getClip("rifle_hold_upper");
-            }
-
-            float rawW = this.prevRollArmRunWeight + (this.rollArmRunWeight - this.prevRollArmRunWeight) * tickDelta;
-            rawW = Math.max(0.0f, Math.min(1.0f, rawW));
-            // Smoothstep curve for seamless acceleration and deceleration
-            float w = rawW * rawW * (3.0f - 2.0f * rawW);
-
-            Vec3f normalTransform = value0;
-            if (normalClip != null) {
-                if (cachedNormalClip != normalClip) {
-                    cachedNormalClip = normalClip;
-                    cachedNormalPlayer = new KeyframeAnimationPlayer(normalClip);
-                }
-                normalTransform = cachedNormalPlayer.get3DTransform(modelName, type, 0.0f, value0);
-            }
-
-            Vec3f runTransform = normalTransform;
-            if (runClip != null) {
-                if (cachedRunClip != runClip) {
-                    cachedRunClip = runClip;
-                    cachedRunPlayer = new KeyframeAnimationPlayer(runClip);
-                }
-                runTransform = cachedRunPlayer.get3DTransform(modelName, type, 0.0f, value0);
-            }
-
-            current = blendTransforms(normalTransform, runTransform, w, type);
-        } else if (actionLayer.getAnimation() != null) {
-            if (!isLeg || isFullBodyAction) {
-                IAnimation actionAnim = actionLayer.getAnimation();
-                if (actionAnim instanceof AbstractFadeModifier) {
-                    current = ((AbstractFadeModifier) actionAnim).get3DTransformWithBase(modelName, type, tickDelta, value0, current);
-                } else {
-                    current = actionAnim.get3DTransform(modelName, type, tickDelta, value0);
-                }
-            }
-        } else if ((isUpperBodyWeaponBone || "head".equals(modelName)) && isHoldingWeapon && this.lastWeaponClip != null) {
-            // Safety fallback: if actionLayer is temporarily transitioning/null, keep holding the weapon
-            if (cachedNormalClip != this.lastWeaponClip) {
-                cachedNormalClip = this.lastWeaponClip;
-                cachedNormalPlayer = new KeyframeAnimationPlayer(this.lastWeaponClip);
-            }
-            current = cachedNormalPlayer.get3DTransform(modelName, type, 0.0f, value0);
-        }
-        
-        return current;
-    }
-
-    private Vec3f blendTransforms(Vec3f a, Vec3f b, float weight, TransformType type) {
-        if (weight <= 0.0001f) return a;
-        if (weight >= 0.9999f) return b;
-        if (type == TransformType.ROTATION) {
-            float x = interpolateAngle(a.getX(), b.getX(), weight);
-            float y = interpolateAngle(a.getY(), b.getY(), weight);
-            float z = interpolateAngle(a.getZ(), b.getZ(), weight);
-            return new Vec3f(x, y, z);
-        } else {
-            return b.scale(weight).add(a.scale(1.0f - weight));
-        }
-    }
-
-    private static float interpolateAngle(float start, float end, float alpha) {
-        float PI2 = (float) (2 * Math.PI);
-        float diff = (end - start) % PI2;
-        if (diff < -Math.PI) diff += PI2;
-        if (diff > Math.PI) diff -= PI2;
-        return start + diff * alpha;
-    }
-
-    private Vec3f combineRotations(Vec3f parent, Vec3f child) {
-        org.lwjgl.util.vector.Matrix4f m = new org.lwjgl.util.vector.Matrix4f();
-        m.setIdentity();
-        
-        // Torso rotations (Z, Y, X)
-        if (parent.getZ() != 0) m.rotate(parent.getZ(), new org.lwjgl.util.vector.Vector3f(0, 0, 1));
-        if (parent.getY() != 0) m.rotate(parent.getY(), new org.lwjgl.util.vector.Vector3f(0, 1, 0));
-        if (parent.getX() != 0) m.rotate(parent.getX(), new org.lwjgl.util.vector.Vector3f(1, 0, 0));
-        
-        // Arm rotations (Z, Y, X)
-        if (child.getZ() != 0) m.rotate(child.getZ(), new org.lwjgl.util.vector.Vector3f(0, 0, 1));
-        if (child.getY() != 0) m.rotate(child.getY(), new org.lwjgl.util.vector.Vector3f(0, 1, 0));
-        if (child.getX() != 0) m.rotate(child.getX(), new org.lwjgl.util.vector.Vector3f(1, 0, 0));
-        
-        // Extract Euler angles (Z, Y, X order)
-        // M20 = m02, M21 = m12, M22 = m22
-        // M00 = m00, M10 = m01
-        float yaw = (float) Math.asin(Math.max(-1.0f, Math.min(1.0f, -m.m02)));
-        float pitch = (float) Math.atan2(m.m12, m.m22);
-        float roll = (float) Math.atan2(m.m01, m.m00);
-        
-        return new Vec3f(pitch, yaw, roll);
+        return this.stack.get3DTransform(modelName, type, tickDelta, value0);
     }
 
     public Vec3f getBaseLayerTransform(String boneName, TransformType type, float partialTick) {
-        if (this.baseLayer.getAnimation() == null) return Vec3f.ZERO;
-        this.baseLayer.setupAnim(partialTick);
         return this.baseLayer.get3DTransform(boneName, type, partialTick, Vec3f.ZERO);
     }
 
     public Vec3f getActionLayerTransform(String boneName, TransformType type, float partialTick) {
-        if (this.actionLayer.getAnimation() == null) return Vec3f.ZERO;
-        this.actionLayer.setupAnim(partialTick);
         return this.actionLayer.get3DTransform(boneName, type, partialTick, Vec3f.ZERO);
     }
 
-    // --- Legacy compatibility methods below ---
-    // Since we are changing MixinModelBiped to call get3DTransform, we can remove most of these,
-    // but some external code might call them. We can return dummy values or convert them.
+    public Vec3f getRollLayerTransform(String boneName, TransformType type, float partialTick) {
+        return this.rollLayer.get3DTransform(boneName, type, partialTick, Vec3f.ZERO);
+    }
 
     public float[] getRotation(String boneName, float partialTick) {
         Vec3f rot = get3DTransform(boneName, TransformType.ROTATION, partialTick, Vec3f.ZERO);
-        return new float[] { rot.getX(), rot.getY(), rot.getZ(), 1.0f }; // Always full weight, assumes blending done in value0
+        return new float[]{rot.getX(), rot.getY(), rot.getZ(), 1.0f};
     }
 
     public float[] getPosition(String boneName, float partialTick) {
         Vec3f pos = get3DTransform(boneName, TransformType.POSITION, partialTick, Vec3f.ZERO);
-        return new float[] { pos.getX(), pos.getY(), pos.getZ(), 1.0f };
+        return new float[]{pos.getX(), pos.getY(), pos.getZ()};
     }
 
     public boolean isPlaying() {
-        return playing
-                || (baseLayer.getAnimation() != null && baseLayer.getAnimation().isActive())
-                || isActionPlaying()
-                // Если action затухает — нам всё ещё нужно применять applyBone чтобы отрендерить затухание.
-                // (Без этого applyBone пропускается и переход снапится к ванилле мгновенно.)
-                || (actionFadingOut && actionLayer.getAnimation() != null && actionLayer.getAnimation().isActive())
-                || (this.rollArmRunWeight > 0.001f || this.prevRollArmRunWeight > 0.001f);
+        return baseLayer.getAnimation() != null && baseLayer.getAnimation().isActive();
     }
 
     public boolean isActionPlaying() {
@@ -463,110 +442,41 @@ public class AnimationPlayer {
     }
 
     public void setTargetArmPitchWeight(float target) {
-        this.targetArmPitchWeight = target;
     }
 
     public float getRenderArmPitchWeight(float partialTicks) {
-        return this.prevArmPitchWeight + (this.armPitchWeight - this.prevArmPitchWeight) * partialTicks;
+        return isHoldingWeapon ? 1.0f : 0.0f;
     }
 
     public float getActionFadeWeight(float tickDelta) {
-        IAnimation anim = actionLayer.getAnimation();
-        if (anim == null || !anim.isActive()) return 0.0f;
-        if (anim instanceof AbstractFadeModifier) {
-            AbstractFadeModifier fm = (AbstractFadeModifier) anim;
-            float progress = fm.calculateProgress(tickDelta);
-            progress = Math.min(1.0f, Math.max(0.0f, progress));
-            float alpha = fm.getAlpha("rightArm", TransformType.ROTATION, progress);
-            if (actionFadingOut) {
-                return Math.max(0.0f, 1.0f - alpha);
-            } else {
-                return Math.min(1.0f, Math.max(0.0f, alpha));
-            }
-        }
         return isActionPlaying() ? 1.0f : 0.0f;
     }
 
     public float getArmPitchTrackingWeight(float tickDelta, boolean isHoldingWeapon) {
-        if (!isHoldingWeapon) {
-            if (actionFadingOut && actionClip != null) {
-                float clipFactor = getClipPitchFactor(actionClip.name);
-                return clipFactor * getActionFadeWeight(tickDelta);
-            }
-            return 0.0f;
-        }
-
-        // During roll or roll fadeout with a weapon, smoothly transition pitch tracking
-        // in sync with the arm untucking (0.0 when fully tucked, up to targetFactor when untucked)
-        boolean isRoll = "roll".equals(getCurrentActionName()) || (actionFadingOut && "roll".equals(getFadeActionName()));
-        if (isRoll || this.rollArmRunWeight > 0.001f || this.prevRollArmRunWeight > 0.001f) {
-            float rawW = this.prevRollArmRunWeight + (this.rollArmRunWeight - this.prevRollArmRunWeight) * tickDelta;
-            rawW = Math.max(0.0f, Math.min(1.0f, rawW));
-            float smoothW = rawW * rawW * (3.0f - 2.0f * rawW);
-            float targetFactor = this.lastWeaponClip != null ? getClipPitchFactor(this.lastWeaponClip.name) : 1.0f;
-            return targetFactor * Math.max(0.0f, Math.min(1.0f, 1.0f - smoothW));
-        }
-
-        // If the base animation is crawling/lying/rolling, arms must NOT pitch up/down into the ground!
-        if (currentClip != null) {
-            float baseFactor = getClipPitchFactor(currentClip.name);
-            if (baseFactor == 0.0f) return 0.0f;
-        }
-
-        IAnimation anim = actionLayer.getAnimation();
-        if (anim instanceof AbstractFadeModifier) {
-            AbstractFadeModifier fm = (AbstractFadeModifier) anim;
-            float progress = fm.calculateProgress(tickDelta);
-            progress = Math.min(1.0f, Math.max(0.0f, progress));
-            float alpha = fm.getAlpha("rightArm", TransformType.ROTATION, progress);
-
-            if (actionFadingOut) {
-                float clipFactor = actionClip != null ? getClipPitchFactor(actionClip.name) : 1.0f;
-                return clipFactor * Math.max(0.0f, 1.0f - alpha);
-            } else {
-                float newFactor = actionClip != null ? getClipPitchFactor(actionClip.name) : 1.0f;
-                float oldFactor = previousActionClip != null ? getClipPitchFactor(previousActionClip.name) : (currentClip != null ? getClipPitchFactor(currentClip.name) : 1.0f);
-                return Math.min(1.0f, Math.max(0.0f, newFactor * alpha + oldFactor * (1.0f - alpha)));
-            }
-        }
-
-        if (actionClip != null) {
-            return getClipPitchFactor(actionClip.name);
-        }
-
-        if (currentClip != null) {
-            return getClipPitchFactor(currentClip.name);
-        }
-
-        if (this.lastWeaponClip != null) {
-            return getClipPitchFactor(this.lastWeaponClip.name);
-        }
-
-        return 1.0f;
+        if (!isHoldingWeapon) return 0.0f;
+        float w = prevArmPitchWeight + (currentArmPitchWeight - prevArmPitchWeight) * tickDelta;
+        return Math.max(0.0f, Math.min(1.0f, w));
     }
 
-    private static float getClipPitchFactor(String name) {
-        if (name == null) return 1.0f;
-        if (name.contains("run") || name.contains("sprint") || name.contains("roll") 
-            || name.contains("lie") || name.contains("reload") || name.contains("crawl")) {
-            return 0.0f;
-        }
-        return 1.0f;
+    public float getRollLookWeight(float tickDelta) {
+        float w = prevRollLookWeight + (currentRollLookWeight - prevRollLookWeight) * tickDelta;
+        return Math.max(0.0f, Math.min(1.0f, w));
+    }
+
+    public float getSneakOffsetWeight(float tickDelta) {
+        float w = prevSneakOffsetWeight + (currentSneakOffsetWeight - prevSneakOffsetWeight) * tickDelta;
+        return Math.max(0.0f, Math.min(1.0f, w));
+    }
+
+    public float getWeaponSneakWeight(float tickDelta) {
+        float w = prevWeaponSneakWeight + (currentWeaponSneakWeight - prevWeaponSneakWeight) * tickDelta;
+        return Math.max(0.0f, Math.min(1.0f, w));
     }
 
     public float getActionProgress() {
         IAnimation anim = actionLayer.getAnimation();
         if (anim instanceof KeyframeAnimationPlayer) {
             return ((KeyframeAnimationPlayer) anim).getProgress();
-        } else if (anim instanceof AbstractFadeModifier) {
-            IAnimation inner = ((AbstractFadeModifier) anim).getAnimation();
-            if (inner instanceof KeyframeAnimationPlayer) {
-                return ((KeyframeAnimationPlayer) inner).getProgress();
-            }
-            IAnimation begin = ((AbstractFadeModifier) anim).getBeginAnimation();
-            if (begin instanceof KeyframeAnimationPlayer) {
-                return ((KeyframeAnimationPlayer) begin).getProgress();
-            }
         }
         return 0.0f;
     }
@@ -577,12 +487,7 @@ public class AnimationPlayer {
 
     public void setActionSpeed(float speed) {
         this.actionSpeed = speed;
-        if (this.actionLayer.getAnimation() instanceof AbstractFadeModifier) {
-            AbstractFadeModifier fm = (AbstractFadeModifier) this.actionLayer.getAnimation();
-            if (fm.getAnimation() instanceof KeyframeAnimationPlayer) {
-                ((KeyframeAnimationPlayer) fm.getAnimation()).setSpeed(speed);
-            }
-        }
+        updateAnimationSpeed(this.actionLayer.getAnimation(), speed);
     }
 
     public float getPrevActionWeight() { return getActionWeight(); }
@@ -596,54 +501,4 @@ public class AnimationPlayer {
     public String getPrevAnimationName() { return null; }
     public String getCurrentActionName() { return isActionPlaying() && actionClip != null ? actionClip.name : null; }
     public String getFadeActionName() { return actionFadingOut && actionClip != null ? actionClip.name : null; }
-
-    public boolean isRollActive(float pt) {
-        if (actionClip != null && "roll".equals(actionClip.name)) {
-            return true;
-        }
-        return getRollWeight(this.actionLayer.getAnimation(), pt) > 0.0f;
-    }
-
-    public KeyframeAnimationPlayer getRollPlayer() {
-        return findRollPlayer(this.actionLayer.getAnimation());
-    }
-
-    private KeyframeAnimationPlayer findRollPlayer(IAnimation anim) {
-        if (anim == null) return null;
-        if (anim instanceof KeyframeAnimationPlayer) {
-            KeyframeAnimationPlayer kap = (KeyframeAnimationPlayer) anim;
-            if ("roll".equals(kap.getClip().name)) {
-                return kap;
-            }
-        } else if (anim instanceof AbstractFadeModifier) {
-            AbstractFadeModifier fm = (AbstractFadeModifier) anim;
-            KeyframeAnimationPlayer found = findRollPlayer(fm.getBeginAnimation());
-            if (found != null) return found;
-            return findRollPlayer(fm.getAnimation());
-        }
-        return null;
-    }
-
-    public float getRollProgress(float tickDelta) {
-        float weight = getRollWeight(this.actionLayer.getAnimation(), tickDelta);
-        return 1.0f - weight;
-    }
-
-    private float getRollWeight(IAnimation anim, float tickDelta) {
-        if (anim == null) return 0f;
-        if (anim instanceof KeyframeAnimationPlayer) {
-            KeyframeAnimationPlayer kap = (KeyframeAnimationPlayer) anim;
-            return "roll".equals(kap.getClip().name) ? 1.0f : 0f;
-        } else if (anim instanceof AbstractFadeModifier) {
-            AbstractFadeModifier fm = (AbstractFadeModifier) anim;
-            float progress = fm.calculateProgress(tickDelta);
-            progress = Math.min(1.0f, Math.max(0.0f, progress));
-            float alpha = fm.getAlpha("body", TransformType.ROTATION, progress);
-            
-            float targetWeight = getRollWeight(fm.getAnimation(), tickDelta) * alpha;
-            float sourceWeight = getRollWeight(fm.getBeginAnimation(), tickDelta) * (1.0f - alpha);
-            return targetWeight + sourceWeight;
-        }
-        return 0f;
-    }
 }

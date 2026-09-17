@@ -781,3 +781,42 @@ tooltip.mwccf.flickering_lamp.redstone=Redstone power disables the lamp.
 tile.mwccf.placed_item.name=Placed Item
 item.mwccf.placer_tool.name=Item Placer Tool
 item.mwccf.zone_tool.name=Quest Zone Tool
+
+# Walkie-Talkie
+item.mwccf.walkie_talkie.name=Walkie-Talkie
+key.mwccf.walkie_talkie_toggle=Toggle Walkie-Talkie
+
+# Walkie-Talkie Tooltip
+tooltip.mwccf.walkie_talkie.status.on=ON
+tooltip.mwccf.walkie_talkie.status.off=OFF
+tooltip.mwccf.walkie_talkie.channel=Ch: %s
+tooltip.mwccf.walkie_talkie.mic.on=ON
+tooltip.mwccf.walkie_talkie.mic.muted=MUTE
+tooltip.mwccf.walkie_talkie.mic=Mic: %s
+tooltip.mwccf.walkie_talkie.no_battery=No battery!
+tooltip.mwccf.walkie_talkie.battery=Battery: %s%%
+tooltip.mwccf.walkie_talkie.controls=[%s] Toggle | [RMB] Use
+tooltip.mwccf.walkie_talkie.configure=§7[§eX§7] §eConfigure
+
+# Walkie-Talkie GUI
+gui.mwccf.walkie_talkie.title=Walkie-Talkie
+gui.mwccf.walkie_talkie.freq_mhz=FREQUENCY, MHz
+gui.mwccf.walkie_talkie.signal=SIGNAL: %s
+gui.mwccf.walkie_talkie.tuning=FREQUENCY TUNING
+gui.mwccf.walkie_talkie.volume=VOLUME
+gui.mwccf.walkie_talkie.power=Power
+gui.mwccf.walkie_talkie.mic=Microphone
+
+# Character Button
+wildfire_gender.buttoninevntory=Character
+
+# New Components & Radio
+item.mcore.internet_module.name=Internet Module
+item.mcore.radio_board.name=Old Radio Board
+item.mcore.microphone_part.name=Microphone Component
+item.mcore.screwdriver.name=Screwdriver
+item.mcore.walkie_talkie_case.name=Toy Walkie-Talkie Case
+tile.mwccf.old_radio.name=Old Radio
+inspect.internet_module=Can be used in a terminal or body camera for internet connectivity.
+inspect.radio_board=Electronic circuit board from an old radio receiver. Contains working components for crafting radio equipment.
+tooltip.mcore.internet_module=§7Can be used in a terminal or body camera for internet connectivity.

@@ -60,13 +60,15 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
     @Shadow
     protected abstract EnumHandSide getMainHand(Entity entityIn);
 
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    // UNIQUE (РџРµСЂРµРјРµРЅРЅС‹Рµ Рё РјРµС‚РѕРґС‹ РёР· Aqua Acrobatics)
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    // ──────────────────────────────────────────────────────────────────────────
+    // UNIQUE (Переменные и методы из Aqua Acrobatics)
+    // ──────────────────────────────────────────────────────────────────────────
     @Unique
     public float swimAnimation;
     @Unique
-    private static final float WEAPON_ARM_SPREAD = 1.0f; // РќР° СЃРєРѕР»СЊРєРѕ СЂР°Р·РґРІРёРіР°С‚СЊ СЂСѓРєРё РїСЂРё СѓРґРµСЂР¶Р°РЅРёРё РѕСЂСѓР¶РёСЏ MWC
+    public float mwccfSwimAnimation; // Истинное значение swimAnimation от AA (до обнуления)
+    @Unique
+    private static final float WEAPON_ARM_SPREAD = 1.0f; // На сколько раздвигать руки при удержании оружия MWC
 
     @Override
     public void setSwimAnimation(float swimAnimation) {
@@ -77,7 +79,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
     public void setLivingAnimations(@Nonnull EntityLivingBase entitylivingbaseIn, float limbSwing,
             float limbSwingAmount, float partialTickTime) {
         if (entitylivingbaseIn instanceof IPlayerResizeable) {
-            this.swimAnimation = ((IPlayerResizeable) entitylivingbaseIn).getSwimAnimation(partialTickTime);
+            this.mwccfSwimAnimation = ((IPlayerResizeable) entitylivingbaseIn).getSwimAnimation(partialTickTime);
+            this.swimAnimation = this.mwccfSwimAnimation;
         }
     }
 
@@ -96,9 +99,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         return -65.0F * limbSwing + limbSwing * limbSwing;
     }
 
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    // РРќР–Р•РљР¦РРЇ 0: Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ Р±Р°Р·РѕРІС‹С… СЃРјРµС‰РµРЅРёР№ РїРµСЂРµРґ СЂРµРЅРґРµСЂРѕРј
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    // ──────────────────────────────────────────────────────────────────────────
+    // ИНЖЕКЦИЯ 0: Восстановление базовых смещений перед рендером
+    // ──────────────────────────────────────────────────────────────────────────
     @Inject(method = "setRotationAngles", at = @At("HEAD"), cancellable = true)
     public void resetRotationPoints(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
             float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
@@ -106,6 +109,14 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             return;
         EntityPlayer player = (EntityPlayer) entityIn;
         Minecraft mc = Minecraft.getMinecraft();
+
+        // Silence AquaAcrobatics' hardcoded limb stroke logic (setRotationAnglesPost).
+        // It cancels setRotationAngles and breaks our custom JSON crawling/swimming animations.
+        // We saved the real value in mwccfSwimAnimation before zeroing.
+        this.swimAnimation = 0.0f;
+        if ((Object) this instanceof IModelBipedSwimming) {
+            ((IModelBipedSwimming) (Object) this).setSwimAnimation(0.0f);
+        }
 
         ModelBiped mainBiped = null;
         net.minecraft.client.renderer.entity.RenderManager rm = mc.getRenderManager();
@@ -117,7 +128,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
         }
 
-        // --- Р‘Р РћРќРЇ: РРґРµР°Р»СЊРЅР°СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ ---
+        // --- БРОНЯ: Идеальная синхронизация ---
         if (mainBiped != null && mainBiped != (Object) this) {
             this.bipedRightArm.rotateAngleX = mainBiped.bipedRightArm.rotateAngleX;
             this.bipedRightArm.rotateAngleY = mainBiped.bipedRightArm.rotateAngleY;
@@ -161,7 +172,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             this.bipedHead.rotationPointY = mainBiped.bipedHead.rotationPointY;
             this.bipedHead.rotationPointZ = mainBiped.bipedHead.rotationPointZ;
 
-            // Р•СЃР»Рё СЌС‚Рѕ ModelPlayer, СЃРёРЅС…СЂРѕРЅРёР·РёСЂСѓРµРј СЃР»РѕРё (СЂСѓРєР°РІР°, С€С‚Р°РЅРёРЅС‹ Рё С‚.Рґ.)
+            // Если это ModelPlayer, синхронизируем слои (рукава, штанины и т.д.)
             if ((Object) this instanceof net.minecraft.client.model.ModelPlayer
                     && mainBiped instanceof net.minecraft.client.model.ModelPlayer) {
                 net.minecraft.client.model.ModelPlayer mpThis = (net.minecraft.client.model.ModelPlayer) (Object) this;
@@ -248,9 +259,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             return;
         }
 
-        // Р–Р•РЎРўРљРћ СЃР±СЂР°СЃС‹РІР°РµРј Р’РЎР• РєРѕРѕСЂРґРёРЅР°С‚С‹ РІ РІР°РЅРёР»СЊРЅС‹Рµ РґРµС„РѕР»С‚С‹ РїРµСЂРµРґ РєР°РґСЂРѕРј.
-        // Р­С‚Рѕ РїСЂРµРґРѕС‚РІСЂР°С‰Р°РµС‚ Р›Р®Р‘РћР• РЅР°РєРѕРїР»РµРЅРёРµ (СѓР»РµС‚Р°РЅРёРµ РІ РЅРµР±Рѕ), РµСЃР»Рё РєР°РєРѕР№-С‚Рѕ РјРѕРґ
-        // РїРµСЂРµРѕРїСЂРµРґРµР»РёР» setRotationAngles Рё РЅРµ РІС‹Р·РІР°Р» super (РІР°РЅРёР»СЊРЅС‹Р№ СЃР±СЂРѕСЃ isSneak).
+        // ЖЕСТКО сбрасываем ВСЕ координаты в ванильные дефолты перед кадром.
+        // Это предотвращает ЛЮБОЕ накопление (улетание в небо), если какой-то мод
+        // переопределил setRotationAngles и не вызвал super (ванильный сброс isSneak).
         boolean isSneak = entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen;
 
         efw.animation.AnimationPlayer ap = efw.util.RenderContext.isRenderingPlayerInSevenScreen
@@ -311,15 +322,15 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         }
     }
 
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    // РРќР–Р•РљР¦РРЇ 1: Aqua Acrobatics (РќР°РєР»РѕРЅ РіРѕР»РѕРІС‹ РІ РїРѕР»РµС‚Рµ/РїР»Р°РІР°РЅРёРё)
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    // ──────────────────────────────────────────────────────────────────────────
+    // ИНЖЕКЦИЯ 1: Aqua Acrobatics (Наклон головы в полете/плавании)
+    // ──────────────────────────────────────────────────────────────────────────
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     public void redirectSetRotationAngles(ModelBiped modelBiped, float limbSwing, float limbSwingAmount,
             float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
         if (entityIn instanceof IPlayerResizeable) {
             boolean isElytra = ((EntityLivingBase) entityIn).getTicksElytraFlying() > 4;
-            boolean isSwimming = ((IPlayerResizeable) entityIn).isActuallySwimming();
+            boolean isSwimming = ((IPlayerResizeable) entityIn).isActuallySwimming() && entityIn.isInWater();
             if (!isElytra && this.swimAnimation > 0.0F) {
                 if (isSwimming) {
                     headPitch = this.rotLerpRad(this.swimAnimation, this.bipedHead.rotateAngleX,
@@ -339,17 +350,18 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
 
 
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    // РРќР–Р•РљР¦РРЇ 4: РћС‚РєР»СЋС‡РµРЅРёРµ РІР°РЅРёР»СЊРЅРѕР№ Р°РЅРёРјР°С†РёРё РІР·РјР°С…Р°, РµСЃР»Рё РёРіСЂР°РµС‚ РЅР°С€Р°
+    // ──────────────────────────────────────────────────────────────────────────
+    // ИНЖЕКЦИЯ 4: Отключение ванильной анимации взмаха, если играет наша
+    // ──────────────────────────────────────────────────────────────────────────
     @Inject(method = "setRotationAngles", at = @At("HEAD"))
     public void mwccf$onSetRotationAnglesHead(float limbSwing, float limbSwingAmount, float ageInTicks,
             float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
         if (entityIn instanceof EntityPlayer) {
             efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer((EntityPlayer) entityIn);
             if (ap != null && ap.hasActionWeight()) {
-                // РџРћР›РќРћРЎРўР¬Р® РћРўРљР›Р®Р§РђР•Рњ РІР°РЅРёР»СЊРЅСѓСЋ Р°РЅРёРјР°С†РёСЋ РІР·РјР°С…Р° (swingProgress),
-                // РµСЃР»Рё РїСЂРѕРёРіСЂС‹РІР°РµС‚СЃСЏ РЅР°С€Р° СЌРєС€РЅ-Р°РЅРёРјР°С†РёСЏ. РРЅР°С‡Рµ РѕРЅРё РєРѕРЅС„Р»РёРєС‚СѓСЋС‚ (СЃРјРµС€РёРІР°СЋС‚СЃСЏ)
-                // Рё РІС‹Р·С‹РІР°СЋС‚ РїРѕРґРµСЂРіРёРІР°РЅРёРµ (РґРµСЂРіР°РЅРЅС‹Рµ СЂС‹РІРєРё) РїСЂРё Р»РѕРјР°РЅРёРё Р±Р»РѕРєРѕРІ РёР»Рё СЃРїР°РјРµ.
+                // ПОЛНОСТЬЮ ОТКЛЮЧАЕМ ванильную анимацию взмаха (swingProgress),
+                // если проигрывается наша экшн-анимация. Иначе они конфликтуют (смешиваются)
+                // и вызывают подергивание (дерганные рывки) при ломании блоков или спаме.
                 this.swingProgress = 0.0f;
             }
         }
@@ -361,8 +373,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         if (delta >= (float) Math.PI) delta -= 2f * (float) Math.PI;
         return a + delta * t;
     }
-    // РРќР–Р•РљР¦РРЇ 5: РџР»Р°РІР°РЅРёРµ, РџРѕР»Р·Р°РЅРёРµ, РЎРіР»Р°Р¶РёРІР°РЅРёРµ Рё Р¤Р°РєРµР» (Р’СЃС‘ РІ РѕРґРЅРѕРј!)
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    // ИНЖЕКЦИЯ 5: Плавание, Ползание, Сглаживание и Факел (Всё в одном!)
+    // ──────────────────────────────────────────────────────────────────────────
     @Inject(method = "setRotationAngles", at = @At("RETURN"))
     public void applyCustomAnimations(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
             float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
@@ -371,9 +383,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         EntityPlayer player = (EntityPlayer) entityIn;
         Minecraft mc = Minecraft.getMinecraft();
 
-        // EAT/DRINK вЂ” РїСЂРёРјРµРЅСЏРµРј Р°РЅРёРјР°С†РёСЋ РµРґС‹/РїРёС‚СЊСЏ РєР°Рє fallback.
-        // Р•СЃР»Рё AquaAcrobatics РѕС‚СЂР°Р±РѕС‚Р°Р» (ci.cancel()) вЂ” СЌС‚РѕС‚ RETURN injection РјРѕР¶РµС‚ РЅРµ Р·Р°РїСѓСЃС‚РёС‚СЊСЃСЏ.
-        // Р•СЃР»Рё РЅРµ РѕС‚СЂР°Р±РѕС‚Р°Р» (РІР°РЅРёР»СЊРЅС‹Р№ return) вЂ” РјС‹ РїСЂРёРјРµРЅСЏРµРј Р°РЅРёРјР°С†РёСЋ СЂСѓРєРё СЃР°РјРё, РїРѕ С‚РѕР№ Р¶Рµ С„РѕСЂРјСѓР»Рµ.
+        // EAT/DRINK — применяем анимацию еды/питья как fallback.
+        // Если AquaAcrobatics отработал (ci.cancel()) — этот RETURN injection может не запуститься.
+        // Если не отработал (ванильный return) — мы применяем анимацию руки сами, по той же формуле.
         if (player.isHandActive()) {
             net.minecraft.item.ItemStack cs = player.getActiveItemStack();
             if (!cs.isEmpty()) {
@@ -382,11 +394,11 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                     int itemInUseCount = player.getItemInUseCount();
                     int maxDuration = cs.getMaxItemUseDuration();
                     if (itemInUseCount > 0 && maxDuration > 0) {
-                        // Р’РѕСЃРїСЂРѕРёР·РІРѕРґРёРј С„РѕСЂРјСѓР»Сѓ AquaAcrobatics
+                        // Воспроизводим формулу AquaAcrobatics
                         float fracTick = ageInTicks - (float)((int) ageInTicks);
                         float animCount = (float) itemInUseCount - fracTick + 1.0f;
                         float useRatio = animCount / (float) maxDuration;
-                        // РћРіСЂР°РЅРёС‡РёРІР°РµРј: РµСЃР»Рё useRatio > 1 (РїРµСЂРІС‹Р№ С‚РёРє), f18 < 0 вЂ” РЅРµ С‚СЂРѕРіР°РµРј
+                        // Ограничиваем: если useRatio > 1 (первый тик), f18 < 0 — не трогаем
                         if (useRatio <= 1.0f) {
                             float f18 = 1.0f - (float) Math.pow((double) useRatio, 27.0);
                             if (useRatio < 0.8f) {
@@ -395,11 +407,11 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                             }
                             f18 = Math.min(1.5f, f18);
                             if (f18 > 0.001f) {
-                                // РћРїСЂРµРґРµР»СЏРµРј РѕСЃРЅРѕРІРЅСѓСЋ СЂСѓРєСѓ
+                                // Определяем основную руку
                                 boolean isRightHanded = player.getPrimaryHand() == net.minecraft.util.EnumHandSide.RIGHT;
                                 net.minecraft.client.model.ModelRenderer armPrimary =
                                         isRightHanded ? this.bipedRightArm : this.bipedLeftArm;
-                                // Р’С‹С‡РёСЃР»СЏРµРј Р±Р°Р·РѕРІС‹Р№ СѓРіРѕР» (РєР°Рє РІ РІР°РЅРёР»Рё) Рё РїСЂРёРјРµРЅСЏРµРј РїРѕРґСЉС‘Рј
+                                // Вычисляем базовый угол (как в ванили) и применяем подъём
                                 float baseArmX = isRightHanded
                                         ? net.minecraft.util.math.MathHelper.cos(limbSwing * 0.6662F + (float) Math.PI)
                                                 * 2.0F * limbSwingAmount * 0.5F
@@ -445,23 +457,64 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 : efw.animation.AnimationRegistry.getPlayer(player);
 
         // --- Р§РђРЎРўР¬ A: AQUA ACROBATICS (РЎР±СЂРѕСЃ Рё Р»РѕРіРёРєР° РїР»Р°РІР°РЅРёСЏ) ---
-        boolean hasCustomSwim = ap != null && ap.isPlaying() && "swimming".equals(ap.getCurrentAnimationName());
+        // --- ЧАСТЬ A: AQUA ACROBATICS (Сброс и логика плавания / ползания) ---
+        String currentAnimName = ap != null ? ap.getCurrentAnimationName() : null;
+        boolean hasCustomWaterAnim = ap != null && ap.isPlaying() && (
+                "swimming".equals(currentAnimName) ||
+                "up_in_water".equals(currentAnimName) ||
+                "backwards_in_water".equals(currentAnimName) ||
+                "forward_in_water".equals(currentAnimName) ||
+                "idle_in_water".equals(currentAnimName)
+        );
 
-        if (this.swimAnimation > 0.0F && !entityIn.isInWater() && !hasCustomSwim) {
+        boolean isWaterAnim = hasCustomWaterAnim || (entityIn != null && entityIn.isInWater());
+
+        String currentAnimForCrawlCheck = currentAnimName;
+        boolean isCrawlingAnim = !isWaterAnim && (
+                (currentAnimForCrawlCheck != null && (currentAnimForCrawlCheck.contains("lie") || currentAnimForCrawlCheck.contains("crawl")))
+                || efw.AnimationTickHandler.isPlayerCrawling(player)
+        );
+
+        // Reset vanilla/AA bone transformations so JSON animations apply cleanly
+        if (this.swimAnimation > 0.0F || isCrawlingAnim || hasCustomWaterAnim || entityIn.isInWater()) {
             this.bipedRightLeg.rotationPointY = 12.0F;
             this.bipedLeftLeg.rotationPointY = 12.0F;
             this.bipedRightLeg.rotationPointZ = 0.0F;
             this.bipedLeftLeg.rotationPointZ = 0.0F;
+            this.bipedRightLeg.rotateAngleX = 0.0F;
+            this.bipedRightLeg.rotateAngleY = 0.0F;
+            this.bipedRightLeg.rotateAngleZ = 0.0F;
+            this.bipedLeftLeg.rotateAngleX = 0.0F;
+            this.bipedLeftLeg.rotateAngleY = 0.0F;
+            this.bipedLeftLeg.rotateAngleZ = 0.0F;
+
             this.bipedBody.rotationPointY = 0.0F;
+            this.bipedBody.rotationPointZ = 0.0F;
             this.bipedBody.rotateAngleX = 0.0F;
+            this.bipedBody.rotateAngleY = 0.0F;
+            this.bipedBody.rotateAngleZ = 0.0F;
+
             this.bipedHead.rotationPointY = 0.0F;
+            this.bipedHead.rotationPointZ = 0.0F;
+
+            this.bipedRightArm.rotationPointY = 2.0F;
+            this.bipedRightArm.rotationPointZ = 0.0F;
+            this.bipedRightArm.rotateAngleX = 0.0F;
+            this.bipedRightArm.rotateAngleY = 0.0F;
+            this.bipedRightArm.rotateAngleZ = 0.0F;
+
+            this.bipedLeftArm.rotationPointY = 2.0F;
+            this.bipedLeftArm.rotationPointZ = 0.0F;
+            this.bipedLeftArm.rotateAngleX = 0.0F;
+            this.bipedLeftArm.rotateAngleY = 0.0F;
+            this.bipedLeftArm.rotateAngleZ = 0.0F;
         }
 
-        if (this.swimAnimation > 0.0F && !hasCustomSwim) {
+        if (this.mwccfSwimAnimation > 0.0F && !hasCustomWaterAnim) {
             float time = limbSwing * 0.6662F;
             EnumHandSide handside = this.getMainHand(entityIn);
-            float f2 = handside == EnumHandSide.RIGHT && this.swingProgress > 0.0F ? 0.0F : this.swimAnimation;
-            float f3 = handside == EnumHandSide.LEFT && this.swingProgress > 0.0F ? 0.0F : this.swimAnimation;
+            float f2 = handside == EnumHandSide.RIGHT && this.swingProgress > 0.0F ? 0.0F : this.mwccfSwimAnimation;
+            float f3 = handside == EnumHandSide.LEFT && this.swingProgress > 0.0F ? 0.0F : this.mwccfSwimAnimation;
 
             float basePY = 2.0F;
             float basePZ = 0.0F;
@@ -521,28 +574,6 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                             -1.0471976F * (1.0F - f6) + -2.3561945F * f6);
                     this.bipedRightArm.rotateAngleX = this.rotLerpRad(f2, this.bipedRightArm.rotateAngleX,
                             -1.0471976F * (1.0F - f6) + -2.3561945F * f6);
-
-                    if (hasCustomSwim) {
-                        float f7 = net.minecraft.util.math.MathHelper.sin(time);
-                        float f8 = net.minecraft.util.math.MathHelper.cos(time);
-                        float f9 = net.minecraft.util.math.MathHelper.sin(time * 0.5F);
-                        this.bipedLeftArm.rotateAngleZ = this.rotLerpRad(f3, this.bipedLeftArm.rotateAngleZ,
-                                -0.2F * (1.0F - f6) + -1.0F * f8 * f6);
-                        this.bipedRightArm.rotateAngleZ = this.rotLerpRad(f2, this.bipedRightArm.rotateAngleZ,
-                                0.2F * (1.0F - f6) + 1.0F * f8 * f6);
-                        this.bipedLeftArm.rotateAngleX = this.rotLerpRad(f3, this.bipedLeftArm.rotateAngleX,
-                                ((float) Math.PI / 2F) - ((float) Math.PI / 2F) * f9);
-                        this.bipedRightArm.rotateAngleX = MathHelperNew.lerp(f2, this.bipedRightArm.rotateAngleX,
-                                ((float) Math.PI / 2F) - ((float) Math.PI / 2F) * f9);
-                        this.bipedLeftArm.rotateAngleY = this.rotLerpRad(f3, this.bipedLeftArm.rotateAngleY,
-                                (float) Math.PI);
-                        this.bipedRightArm.rotateAngleY = MathHelperNew.lerp(f2, this.bipedRightArm.rotateAngleY,
-                                (float) Math.PI);
-                        this.bipedLeftArm.rotateAngleZ = this.rotLerpRad(f3, this.bipedLeftArm.rotateAngleZ,
-                                (float) Math.PI);
-                        this.bipedRightArm.rotateAngleZ = MathHelperNew.lerp(f2, this.bipedRightArm.rotateAngleZ,
-                                (float) Math.PI);
-                    }
                 }
                 this.bipedLeftLeg.rotateAngleX += (0.3F * net.minecraft.util.math.MathHelper.cos(limbSwing * 0.33333334F + (float) Math.PI)
                         - this.bipedLeftLeg.rotateAngleX) * this.swimAnimation;
@@ -561,17 +592,57 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
         // Detect crawling: lie/crawl animations already handle body posture, so we must
         // NOT apply the vanilla sneak Y-offset on top of them (causes head/arm tilt bugs).
-        String currentAnimForCrawlCheck = ap.getCurrentAnimationName();
-        boolean isCrawlingAnim = (currentAnimForCrawlCheck != null && (currentAnimForCrawlCheck.contains("lie") || currentAnimForCrawlCheck.contains("crawl")))
-                || player.height < 1.0F;
+        // (isCrawlingAnim was already computed above)
 
         if ((ap.isPlaying() || ap.getWeight() > 0f) && !isConsumingItem) {
-            if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
-                // руки сюда больше не трогаем!
-                this.bipedRightLeg.rotationPointY -= 3.0F;
-                this.bipedLeftLeg.rotationPointY -= 3.0F;
-                this.bipedBody.rotationPointY -= 3.0F;
-                this.bipedHead.rotationPointY -= 3.0F;
+            String animName = ap.getCurrentAnimationName();
+            String prevAnimName = ap.getPrevAnimationName();
+            String actionName = ap.getCurrentActionName();
+            String fadeActionName = ap.getFadeActionName();
+            boolean currBow = animName != null && animName.contains("bow");
+            boolean prevBow = prevAnimName != null && prevAnimName.contains("bow");
+
+            boolean isMWCWeapon = !efw.util.RenderContext.isRenderingPlayerInSevenScreen && player.getHeldItemMainhand().getItem() instanceof Weapon;
+            boolean hasWeaponAnim = (animName != null && (animName.startsWith("pistol_") || animName.startsWith("rifle_")))
+                                 || (actionName != null && (actionName.startsWith("pistol_") || actionName.startsWith("rifle_")))
+                                 || (fadeActionName != null && (fadeActionName.startsWith("pistol_") || fadeActionName.startsWith("rifle_")));
+            boolean isHoldingWeapon = isMWCWeapon || hasWeaponAnim || currBow || prevBow;
+            ap.isHoldingWeapon = isHoldingWeapon;
+            ap.setPlayer(player);
+
+            float ww = ap.getWeaponSneakWeight(pt);
+            if (!efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
+                if (ww > 0.001f) {
+                    // --- WEAPON SNEAK SYSTEM (from backup) ---
+                    // Arms and head smoothly lower into crouch with proper weapon alignment
+                    float sw = ap.getSneakOffsetWeight(pt);
+                    if (entityIn.isSneaking() || sw > 0.001f) {
+                        float targetBodyY = -3.0F;
+                        float targetLegY = 9.0F;
+                        float targetHeadY = -1.0F;
+                        float targetRightArmY = 1.0F;
+                        float targetLeftArmY = 1.0F;
+
+                        float w = sw * ww;
+                        this.bipedRightLeg.rotationPointY = 12.0F * (1.0f - w) + targetLegY * w;
+                        this.bipedLeftLeg.rotationPointY = 12.0F * (1.0f - w) + targetLegY * w;
+                        this.bipedRightLeg.rotationPointZ = 0.0F * w + this.bipedRightLeg.rotationPointZ * (1.0f - w);
+                        this.bipedLeftLeg.rotationPointZ = 0.0F * w + this.bipedLeftLeg.rotationPointZ * (1.0f - w);
+
+                        this.bipedBody.rotationPointY = 0.0F * (1.0f - w) + targetBodyY * w;
+                        this.bipedHead.rotationPointY = 0.0F * (1.0f - w) + targetHeadY * w;
+                        this.bipedRightArm.rotationPointY = 2.0F * (1.0f - w) + targetRightArmY * w;
+                        this.bipedLeftArm.rotationPointY = 2.0F * (1.0f - w) + targetLeftArmY * w;
+                    }
+                } else {
+                    // --- NON-WEAPON SNEAK (exact Git baseline) ---
+                    if (entityIn.isSneaking()) {
+                        this.bipedRightLeg.rotationPointY -= 3.0F;
+                        this.bipedLeftLeg.rotationPointY -= 3.0F;
+                        this.bipedBody.rotationPointY -= 3.0F;
+                        this.bipedHead.rotationPointY -= 3.0F;
+                    }
+                }
             }
 
             ModelBiped model = (ModelBiped) (Object) this;
@@ -579,13 +650,6 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             applyBone(this.bipedRightLeg, AnimationApplicator.getOverlayForBone(this.bipedRightLeg, model), ap, "rightLeg", pt);
             applyBone(this.bipedLeftLeg, AnimationApplicator.getOverlayForBone(this.bipedLeftLeg, model), ap, "leftLeg", pt);
             applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
-
-            String animName = ap.getCurrentAnimationName();
-            String prevAnimName = ap.getPrevAnimationName();
-            String actionName = ap.getCurrentActionName();
-            String fadeActionName = ap.getFadeActionName();
-            boolean currBow = animName != null && animName.contains("bow");
-            boolean prevBow = prevAnimName != null && prevAnimName.contains("bow");
 
             float bowWeight = 0f;
             float baseW = ap.getPrevWeight() + (ap.getWeight() - ap.getPrevWeight()) * pt;
@@ -603,7 +667,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             boolean hasCustomItemAnim = animName != null && (
                     animName.contains("eating") || animName.contains("bow") ||
                             animName.contains("shield") || animName.contains("reload") ||
-                            animName.contains("aim") || animName.contains("hold"));
+                            animName.contains("aim") || animName.contains("hold") ||
+                            animName.contains("lie") || animName.contains("crawl"));
             boolean isGenericItemUse = player.isHandActive() && !hasCustomItemAnim && !ap.hasActionWeight();
 
             // Capture vanilla head pitch (camera up/down) early so we can apply it to the arms
@@ -615,16 +680,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             boolean skipRightArm = false;
             boolean skipLeftArm = false;
 
-            // --- ANIMATION PRIORITY LOGIC ---
-            // We want the arms to track the head when aiming or holding a weapon,
-            // but NOT during sprint/run, reload, roll, or crawling.
-            boolean isMWCWeapon = !efw.util.RenderContext.isRenderingPlayerInSevenScreen && player.getHeldItemMainhand().getItem() instanceof Weapon;
-            boolean hasWeaponAnim = (animName != null && (animName.startsWith("pistol_") || animName.startsWith("rifle_")))
-                                 || (actionName != null && (actionName.startsWith("pistol_") || actionName.startsWith("rifle_")))
-                                 || (fadeActionName != null && (fadeActionName.startsWith("pistol_") || fadeActionName.startsWith("rifle_")));
-            boolean isHoldingWeapon = isMWCWeapon || hasWeaponAnim || currBow || prevBow;
-
-            float armPitchWeight = isCrawlingAnim ? 0.0f : ap.getArmPitchTrackingWeight(pt, isHoldingWeapon);
+            boolean disableArmPitch = isCrawlingAnim || player.isInWater();
+            float armPitchWeight = disableArmPitch ? 0.0f : ap.getArmPitchTrackingWeight(pt, isHoldingWeapon);
 
             float aimWeight = 0.0f;
             if (actionName != null && actionName.contains("aim")) {
@@ -651,12 +708,16 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 disableLeftArmAnim = true;
             }
 
-             if (!disableRightArmAnim) {
-                if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) this.bipedRightArm.rotationPointY -= 3.0F;
+            if (!disableRightArmAnim) {
+                if (ww <= 0.001f && entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
+                    this.bipedRightArm.rotationPointY -= 3.0F;
+                }
                 applyBone(this.bipedRightArm, AnimationApplicator.getOverlayForBone(this.bipedRightArm, model), ap, "rightArm", pt);
             }
             if (!disableLeftArmAnim) {
-                if (entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) this.bipedLeftArm.rotationPointY -= 3.0F;
+                if (ww <= 0.001f && entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
+                    this.bipedLeftArm.rotationPointY -= 3.0F;
+                }
                 applyBone(this.bipedLeftArm, AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model), ap, "leftArm", pt);
             }
 
@@ -669,7 +730,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 boolean isCrawlingOrRolling = (actionName != null && (actionName.contains("roll") || actionName.contains("lie") || actionName.contains("crawl")))
                         || (fadeActionName != null && (fadeActionName.contains("roll") || fadeActionName.contains("lie") || fadeActionName.contains("crawl")))
                         || (animName != null && (animName.contains("lie") || animName.contains("roll") || animName.contains("crawl")))
-                        || isCrawlingAnim || currRoll || prevRoll;
+                        || isCrawlingAnim || isWaterAnim || currRoll || prevRoll || ap.isRollPlaying();
 
                 if (!isCrawlingOrRolling) {
                     float torchRotX = -1.35F + vanillaHeadPitch * 0.6F;
@@ -688,6 +749,14 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 }
             }
 
+            // Pitch Arms when holding a weapon (from backup system: smoothly scaled and blended after roll)
+            if (armPitchWeight > 0.001f) {
+                float lookWeight = ap.getRollLookWeight(pt);
+                float effectiveArmPitch = vanillaHeadPitch * armPitchWeight * lookWeight;
+                if (!skipRightArm) this.bipedRightArm.rotateAngleX += effectiveArmPitch;
+                if (!skipLeftArm)  this.bipedLeftArm.rotateAngleX += effectiveArmPitch;
+            }
+
             // Apply Head Bones
             if (!isGenericItemUse) {
                 float headX = this.bipedHead.rotateAngleX;
@@ -698,32 +767,36 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 this.bipedHead.rotateAngleZ = 0;
                 applyBone(this.bipedHead, AnimationApplicator.getOverlayForBone(this.bipedHead, model), ap, "head", pt);
                 
-                if (isCrawlingAnim) {
-                    // Bedrock JSON lie animation already has the -77.5° angle for horizontal body.
-                    // Only add the player's camera pitch clamped so head looks slightly up/down with mouse!
-                    float pitchOffset = Math.max(-0.4f, Math.min(0.4f, player.rotationPitch * 0.017453292F));
-                    this.bipedHead.rotateAngleX += pitchOffset;
-                    this.bipedHead.rotateAngleY += headY;
-                    this.bipedHead.rotateAngleZ += headZ;
+                float lookWeight = ap.getRollLookWeight(pt);
+                boolean isSwimming = ap != null && ap.isPlaying() && ("swimming".equals(animName) || "swimming".equals(currentAnimName) || isWaterAnim);
+                if (isSwimming) {
+                    // In swimming, body is tilted horizontally by player pitch in RenderPlayer.
+                    // Face should look forward along the swimming vector, so head is raised ~-45° (-0.785 rad).
+                    // Mouse pitch following is disabled.
+                    this.bipedHead.rotateAngleX = -0.7853982F;
+                    this.bipedHead.rotateAngleY = 0.0F;
+                    this.bipedHead.rotateAngleZ = 0.0F;
+                } else if (isCrawlingAnim) {
+                    // Like TaCZ (anim 1.20.1): when crawling, the head does NOT pitch up/down into the ground.
+                    // The only tracking reaction to aiming is a subtle roll/tilt to the left and right.
+                    float tilt = Math.max(-0.25f, Math.min(0.25f, headY));
+                    this.bipedHead.rotateAngleZ += tilt * lookWeight;
                 } else {
                     // Add vanilla tracking back
-                    this.bipedHead.rotateAngleX += headX;
-                    this.bipedHead.rotateAngleY += headY;
-                    this.bipedHead.rotateAngleZ += headZ;
+                    this.bipedHead.rotateAngleX += headX * lookWeight;
+                    this.bipedHead.rotateAngleY += headY * lookWeight;
+                    this.bipedHead.rotateAngleZ += headZ * lookWeight;
                 }
             }
 
-            // Pitch Arms if required (smoothly scaled during crossfade)
-            if (armPitchWeight > 0.0f) {
-                if (!skipRightArm) this.bipedRightArm.rotateAngleX += vanillaHeadPitch * armPitchWeight;
-                if (!skipLeftArm)  this.bipedLeftArm.rotateAngleX += vanillaHeadPitch * armPitchWeight;
-            }
-
-            // Sync hat
+            // Sync hat (both angles and pivot points so hat layer never separates)
             if (this.bipedHeadwear != null) {
                 this.bipedHeadwear.rotateAngleX = this.bipedHead.rotateAngleX;
                 this.bipedHeadwear.rotateAngleY = this.bipedHead.rotateAngleY;
                 this.bipedHeadwear.rotateAngleZ = this.bipedHead.rotateAngleZ;
+                this.bipedHeadwear.rotationPointX = this.bipedHead.rotationPointX;
+                this.bipedHeadwear.rotationPointY = this.bipedHead.rotationPointY;
+                this.bipedHeadwear.rotationPointZ = this.bipedHead.rotationPointZ;
             }
         }
     }

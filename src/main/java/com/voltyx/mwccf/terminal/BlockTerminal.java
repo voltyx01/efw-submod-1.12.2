@@ -148,6 +148,26 @@ public class BlockTerminal extends BlockFurnitureHorizontal {
         TileEntity te = worldIn.getTileEntity(pos);
         if (te instanceof TileEntityTerminal) {
             TileEntityTerminal terminal = (TileEntityTerminal) te;
+
+            // --- Установка интернет-модуля ---
+            net.minecraft.item.ItemStack heldStack = playerIn.getHeldItemMainhand();
+            if (!heldStack.isEmpty() && heldStack.getItem() == com.voltyx.mwccf.mcore.MCoreItems.INTERNET_MODULE) {
+                if (!terminal.hasInternetModule()) {
+                    if (!worldIn.isRemote) {
+                        terminal.installInternetModule(playerIn.getName());
+                        if (!playerIn.isCreative()) {
+                            heldStack.shrink(1);
+                        }
+                        worldIn.playSound(null, pos,
+                                net.minecraft.init.SoundEvents.BLOCK_NOTE_PLING,
+                                net.minecraft.util.SoundCategory.BLOCKS, 1.0F, 1.6F);
+                    } else {
+                        terminal.installInternetModule(playerIn.getName());
+                    }
+                }
+                return true;
+            }
+
             if (worldIn.isRemote) {
                 if (com.voltyx.mwccf.terminal.client.TerminalCameraController.isActive()) {
                     com.voltyx.mwccf.terminal.client.TerminalCameraController.close();

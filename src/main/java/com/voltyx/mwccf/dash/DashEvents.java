@@ -86,13 +86,32 @@ public class DashEvents {
 
             if (player.world instanceof WorldServer) {
                 WorldServer ws = (WorldServer) player.world;
-                ws.spawnParticle(EnumParticleTypes.CLOUD,
-                        player.posX, player.posY + MwccfConfig.dashAndStamina.dash.particleYOffset, player.posZ,
-                        MwccfConfig.dashAndStamina.dash.particleCount,
-                        dir.x * MwccfConfig.dashAndStamina.dash.particleSpread,
-                        MwccfConfig.dashAndStamina.dash.particleHeight,
-                        dir.z * MwccfConfig.dashAndStamina.dash.particleSpread,
-                        MwccfConfig.dashAndStamina.dash.particleSpeed);
+                net.minecraft.util.math.BlockPos footPos = new net.minecraft.util.math.BlockPos(player.posX, player.getEntityBoundingBox().minY - 0.2, player.posZ);
+                net.minecraft.block.state.IBlockState footState = ws.getBlockState(footPos);
+                if (footState.getMaterial() == net.minecraft.block.material.Material.AIR) {
+                    footPos = footPos.down();
+                    footState = ws.getBlockState(footPos);
+                }
+
+                if (footState.getMaterial() != net.minecraft.block.material.Material.AIR) {
+                    int blockStateId = net.minecraft.block.Block.getStateId(footState);
+                    ws.spawnParticle(EnumParticleTypes.BLOCK_CRACK,
+                            player.posX, player.posY + 0.1, player.posZ,
+                            MwccfConfig.dashAndStamina.dash.particleCount,
+                            dir.x * MwccfConfig.dashAndStamina.dash.particleSpread,
+                            0.15,
+                            dir.z * MwccfConfig.dashAndStamina.dash.particleSpread,
+                            0.15,
+                            blockStateId);
+                } else {
+                    ws.spawnParticle(EnumParticleTypes.CLOUD,
+                            player.posX, player.posY + MwccfConfig.dashAndStamina.dash.particleYOffset, player.posZ,
+                            MwccfConfig.dashAndStamina.dash.particleCount,
+                            dir.x * MwccfConfig.dashAndStamina.dash.particleSpread,
+                            MwccfConfig.dashAndStamina.dash.particleHeight,
+                            dir.z * MwccfConfig.dashAndStamina.dash.particleSpread,
+                            MwccfConfig.dashAndStamina.dash.particleSpeed);
+                }
             }
 
             cap.setDashing(false);

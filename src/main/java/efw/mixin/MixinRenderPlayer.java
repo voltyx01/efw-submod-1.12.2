@@ -57,41 +57,13 @@ public class MixinRenderPlayer {
         if (ap == null) return;
         
         // Apply body-level world-space transform during roll AND its fade-out
-        // This matches 1.20.1: get3DTransform("body") on the full blended stack
-        String actionName = ap.getCurrentActionName();
-        String baseName = ap.getCurrentAnimationName();
-        String fadeActionName = ap.getFadeActionName();
-        boolean isRollAction = "roll".equals(actionName) || (ap.isActionFadingOut() && "roll".equals(fadeActionName));
-        if (!isRollAction) return;
+        if (!ap.isRollActive(partialTicks)) return;
 
-        // Check if a weapon animation is involved (either as base or action)
-        boolean hasWeapon = (actionName != null && (actionName.startsWith("pistol_") || actionName.startsWith("rifle_"))) ||
-                            (baseName != null && (baseName.startsWith("pistol_") || baseName.startsWith("rifle_")));
-
-        // Determine if the roll animation's global somersault is actively contributing
-        boolean isRollActive = ap.isRollActive(partialTicks);
-
-        if (hasWeapon && !isRollActive) {
-            // Normal weapon animation without roll.
-            // SKIP applying body transforms globally because weapons use "body" as the local torso, 
-            // not the global entity root! (This prevents the character from flying up or twisting globally).
-            return;
-        }
-        
-        // Get from full stack (base + action layers blended)
-        efw.animation.layered.math.Vec3f pos = ap.get3DTransform("body", efw.animation.layered.TransformType.POSITION, partialTicks, efw.animation.layered.math.Vec3f.ZERO);
-        efw.animation.layered.math.Vec3f rot = ap.get3DTransform("body", efw.animation.layered.TransformType.ROTATION, partialTicks, efw.animation.layered.math.Vec3f.ZERO);
-        
-        if (hasWeapon && isRollActive) {
-            // A roll is playing ON TOP of a weapon base layer!
-            // The blended pos contains the weapon's massive local Y offset (e.g. Y = -4.5).
-            // To prevent flying up during the roll, subtract the base layer's contribution,
-            // isolating ONLY the roll's global position and rotation!
-            efw.animation.layered.math.Vec3f basePos = ap.getBaseLayerTransform("body", efw.animation.layered.TransformType.POSITION, partialTicks);
-            efw.animation.layered.math.Vec3f baseRot = ap.getBaseLayerTransform("body", efw.animation.layered.TransformType.ROTATION, partialTicks);
-            pos = new efw.animation.layered.math.Vec3f(pos.getX() - basePos.getX(), pos.getY() - basePos.getY(), pos.getZ() - basePos.getZ());
-            rot = new efw.animation.layered.math.Vec3f(rot.getX() - baseRot.getX(), rot.getY() - baseRot.getY(), rot.getZ() - baseRot.getZ());
-        }
+        // Roll is cleanly isolated on rollLayer (priority 1000).
+        // Query the roll layer directly for pure somersault rotation and position,
+        // completely decoupled from base and weapon layers!
+        efw.animation.layered.math.Vec3f pos = ap.getRollLayerTransform("body", efw.animation.layered.TransformType.POSITION, partialTicks);
+        efw.animation.layered.math.Vec3f rot = ap.getRollLayerTransform("body", efw.animation.layered.TransformType.ROTATION, partialTicks);
 
         // Only apply if there's meaningful transform (skip if nearly zero)
         boolean hasRot = Math.abs(rot.getX()) > 0.001f || Math.abs(rot.getY()) > 0.001f || Math.abs(rot.getZ()) > 0.001f;

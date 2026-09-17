@@ -74,6 +74,9 @@ public class BlockAntenna extends BlockFurnitureHorizontal {
         TileEntity te = worldIn.getTileEntity(pos);
         if (te instanceof TileEntityAntenna) {
             TileEntityAntenna antenna = (TileEntityAntenna) te;
+            if (antenna.isLooted()) {
+                return true;
+            }
 
             if (worldIn.isRemote) {
                 if (com.voltyx.mwccf.antenna.client.AntennaCameraController.isActive()) {

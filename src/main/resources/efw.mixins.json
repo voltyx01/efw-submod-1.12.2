@@ -41,7 +41,8 @@
     "MixinMinecraftSplash",
     "MixinFMLClientHandler",
     "MixinSplashProgress",
-    "MixinRender"
+    "MixinRender",
+    "MixinLaserBeamRenderer"
   ],
   "server": [],
   "injectors": {

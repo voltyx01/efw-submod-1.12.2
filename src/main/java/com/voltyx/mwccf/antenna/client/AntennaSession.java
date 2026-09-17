@@ -50,6 +50,11 @@ public class AntennaSession {
                 if ("ACCESS".equals(statusMessage)) {
                     // Automatically close session after successful door open
                     AntennaCameraController.close();
+                    if (Minecraft.getMinecraft().player != null) {
+                        Minecraft.getMinecraft().player.playSound(efw.init.EfwModSounds.DIARYOPEN, 1.5f, 1.0f);
+                    }
+                    com.voltyx.mwccf.client.inspect.InspectTransitionHandler.startTransition(
+                            new net.minecraft.item.ItemStack(com.voltyx.mwccf.mcore.MCoreItems.INTERNET_MODULE), null);
                 }
                 statusMessage = "";
             }

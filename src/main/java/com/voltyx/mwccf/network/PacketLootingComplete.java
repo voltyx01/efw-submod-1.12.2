@@ -43,6 +43,24 @@ public class PacketLootingComplete implements IMessage {
 
                 TileEntity tile = player.world.getTileEntity(message.pos);
                 if (tile != null) {
+
+                    // --- Старое радио: выдать плату и отметить как разобранное ---
+                    if (tile instanceof com.voltyx.mwccf.radio.TileEntityOldRadio) {
+                        com.voltyx.mwccf.radio.TileEntityOldRadio radio =
+                                (com.voltyx.mwccf.radio.TileEntityOldRadio) tile;
+                        if (!radio.isDisassembled()) {
+                            radio.setDisassembled(true);
+                            net.minecraft.item.ItemStack boardStack =
+                                    new net.minecraft.item.ItemStack(
+                                            com.voltyx.mwccf.mcore.MCoreItems.RADIO_BOARD);
+                            if (!player.inventory.addItemStackToInventory(boardStack)) {
+                                player.dropItem(boardStack, false);
+                            }
+                            player.inventoryContainer.detectAndSendChanges();
+                        }
+                        return; // Не имитируем клик для радио
+                    }
+
                     // Разблокируем навсегда
                     tile.getTileData().setBoolean("LootUnlocked", true);
                     tile.markDirty();

@@ -84,6 +84,11 @@ public class OverlayStamina {
         if (event.isCancelable() || event.getType() != RenderGameOverlayEvent.ElementType.HELMET)
             return;
 
+        if (com.voltyx.mwccf.terminal.client.TerminalCameraController.isActive() ||
+            com.voltyx.mwccf.antenna.client.AntennaCameraController.isActive()) {
+            return;
+        }
+
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = mc.player;
         if (player == null)

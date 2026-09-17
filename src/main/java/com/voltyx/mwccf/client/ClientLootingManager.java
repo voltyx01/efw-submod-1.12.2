@@ -158,7 +158,16 @@ public class ClientLootingManager {
             }
 
             if (lootProgress >= REQUIRED_TICKS) {
+                boolean isRadio = mc.world != null && targetBlock != null && mc.world.getBlockState(targetBlock).getBlock() instanceof com.voltyx.mwccf.radio.BlockOldRadio;
                 MwccfMod.PACKET_HANDLER.sendToServer(new PacketLootingComplete(targetBlock));
+
+                if (isRadio) {
+                    if (mc.player != null) {
+                        mc.player.playSound(efw.init.EfwModSounds.DIARYOPEN, 1.5f, 1.0f);
+                    }
+                    com.voltyx.mwccf.client.inspect.InspectTransitionHandler.startTransition(
+                            new net.minecraft.item.ItemStack(com.voltyx.mwccf.mcore.MCoreItems.RADIO_BOARD), null);
+                }
 
                 if (suppressNextOpenSound) {
                     suppressUntilMillis = System.currentTimeMillis() + SUPPRESS_WINDOW_MS;
@@ -235,10 +244,13 @@ public class ClientLootingManager {
         // Рисуем заполняющееся белое кольцо прогресса
         drawThickArc(x, y, radius, thickness, progress, 0xFFFFFFFF);
 
-        // Текст под прицелом
-        String lootText = net.minecraft.client.resources.I18n.format("gui.mwccf.looting");
-        mc.fontRenderer.drawStringWithShadow(lootText, x - mc.fontRenderer.getStringWidth(lootText) / 2.0f, y + 20,
-                0xFFFFFF);
+        // Текст под прицелом (не рисуем для старого радио)
+        boolean isRadio = mc.world != null && targetBlock != null && mc.world.getBlockState(targetBlock).getBlock() instanceof com.voltyx.mwccf.radio.BlockOldRadio;
+        if (!isRadio) {
+            String lootText = net.minecraft.client.resources.I18n.format("gui.mwccf.looting");
+            mc.fontRenderer.drawStringWithShadow(lootText, x - mc.fontRenderer.getStringWidth(lootText) / 2.0f, y + 20,
+                    0xFFFFFF);
+        }
     }
 
     // Хелпер теперь принимает координаты x и y как float!

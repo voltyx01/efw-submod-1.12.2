@@ -26,6 +26,13 @@ public class MCoreItems {
     public static final Item TITANIUM_NUGGET = createItem("titanium_nugget");
     public static final Item RAW_TITANIUM = createItem("raw_titanium");
 
+    // Tech & Radio Parts
+    public static final Item INTERNET_MODULE = createItem("internet_module");
+    public static final Item RADIO_BOARD = createItem("radio_board");
+    public static final Item MICROPHONE_PART = createItem("microphone_part");
+    public static final Item SCREWDRIVER = createItem("screwdriver");
+    public static final Item WALKIE_TALKIE_CASE = createItem("walkie_talkie_case");
+
     // Steel Tools
     public static final Item STEEL_SWORD = createSword("steel_sword", MCoreMaterials.TOOL_STEEL);
     public static final Item STEEL_PICKAXE = createPickaxe("steel_pickaxe", MCoreMaterials.TOOL_STEEL);

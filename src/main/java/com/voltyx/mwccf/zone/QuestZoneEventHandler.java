@@ -126,35 +126,23 @@ public class QuestZoneEventHandler {
                 final QuestZone targetZone = zone;
                 EntityPlayer player = event.getEntityPlayer();
 
-                // Проверяем текущее состояние двери прямо в момент клика
+                // Проверяем текущее состояние двери прямо в момент клика ДО изменения
                 net.minecraft.block.state.IBlockState currentState = world.getBlockState(checkPos);
-                boolean wasOpen = false;
-                if (currentState.getBlock() instanceof net.minecraft.block.BlockDoor) {
-                    wasOpen = currentState.getValue(net.minecraft.block.BlockDoor.OPEN);
-                } else if (currentState.getBlock() instanceof net.minecraft.block.BlockTrapDoor) {
-                    wasOpen = currentState.getValue(net.minecraft.block.BlockTrapDoor.OPEN);
-                } else if (currentState.getBlock() instanceof net.minecraft.block.BlockFenceGate) {
-                    wasOpen = currentState.getValue(net.minecraft.block.BlockFenceGate.OPEN);
-                }
-
-                final boolean previouslyOpen = wasOpen;
+                final boolean previouslyOpen = isDoorOpen(currentState);
 
                 if (world instanceof net.minecraft.world.WorldServer) {
                     ((net.minecraft.world.WorldServer) world).addScheduledTask(() -> {
                         net.minecraft.block.state.IBlockState nextState = world.getBlockState(checkPos);
-                        boolean isNowOpen = false;
-                        if (nextState.getBlock() instanceof net.minecraft.block.BlockDoor) {
-                            isNowOpen = nextState.getValue(net.minecraft.block.BlockDoor.OPEN);
-                        } else if (nextState.getBlock() instanceof net.minecraft.block.BlockTrapDoor) {
-                            isNowOpen = nextState.getValue(net.minecraft.block.BlockTrapDoor.OPEN);
-                        } else if (nextState.getBlock() instanceof net.minecraft.block.BlockFenceGate) {
-                            isNowOpen = nextState.getValue(net.minecraft.block.BlockFenceGate.OPEN);
-                        } else {
-                            isNowOpen = true;
-                        }
+                        boolean isNowOpen = isDoorOpen(nextState);
 
-                        // Если дверь сейчас открыта, ЛИБО если она была закрыта и игрок нажал открыть (инвертировалась)
-                        if (isNowOpen || !previouslyOpen) {
+                        // Проверяем, заперта ли дверь замком мода Locks
+                        boolean isLocked = LocksCompat.isDoorLocked(world, pos, checkPos);
+
+                        // Зона защиты снимается ТОЛЬКО если дверь РЕАЛЬНО открылась:
+                        // 1. Дверь сейчас открыта (isNowOpen == true)
+                        // 2. До этого она была закрыта (!previouslyOpen)
+                        // 3. На ней нет запертого замка (!isLocked)
+                        if (!isLocked && !previouslyOpen && isNowOpen) {
                             data.removeZone(targetZone.getId());
                             syncZonesToAll(world);
                             if (player != null) {
@@ -168,6 +156,23 @@ public class QuestZoneEventHandler {
                 }
             }
         }
+    }
+
+    private static boolean isDoorOpen(net.minecraft.block.state.IBlockState state) {
+        if (state == null) return false;
+        if (state.getBlock() instanceof net.minecraft.block.BlockDoor) {
+            return state.getValue(net.minecraft.block.BlockDoor.OPEN);
+        } else if (state.getBlock() instanceof net.minecraft.block.BlockTrapDoor) {
+            return state.getValue(net.minecraft.block.BlockTrapDoor.OPEN);
+        } else if (state.getBlock() instanceof net.minecraft.block.BlockFenceGate) {
+            return state.getValue(net.minecraft.block.BlockFenceGate.OPEN);
+        }
+        for (net.minecraft.block.properties.IProperty<?> prop : state.getPropertyKeys()) {
+            if ("open".equalsIgnoreCase(prop.getName()) && prop.getValueClass() == Boolean.class) {
+                return (Boolean) state.getValue(prop);
+            }
+        }
+        return false;
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

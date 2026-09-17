@@ -1,0 +1,17 @@
+{
+	"parent": "mwccf:item/walkie_talkie_off",
+	"overrides": [
+		{
+			"predicate": {
+				"active": 0.0
+			},
+			"model": "mwccf:item/walkie_talkie_off"
+		},
+		{
+			"predicate": {
+				"active": 1.0
+			},
+			"model": "mwccf:item/walkie_talkie_on"
+		}
+	]
+}

@@ -58,18 +58,29 @@ public class ItemHeadlamp extends Item implements IBauble {
         NBTTagCompound tag = itemstack.getTagCompound();
         if (tag != null && tag.getBoolean("active")) {
             if (!player.world.isRemote) { // Only decrease on server
-                int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-                if (charge > 0) {
-                    charge--;
-                    tag.setInteger("battery_charge", charge);
-                    if (charge <= 0) {
-                        tag.setBoolean("active", false); // turn off
+                if (player.ticksExisted % 20 == 0) {
+                    int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
+                    if (charge > 0) {
+                        charge = Math.max(0, charge - 20);
+                        tag.setInteger("battery_charge", charge);
+                        if (charge <= 0) {
+                            tag.setBoolean("active", false); // turn off
+                        }
+                    } else {
+                        tag.setBoolean("active", false);
                     }
-                } else {
-                    tag.setBoolean("active", false);
                 }
             }
         }
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        if (slotChanged) return true;
+        if (oldStack.getItem() != newStack.getItem()) return true;
+        boolean oldActive = oldStack.hasTagCompound() && oldStack.getTagCompound().getBoolean("active");
+        boolean newActive = newStack.hasTagCompound() && newStack.getTagCompound().getBoolean("active");
+        return oldActive != newActive;
     }
 
     @Override

@@ -51,7 +51,7 @@ public class AnimationRegistry {
     }
 
     public static AnimationPlayer getPlayer(EntityPlayer player) {
-        return players.computeIfAbsent(player, k -> new AnimationPlayer());
+        return players.computeIfAbsent(player, AnimationPlayer::new);
     }
 
     private static AnimationPlayer sevenScreenPlayer = null;

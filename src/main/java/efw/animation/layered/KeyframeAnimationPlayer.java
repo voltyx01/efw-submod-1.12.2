@@ -91,8 +91,13 @@ public class KeyframeAnimationPlayer implements IAnimation {
         float t = getInterpolatedTime(prevTime, currentTime, tickDelta, clip.length, clip.loop);
 
         if (type == TransformType.ROTATION) {
-            if (track.rotation != null && !track.rotation.isEmpty()) {
-                float[] deg = BoneTrack.interpolate(track.rotation, t, clip.loop);
+            java.util.List<efw.animation.KeyFrame> rotKeys = track.rotation;
+            if ((rotKeys == null || rotKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
+                BoneTrack alt = "torso".equals(modelName) ? clip.bones.get("body") : clip.bones.get("torso");
+                if (alt != null) rotKeys = alt.rotation;
+            }
+            if (rotKeys != null && !rotKeys.isEmpty()) {
+                float[] deg = BoneTrack.interpolate(rotKeys, t, clip.loop);
                 float x = deg[0];
                 float y = deg[1];
                 float z = deg[2];
@@ -102,8 +107,13 @@ public class KeyframeAnimationPlayer implements IAnimation {
                 return new Vec3f(rotX, rotY, rotZ);
             }
         } else if (type == TransformType.POSITION) {
-            if (track.position != null && !track.position.isEmpty()) {
-                float[] pos = BoneTrack.interpolate(track.position, t, clip.loop);
+            java.util.List<efw.animation.KeyFrame> posKeys = track.position;
+            if ((posKeys == null || posKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
+                BoneTrack alt = "torso".equals(modelName) ? clip.bones.get("body") : clip.bones.get("torso");
+                if (alt != null) posKeys = alt.position;
+            }
+            if (posKeys != null && !posKeys.isEmpty()) {
+                float[] pos = BoneTrack.interpolate(posKeys, t, clip.loop);
                 // Position is additive to vanilla base position. Invert Y to match Minecraft's coordinate system.
                 return new Vec3f(value0.getX() + pos[0], value0.getY() - pos[1], value0.getZ() + pos[2]);
             }
@@ -115,6 +125,16 @@ public class KeyframeAnimationPlayer implements IAnimation {
         BoneTrack track = clip.bones.get(boneName);
         if (track != null) return track;
 
+        if ("body".equals(boneName)) {
+            track = clip.bones.get("torso");
+            if (track != null) return track;
+        }
+        if ("torso".equals(boneName)) {
+            if (!"roll".equals(clip.name)) {
+                track = clip.bones.get("body");
+                if (track != null) return track;
+            }
+        }
         if ("rightArm".equals(boneName)) {
             track = clip.bones.get("right_arm");
             if (track == null) track = clip.bones.get("root");

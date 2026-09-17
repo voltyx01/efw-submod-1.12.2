@@ -762,3 +762,41 @@ tile.mwccf.placed_item.name=Размещённый предмет
 item.mwccf.placer_tool.name=Установщик предметов
 item.mwccf.zone_tool.name=Разметчик защитных зон
 
+# Walkie-Talkie
+item.mwccf.walkie_talkie.name=Рация
+key.mwccf.walkie_talkie_toggle=Вкл/Выкл рацию
+
+# Walkie-Talkie Tooltip
+tooltip.mwccf.walkie_talkie.status.on=ВКЛ
+tooltip.mwccf.walkie_talkie.status.off=ВЫКЛ
+tooltip.mwccf.walkie_talkie.channel=Кан: %s
+tooltip.mwccf.walkie_talkie.mic.on=ВКЛ
+tooltip.mwccf.walkie_talkie.mic.muted=МУТ
+tooltip.mwccf.walkie_talkie.mic=Микр: %s
+tooltip.mwccf.walkie_talkie.no_battery=Нет заряда!
+tooltip.mwccf.walkie_talkie.battery=Батарея: %s%%
+tooltip.mwccf.walkie_talkie.controls=[%s] Вкл/Выкл | [ПКМ] Использовать
+tooltip.mwccf.walkie_talkie.configure=§7[§eX§7] §eНастроить
+
+# Walkie-Talkie GUI
+gui.mwccf.walkie_talkie.title=Рация
+gui.mwccf.walkie_talkie.freq_mhz=ЧАСТОТА, MHz
+gui.mwccf.walkie_talkie.signal=СИГНАЛ: %s
+gui.mwccf.walkie_talkie.tuning=НАСТРОЙКА ЧАСТОТЫ
+gui.mwccf.walkie_talkie.volume=ГРОМКОСТЬ
+gui.mwccf.walkie_talkie.power=Питание
+gui.mwccf.walkie_talkie.mic=Микрофон
+
+# Character Button
+wildfire_gender.buttoninevntory=Character
+
+# New Components & Radio
+item.mcore.internet_module.name=Интернет-модуль
+item.mcore.radio_board.name=Плата старого радио
+item.mcore.microphone_part.name=Микрофон
+item.mcore.screwdriver.name=Отвертка
+item.mcore.walkie_talkie_case.name=Корпус от игрушечной рации
+tile.mwccf.old_radio.name=Старое радио
+inspect.internet_module=Может быть использован в терминале или бодикамере для интернет связи.
+inspect.radio_board=Электронная плата старого радиоприёмника. Содержит рабочие компоненты для сборки радиоустройств.
+tooltip.mcore.internet_module=§7Может быть использован в терминале или бодикамере для интернет связи.

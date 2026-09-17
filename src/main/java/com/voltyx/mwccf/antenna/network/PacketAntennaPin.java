@@ -46,14 +46,22 @@ public class PacketAntennaPin implements IMessage {
                     TileEntity te = player.getServerWorld().getTileEntity(message.pos);
                     if (te instanceof TileEntityAntenna) {
                         TileEntityAntenna antenna = (TileEntityAntenna) te;
-                        if (antenna.getPinCode().equals(message.pin)) {
+                        if (antenna.getPinCode().equals(message.pin) && !antenna.isLooted()) {
                             antenna.setUnlocked(true);
                             antenna.setOpen(true);
+                            antenna.setLooted(true);
+
+                            net.minecraft.item.ItemStack moduleStack = new net.minecraft.item.ItemStack(com.voltyx.mwccf.mcore.MCoreItems.INTERNET_MODULE);
+                            if (!player.inventory.addItemStackToInventory(moduleStack)) {
+                                player.dropItem(moduleStack, false);
+                            }
+                            player.inventoryContainer.detectAndSendChanges();
+
                             player.getServerWorld().playSound(null, message.pos,
                                     SoundEvents.BLOCK_IRON_TRAPDOOR_OPEN, SoundCategory.BLOCKS, 1.0F, 1.2F);
                             player.getServerWorld().playSound(null, message.pos,
                                     SoundEvents.BLOCK_NOTE_BELL, SoundCategory.BLOCKS, 1.0F, 2.0F);
-                        } else {
+                        } else if (!antenna.isLooted()) {
                             player.getServerWorld().playSound(null, message.pos,
                                     SoundEvents.BLOCK_NOTE_BASS, SoundCategory.BLOCKS, 1.0F, 0.6F);
                         }
