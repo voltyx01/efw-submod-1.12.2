@@ -221,8 +221,8 @@ public class AnimationTickHandler {
 
         efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(player);
         boolean isLyingAnim = !player.isInWater() && ((ap != null && ap.getCurrentAnimationName() != null &&
-                (ap.getCurrentAnimationName().contains("lie") || ap.getCurrentAnimationName().contains("crawl")))
-                || isPlayerCrawling(player));
+                ap.getCurrentAnimationName().contains("lie"))
+                || isPlayerCrawling(player) || player.height < 1.0F);
         float effectiveHoldWeight = isLyingAnim ? 1.0f : interpWeight;
 
         // Use rotationYaw for local player (updates every frame at full FPS by mouse), rotationYawHead for remote
@@ -477,7 +477,7 @@ public class AnimationTickHandler {
 
             // Sync speed
             float baseSpeed = getAnimationSpeed(ap.getCurrentAnimationName());
-            boolean isLying = state != null && state.baseAnim != null && (state.baseAnim.contains("lie") || state.baseAnim.contains("crawl"));
+            boolean isLying = state != null && state.baseAnim != null && state.baseAnim.contains("lie");
             boolean isLyingAction = state != null && state.baseAnim != null && (state.baseAnim.contains("reload") || state.baseAnim.contains("fire"));
             double moveDx = player.posX - player.prevPosX;
             double moveDz = player.posZ - player.prevPosZ;
@@ -487,13 +487,13 @@ public class AnimationTickHandler {
                 if (isLyingAction) {
                     baseSpeed = 1.0f;
                 } else {
-                    boolean isRemoteMoveClip = state != null && state.baseAnim != null && (state.baseAnim.contains("move") || state.baseAnim.contains("crawl"));
+                    boolean isRemoteMoveClip = state != null && state.baseAnim != null && state.baseAnim.contains("move");
                     if (isRemoteMoveClip) {
                         if (isFrozen || !isMoving) {
                             baseSpeed = 0f;
                             if (ap.getCurrentActionName() != null) {
                                 String actName = ap.getCurrentActionName();
-                                if (actName.endsWith("_lie_move") || actName.equals("lie_move") || actName.contains("crawl")) {
+                                if (actName.endsWith("_lie_move") || actName.equals("lie_move")) {
                                     ap.setActionSpeed(0f);
                                 }
                             }
@@ -948,11 +948,13 @@ public class AnimationTickHandler {
             }
         } else if (player.capabilities.isFlying) {
             animName = "idle_creative_flying";
-        } else if (isPlayerCrawling(player)) { // Ползание (AquaAcrobatics)
-            if (isMoving) {
-                animName = isMovingBackwards ? "crawling_backwards" : "crawling";
+        } else if (isPlayerCrawling(player) || player.height < 1.0F) { // Ползание (AquaAcrobatics)
+            if (isMovingBackwards) {
+                animName = "lie_move";
+            } else if (isMoving) {
+                animName = "lie_move";
             } else {
-                animName = "idle_crawling";
+                animName = "lie";
             }
         } else if (isFalling) {
             animName = "falling";
@@ -1015,10 +1017,9 @@ public class AnimationTickHandler {
         // --- WEAPON ANIMATION OVERRIDE ---
         weaponType = efw.animation.WeaponTypeHelper.getWeaponType(currentStack);
 
-        boolean isLying = !player.isInWater() && ("idle_crawling".equals(animName) || "crawling".equals(animName) || "crawling_backwards".equals(animName)
-                || "lie".equals(animName) || "lie_move".equals(animName)
-                || (animName != null && (animName.contains("lie") || animName.contains("crawl")))
-                || isPlayerCrawling(player));
+        boolean isLying = !player.isInWater() && ("lie".equals(animName) || "lie_move".equals(animName)
+                || (animName != null && animName.contains("lie"))
+                || isPlayerCrawling(player) || player.height < 1.0F);
 
         boolean isWater = player.isInWater() || (animName != null && (animName.contains("water") || animName.contains("swim")));
 
@@ -1212,13 +1213,21 @@ public class AnimationTickHandler {
                             || ap.getCurrentActionName().startsWith("rifle_"))) {
                 ap.cancelAction();
             }
+
+            if (isLying && animName != null) {
+                // The user wants pistol_lie_move for empty hands always, frozen when not moving
+                String fallbackCandidate = "pistol_lie_move";
+                if (efw.animation.AnimationRegistry.getClip(fallbackCandidate) != null) {
+                    animName = fallbackCandidate;
+                }
+            }
         }
         // ---------------------------------
         // Roll is triggered only via triggerRoll(), do not restart it here
 
         if (animName != null && (!animName.equals(ap.getCurrentAnimationName()) || !ap.isPlaying())) {
-            boolean wasLying = ap.getCurrentAnimationName() != null && (ap.getCurrentAnimationName().contains("lie") || ap.getCurrentAnimationName().contains("crawl"));
-            boolean isLyingAnim = animName.contains("lie") || animName.contains("crawl");
+            boolean wasLying = ap.getCurrentAnimationName() != null && ap.getCurrentAnimationName().contains("lie");
+            boolean isLyingAnim = animName.contains("lie");
             
             if (wasLying != isLyingAnim) {
                 ap.snap();
@@ -1265,7 +1274,7 @@ public class AnimationTickHandler {
             if (isLyingAction) {
                 baseSpeed = 1.0f;
             } else {
-                boolean isMoveClip = animName != null && (animName.contains("move") || animName.contains("crawling"));
+                boolean isMoveClip = animName != null && animName.contains("move");
                 if (isMoveClip) {
                     if (!isMoving) {
                         baseSpeed = 0f;
@@ -1273,7 +1282,7 @@ public class AnimationTickHandler {
                         baseSpeed = 0.6f;
                     }
                 } else {
-                    // Idle prone holding/breathing (rifle_lie, pistol_lie, idle_crawling, lie)
+                    // Idle prone holding/breathing (rifle_lie, pistol_lie, lie)
                     baseSpeed = 1.0f;
                 }
             }
@@ -1312,7 +1321,7 @@ public class AnimationTickHandler {
         // Freeze crawling action layer if not moving
         if (isLying && ap.getCurrentActionName() != null) {
             String actName = ap.getCurrentActionName();
-            if (actName.endsWith("_lie_move") || actName.equals("lie_move") || actName.contains("crawling")) {
+            if (actName.endsWith("_lie_move") || actName.equals("lie_move")) {
                 if (!isMoving) {
                     ap.setActionSpeed(0f);
                 } else if (ap.getActionSpeed() == 0f) {
@@ -1331,7 +1340,7 @@ public class AnimationTickHandler {
 
         // --- NETWORK SYNC FOR LOCAL PLAYER ---
         String currentBaseAnim = ap.getCurrentAnimationName();
-        boolean isCurrentMoveClip = currentBaseAnim != null && (currentBaseAnim.contains("move") || currentBaseAnim.equals("crawling"));
+        boolean isCurrentMoveClip = currentBaseAnim != null && currentBaseAnim.contains("move");
         if (isCurrentMoveClip && isLying && !isMoving && !isLyingAction) {
             currentBaseAnim += "_FROZEN";
         }

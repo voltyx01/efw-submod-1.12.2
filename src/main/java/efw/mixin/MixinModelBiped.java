@@ -473,8 +473,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
         String currentAnimForCrawlCheck = currentAnimName;
         boolean isCrawlingAnim = !isWaterAnim && (
-                (currentAnimForCrawlCheck != null && (currentAnimForCrawlCheck.contains("lie") || currentAnimForCrawlCheck.contains("crawl")))
+                (currentAnimForCrawlCheck != null && currentAnimForCrawlCheck.contains("lie"))
                 || efw.AnimationTickHandler.isPlayerCrawling(player)
+                || player.height < 1.0F
         );
 
         // Reset vanilla/AA bone transformations so JSON animations apply cleanly
@@ -729,9 +730,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 float torchWeightRight = torchState.prevRight + (torchState.right - torchState.prevRight) * pt;
                 float torchWeightLeft = torchState.prevLeft + (torchState.left - torchState.prevLeft) * pt;
 
-                boolean isCrawlingOrRolling = (actionName != null && (actionName.contains("roll") || actionName.contains("lie") || actionName.contains("crawl")))
-                        || (fadeActionName != null && (fadeActionName.contains("roll") || fadeActionName.contains("lie") || fadeActionName.contains("crawl")))
-                        || (animName != null && (animName.contains("lie") || animName.contains("roll") || animName.contains("crawl")))
+                boolean isCrawlingOrRolling = (actionName != null && (actionName.contains("roll") || actionName.contains("lie")))
+                        || (fadeActionName != null && (fadeActionName.contains("roll") || fadeActionName.contains("lie")))
+                        || (animName != null && (animName.contains("lie") || animName.contains("roll")))
                         || isCrawlingAnim || isWaterAnim || currRoll || prevRoll || ap.isRollPlaying();
 
                 if (!isCrawlingOrRolling) {
