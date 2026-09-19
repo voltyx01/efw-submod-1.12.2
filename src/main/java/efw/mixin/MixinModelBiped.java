@@ -465,7 +465,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         boolean isAASwimming = false;
         if (entityIn instanceof com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) {
             com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable res = (com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) entityIn;
-            isAASwimming = res.isActuallySwimming() || res.isVisuallySwimming() || res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING;
+            isAASwimming = (entityIn != null && (entityIn.isInWater() || entityIn.isInsideOfMaterial(net.minecraft.block.material.Material.WATER)))
+                    && (res.isActuallySwimming() || res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING);
         }
 
         boolean isWaterAnim = hasCustomWaterAnim || (entityIn != null && entityIn.isInWater());

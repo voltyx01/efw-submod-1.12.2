@@ -29,11 +29,12 @@ public class AnimationTickHandler {
     }
 
     public static boolean isPlayerCrawling(EntityPlayer player) {
-        if (player == null || player.isInWater()) return false;
+        if (player == null || player.isInWater() || player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER)) return false;
         if (player instanceof com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) {
             com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable res = (com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) player;
-            if (res.isActuallySwimming() || res.isVisuallySwimming()) return false;
             if (res.isForcingCrawling()) return true;
+            if (res.isVisuallySwimming()) return true;
+            if (res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING) return true;
             if (res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.CROUCHING && res.getHeight() < 1.0F) return true;
         }
         if (player.height < 1.0F) {
@@ -476,7 +477,7 @@ public class AnimationTickHandler {
 
             // Sync speed
             float baseSpeed = getAnimationSpeed(ap.getCurrentAnimationName());
-            boolean isLying = state != null && state.baseAnim != null && state.baseAnim.contains("lie");
+            boolean isLying = state != null && state.baseAnim != null && (state.baseAnim.contains("lie") || state.baseAnim.contains("crawl"));
             boolean isLyingAction = state != null && state.baseAnim != null && (state.baseAnim.contains("reload") || state.baseAnim.contains("fire"));
             double moveDx = player.posX - player.prevPosX;
             double moveDz = player.posZ - player.prevPosZ;
@@ -486,13 +487,13 @@ public class AnimationTickHandler {
                 if (isLyingAction) {
                     baseSpeed = 1.0f;
                 } else {
-                    boolean isRemoteMoveClip = state != null && state.baseAnim != null && (state.baseAnim.contains("move") || state.baseAnim.equals("crawling"));
+                    boolean isRemoteMoveClip = state != null && state.baseAnim != null && (state.baseAnim.contains("move") || state.baseAnim.contains("crawl"));
                     if (isRemoteMoveClip) {
                         if (isFrozen || !isMoving) {
                             baseSpeed = 0f;
                             if (ap.getCurrentActionName() != null) {
                                 String actName = ap.getCurrentActionName();
-                                if (actName.endsWith("_lie_move") || actName.equals("lie_move") || actName.equals("crawling")) {
+                                if (actName.endsWith("_lie_move") || actName.equals("lie_move") || actName.contains("crawl")) {
                                     ap.setActionSpeed(0f);
                                 }
                             }
@@ -798,7 +799,8 @@ public class AnimationTickHandler {
         boolean isAASwimming = false;
         if (player instanceof com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) {
             com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable res = (com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) player;
-            isAASwimming = res.isActuallySwimming() || res.isVisuallySwimming() || res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING;
+            isAASwimming = (player.isInWater() || player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER))
+                    && (res.isActuallySwimming() || res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING);
         }
 
         int outOfWaterTicks = outOfWaterTicksMap.getOrDefault(player, 100);
@@ -947,7 +949,11 @@ public class AnimationTickHandler {
         } else if (player.capabilities.isFlying) {
             animName = "idle_creative_flying";
         } else if (isPlayerCrawling(player)) { // Ползание (AquaAcrobatics)
-            animName = "lie_move";
+            if (isMoving) {
+                animName = isMovingBackwards ? "crawling_backwards" : "crawling";
+            } else {
+                animName = "idle_crawling";
+            }
         } else if (isFalling) {
             animName = "falling";
         } else {
@@ -1259,7 +1265,7 @@ public class AnimationTickHandler {
             if (isLyingAction) {
                 baseSpeed = 1.0f;
             } else {
-                boolean isMoveClip = animName != null && (animName.contains("move") || animName.equals("crawling"));
+                boolean isMoveClip = animName != null && (animName.contains("move") || animName.contains("crawling"));
                 if (isMoveClip) {
                     if (!isMoving) {
                         baseSpeed = 0f;
@@ -1306,7 +1312,7 @@ public class AnimationTickHandler {
         // Freeze crawling action layer if not moving
         if (isLying && ap.getCurrentActionName() != null) {
             String actName = ap.getCurrentActionName();
-            if (actName.endsWith("_lie_move") || actName.equals("lie_move") || actName.equals("crawling")) {
+            if (actName.endsWith("_lie_move") || actName.equals("lie_move") || actName.contains("crawling")) {
                 if (!isMoving) {
                     ap.setActionSpeed(0f);
                 } else if (ap.getActionSpeed() == 0f) {
