@@ -47,6 +47,9 @@ public class AnimationPlayer {
     private float prevWeaponSneakWeight = 0.0f;
     private float currentRollLookWeight = 1.0f;
     private float prevRollLookWeight = 1.0f;
+    private float currentSwimHeadWeight = 0.0f;
+    private float prevSwimHeadWeight = 0.0f;
+    public boolean isSwimmingHead = false;
     private boolean snapped = false;
     private boolean actionSnapped = false;
     private String lastClipName = null;
@@ -251,9 +254,11 @@ public class AnimationPlayer {
 
     public void stop() {
         this.playing = false;
+        String oldName = this.currentClip != null ? this.currentClip.name : null;
+        this.currentClip = null;
         IAnimation oldAnim = this.baseLayer.getAnimation();
         if (oldAnim != null && oldAnim.isActive()) {
-            int blendTicks = getPoseBlendTicks(this.currentClip != null ? this.currentClip.name : null, null);
+            int blendTicks = getPoseBlendTicks(oldName, null);
             if (blendTicks <= 0) {
                 this.baseLayer.setAnimation(null);
             } else {
@@ -333,6 +338,20 @@ public class AnimationPlayer {
         this.currentWeaponSneakWeight += (targetWeaponSneak - this.currentWeaponSneakWeight) * 0.2f;
         if (Math.abs(targetWeaponSneak - this.currentWeaponSneakWeight) < 0.01f) {
             this.currentWeaponSneakWeight = targetWeaponSneak;
+        }
+
+        // Smooth swimming head lock weight (smooth transition into and out of forward-looking swimming head pose)
+        this.prevSwimHeadWeight = this.currentSwimHeadWeight;
+        boolean isSwimmingAnim = isPlaying() && "swimming".equals(getCurrentAnimationName());
+        boolean isUnderwater = this.player != null && (this.player.isInWater() || this.player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER));
+        boolean isUnderwaterSprint = isUnderwater && this.player.isSprinting();
+        boolean shouldLockHead = isSwimmingAnim || isUnderwaterSprint || this.isSwimmingHead;
+        this.isSwimmingHead = false;
+
+        float targetSwimHead = shouldLockHead ? 1.0f : 0.0f;
+        this.currentSwimHeadWeight += (targetSwimHead - this.currentSwimHeadWeight) * 0.25f;
+        if (Math.abs(targetSwimHead - this.currentSwimHeadWeight) < 0.005f) {
+            this.currentSwimHeadWeight = targetSwimHead;
         }
     }
 
@@ -470,6 +489,11 @@ public class AnimationPlayer {
 
     public float getWeaponSneakWeight(float tickDelta) {
         float w = prevWeaponSneakWeight + (currentWeaponSneakWeight - prevWeaponSneakWeight) * tickDelta;
+        return Math.max(0.0f, Math.min(1.0f, w));
+    }
+
+    public float getSwimHeadWeight(float tickDelta) {
+        float w = prevSwimHeadWeight + (currentSwimHeadWeight - prevSwimHeadWeight) * tickDelta;
         return Math.max(0.0f, Math.min(1.0f, w));
     }
 

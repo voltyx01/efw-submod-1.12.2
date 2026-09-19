@@ -30,14 +30,16 @@ public class AnimationTickHandler {
 
     public static boolean isPlayerCrawling(EntityPlayer player) {
         if (player == null || player.isInWater()) return false;
-        if (player.height < 1.0F) return true;
         if (player instanceof com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) {
             com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable res = (com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) player;
-            if (res.getHeight() < 1.0F) return true;
+            if (res.isActuallySwimming() || res.isVisuallySwimming()) return false;
             if (res.isForcingCrawling()) return true;
-            if (res.isVisuallySwimming()) return true;
-            if (res.isActuallySwimming()) return true;
-            if (res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING) return true;
+            if (res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.CROUCHING && res.getHeight() < 1.0F) return true;
+        }
+        if (player.height < 1.0F) {
+            Integer outTicks = outOfWaterTicksMap.get(player);
+            if (outTicks != null && outTicks < 10) return false;
+            return true;
         }
         return false;
     }
@@ -534,6 +536,11 @@ public class AnimationTickHandler {
                 airMult = 1.0f;
             }
             
+            boolean isRemoteSubmerged = player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER);
+            boolean isRemoteSwimmingAnim = ap.isPlaying() && "swimming".equals(ap.getCurrentAnimationName());
+            boolean isRemoteUnderwaterSprint = (player.isInWater() || isRemoteSubmerged) && player.isSprinting();
+            ap.isSwimmingHead = isRemoteSwimmingAnim || isRemoteUnderwaterSprint;
+
             ap.isHoldingWeapon = weaponHoldWeightMap.getOrDefault(player, 0.0f) > 0.01f;
             ap.tick(baseSpeed * airMult);
             return;
@@ -788,8 +795,14 @@ public class AnimationTickHandler {
         float ladderSpeedMult = 1.0f;
 
         // Определяем приоритеты состояний
+        boolean isAASwimming = false;
+        if (player instanceof com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) {
+            com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable res = (com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) player;
+            isAASwimming = res.isActuallySwimming() || res.isVisuallySwimming() || res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING;
+        }
+
         int outOfWaterTicks = outOfWaterTicksMap.getOrDefault(player, 100);
-        if (player.isInWater()) {
+        if (player.isInWater() || isAASwimming) {
             outOfWaterTicks = 0;
         } else {
             outOfWaterTicks++;
@@ -867,11 +880,13 @@ public class AnimationTickHandler {
             } else {
                 animName = "horse_idle"; // Фолбек для других маунтов
             }
-        } else if (player.isInWater() || (outOfWaterTicks < 8 && wasInWaterAnimation)) {
+        } else if (player.isInWater() || isAASwimming || (outOfWaterTicks < 8 && wasInWaterAnimation)) {
+            boolean isSubmerged = player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER);
+
             // Hard block check: look at the block at floor(posY) - 1
-            // Also verify no water/liquid at Y+1 — if submerged, force swimming
+            // Wading in shallow water is only when standing on the ground (not swimming/floating)
             boolean wadingInShallowWater = false;
-            if (player.isInWater()) {
+            if (player.isInWater() && player.onGround && !isAASwimming && !isSubmerged) {
                 net.minecraft.util.math.BlockPos floorBelow = new net.minecraft.util.math.BlockPos(
                         player.posX,
                         Math.floor(player.posY) - 1,
@@ -901,11 +916,12 @@ public class AnimationTickHandler {
                 } else {
                     animName = "idle_standing";
                 }
+            } else if (isAASwimming || ((player.isInWater() || isSubmerged) && isMoving && isSprinting)) {
+                // Подводное горизонтальное плавание
+                animName = "swimming";
             } else {
-                // Плавание
-                if (isMoving && isSprinting) {
-                    animName = "swimming";
-                } else if (player.motionY > 0.15) {
+                // Плавание на поверхности воды (upright in-water animations)
+                if (player.motionY > 0.15) {
                     animName = "up_in_water";
                 } else if (isMovingBackwards) {
                     animName = "backwards_in_water";
@@ -1194,7 +1210,7 @@ public class AnimationTickHandler {
         // ---------------------------------
         // Roll is triggered only via triggerRoll(), do not restart it here
 
-        if (animName != null && !animName.equals(ap.getCurrentAnimationName())) {
+        if (animName != null && (!animName.equals(ap.getCurrentAnimationName()) || !ap.isPlaying())) {
             boolean wasLying = ap.getCurrentAnimationName() != null && (ap.getCurrentAnimationName().contains("lie") || ap.getCurrentAnimationName().contains("crawl"));
             boolean isLyingAnim = animName.contains("lie") || animName.contains("crawl");
             
@@ -1298,6 +1314,11 @@ public class AnimationTickHandler {
                 }
             }
         }
+
+        boolean isLocalSubmerged = player.isInsideOfMaterial(net.minecraft.block.material.Material.WATER);
+        boolean isLocalSwimmingAnim = ap.isPlaying() && "swimming".equals(ap.getCurrentAnimationName());
+        boolean isLocalUnderwaterSprint = (player.isInWater() || isLocalSubmerged || isAASwimming) && player.isSprinting();
+        ap.isSwimmingHead = isLocalSwimmingAnim || isLocalUnderwaterSprint;
 
         ap.isHoldingWeapon = weaponHoldWeightMap.getOrDefault(player, 0.0f) > 0.01f;
         ap.tick(finalSpeed);

@@ -94,6 +94,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         return maxAngleIn + angleIn * f;
     }
 
+
     @Unique
     private float getArmAngleSq(float limbSwing) {
         return -65.0F * limbSwing + limbSwing * limbSwing;
@@ -328,18 +329,12 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     public void redirectSetRotationAngles(ModelBiped modelBiped, float limbSwing, float limbSwingAmount,
             float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
-        if (entityIn instanceof IPlayerResizeable) {
+        if (entityIn instanceof EntityLivingBase) {
             boolean isElytra = ((EntityLivingBase) entityIn).getTicksElytraFlying() > 4;
-            boolean isSwimming = ((IPlayerResizeable) entityIn).isActuallySwimming() && entityIn.isInWater();
-            if (!isElytra && this.swimAnimation > 0.0F) {
-                if (isSwimming) {
-                    headPitch = this.rotLerpRad(this.swimAnimation, this.bipedHead.rotateAngleX,
-                            ((float) -Math.PI / 4F)) / 0.017453292F;
-                } else {
-                    // Crawling on land: do NOT feed back this.bipedHead.rotateAngleX!
-                    // It causes a feedback loop that multiplies head rotation every frame.
-                    headPitch = ((EntityLivingBase) entityIn).rotationPitch;
-                }
+            if (!isElytra) {
+                // Do NOT feed back this.bipedHead.rotateAngleX into headPitch!
+                // It causes a recursive feedback loop. Swimming head tilting is smoothly handled in postSetRotationAngles.
+                headPitch = ((EntityLivingBase) entityIn).rotationPitch;
             }
         }
         if (entityIn != null) {
@@ -467,6 +462,12 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 "idle_in_water".equals(currentAnimName)
         );
 
+        boolean isAASwimming = false;
+        if (entityIn instanceof com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) {
+            com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable res = (com.fuzs.aquaacrobatics.entity.player.IPlayerResizeable) entityIn;
+            isAASwimming = res.isActuallySwimming() || res.isVisuallySwimming() || res.getPose() == com.fuzs.aquaacrobatics.entity.Pose.SWIMMING;
+        }
+
         boolean isWaterAnim = hasCustomWaterAnim || (entityIn != null && entityIn.isInWater());
 
         String currentAnimForCrawlCheck = currentAnimName;
@@ -476,7 +477,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         );
 
         // Reset vanilla/AA bone transformations so JSON animations apply cleanly
-        if (this.swimAnimation > 0.0F || isCrawlingAnim || hasCustomWaterAnim || entityIn.isInWater()) {
+        if (this.swimAnimation > 0.0F || isCrawlingAnim || hasCustomWaterAnim || (isAASwimming && entityIn != null && entityIn.isInWater())) {
             this.bipedRightLeg.rotationPointY = 12.0F;
             this.bipedLeftLeg.rotationPointY = 12.0F;
             this.bipedRightLeg.rotationPointZ = 0.0F;
@@ -510,7 +511,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             this.bipedLeftArm.rotateAngleZ = 0.0F;
         }
 
-        if (this.mwccfSwimAnimation > 0.0F && !hasCustomWaterAnim) {
+        if (this.mwccfSwimAnimation > 0.0F && !hasCustomWaterAnim && isAASwimming) {
             float time = limbSwing * 0.6662F;
             EnumHandSide handside = this.getMainHand(entityIn);
             float f2 = handside == EnumHandSide.RIGHT && this.swingProgress > 0.0F ? 0.0F : this.mwccfSwimAnimation;
@@ -768,24 +769,42 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 applyBone(this.bipedHead, AnimationApplicator.getOverlayForBone(this.bipedHead, model), ap, "head", pt);
                 
                 float lookWeight = ap.getRollLookWeight(pt);
-                boolean isSwimming = ap != null && ap.isPlaying() && ("swimming".equals(animName) || "swimming".equals(currentAnimName) || isWaterAnim);
-                if (isSwimming) {
-                    // In swimming, body is tilted horizontally by player pitch in RenderPlayer.
-                    // Face should look forward along the swimming vector, so head is raised ~-45° (-0.785 rad).
-                    // Mouse pitch following is disabled.
-                    this.bipedHead.rotateAngleX = -0.7853982F;
-                    this.bipedHead.rotateAngleY = 0.0F;
-                    this.bipedHead.rotateAngleZ = 0.0F;
-                } else if (isCrawlingAnim) {
+                float swimWeight = ap != null ? ap.getSwimHeadWeight(pt) : 0.0f;
+
+                float baseHeadX = this.bipedHead.rotateAngleX;
+                float baseHeadY = this.bipedHead.rotateAngleY;
+                float baseHeadZ = this.bipedHead.rotateAngleZ;
+
+                float targetX;
+                float targetY;
+                float targetZ;
+
+                if (isCrawlingAnim) {
                     // Like TaCZ (anim 1.20.1): when crawling, the head does NOT pitch up/down into the ground.
                     // The only tracking reaction to aiming is a subtle roll/tilt to the left and right.
+                    targetX = baseHeadX;
+                    targetY = baseHeadY;
                     float tilt = Math.max(-0.25f, Math.min(0.25f, headY));
-                    this.bipedHead.rotateAngleZ += tilt * lookWeight;
+                    targetZ = baseHeadZ + tilt * lookWeight;
                 } else {
                     // Add vanilla tracking back
-                    this.bipedHead.rotateAngleX += headX * lookWeight;
-                    this.bipedHead.rotateAngleY += headY * lookWeight;
-                    this.bipedHead.rotateAngleZ += headZ * lookWeight;
+                    targetX = baseHeadX + headX * lookWeight;
+                    targetY = baseHeadY + headY * lookWeight;
+                    targetZ = baseHeadZ + headZ * lookWeight;
+                }
+
+                if (swimWeight > 0.001f) {
+                    // In swimming, body is tilted horizontally by player pitch in RenderPlayer.
+                    // Face should look forward along the swimming vector, so head is raised ~-45° (-0.785 rad).
+                    // Smoothly blend between free look tracking and the locked forward angle.
+                    float lockedX = -0.7853982F;
+                    this.bipedHead.rotateAngleX = shortestAngleLerp(targetX, lockedX, swimWeight);
+                    this.bipedHead.rotateAngleY = shortestAngleLerp(targetY, 0.0F, swimWeight);
+                    this.bipedHead.rotateAngleZ = shortestAngleLerp(targetZ, 0.0F, swimWeight);
+                } else {
+                    this.bipedHead.rotateAngleX = targetX;
+                    this.bipedHead.rotateAngleY = targetY;
+                    this.bipedHead.rotateAngleZ = targetZ;
                 }
             }
 
