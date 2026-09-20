@@ -119,9 +119,30 @@ public class AnimationPlayer {
         playerAnim.setSpeed(speed);
 
         int blendTicks = getActionBlendTicks(clip.name);
+        boolean isSwordToSword = false;
+        if (this.previousActionClip != null && this.previousActionClip.name != null && clip.name != null) {
+            if (this.previousActionClip.name.contains("sword_attack") && clip.name.contains("sword_attack")) {
+                blendTicks = 3;
+                isSwordToSword = true;
+            }
+        }
         if (this.actionSnapped || blendTicks <= 0) {
             this.actionSnapped = false;
             this.actionLayer.setAnimation(playerAnim);
+        } else if (isSwordToSword) {
+            // Sword-to-sword transition: snap the rightArm rotation immediately so it
+            // doesn't arc/flip across the ~172° gap between the two attack poses.
+            // All other bones (torso, leftArm, body) still blend smoothly via inOutSine.
+            final int ticks = blendTicks;
+            this.actionLayer.replaceAnimationWithFade(new AbstractFadeModifier(ticks) {
+                @Override
+                public float getAlpha(String modelName, TransformType type, float progress) {
+                    if ("rightArm".equals(modelName) && type == TransformType.ROTATION) {
+                        return 1.0f; // skip rotation blend – use target frame immediately
+                    }
+                    return Ease.inOutSine(progress);
+                }
+            }, playerAnim, true);
         } else {
             this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), playerAnim, true);
         }
@@ -472,7 +493,6 @@ public class AnimationPlayer {
     }
 
     public float getArmPitchTrackingWeight(float tickDelta, boolean isHoldingWeapon) {
-        if (!isHoldingWeapon) return 0.0f;
         float w = prevArmPitchWeight + (currentArmPitchWeight - prevArmPitchWeight) * tickDelta;
         return Math.max(0.0f, Math.min(1.0f, w));
     }

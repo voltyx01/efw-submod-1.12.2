@@ -62,30 +62,25 @@ public abstract class InventoryPickupMixin {
     private void onPickup(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (stack == null || stack.isEmpty()) return;
 
-        ResourceLocation id = stack.getItem().getRegistryName();
-        if (id == null) return;
-        String idStr = id.toString();
-
         int targetSlot = -1;
 
-        // РћРїСЂРµРґРµР»СЏРµРј РїСЂР°РІРёР»СЊРЅС‹Р№ СЃР»РѕС‚
-        if (PISTOLS.contains(idStr)) {
-            targetSlot = 1; // РїРёСЃС‚РѕР»РµС‚С‹ в†’ СЃР»РѕС‚ 1
-        } else if (WEAPONS.contains(idStr)) {
-            targetSlot = 0; // РѕСЂСѓР¶РёРµ в†’ СЃР»РѕС‚ 0
+        if (efw.util.WeaponSlotRestrictions.isPistol(stack)) {
+            targetSlot = 1; // пистолеты → слот 1
+        } else if (efw.util.WeaponSlotRestrictions.isOtherMwcGun(stack)) {
+            targetSlot = 0; // весь остальной огнестрел MWC → слот 0
         } else {
-            return; // РЅРµ РЅР°С€ РїСЂРµРґРјРµС‚ вЂ” РѕСЃС‚Р°РІР»СЏРµРј vanilla РїРѕРІРµРґРµРЅРёРµ
+            return; // не огнестрел — оставляем vanilla поведение
         }
 
-        // --- 1. Р•СЃР»Рё РїСЂР°РІРёР»СЊРЅС‹Р№ СЃР»РѕС‚ РїСѓСЃС‚ ---
+        // --- 1. Если правильный слот пуст ---
         if (mainInventory.get(targetSlot).isEmpty()) {
             mainInventory.set(targetSlot, stack.copy());
-            stack.setCount(0); // СѓР±РёСЂР°РµРј РёР· РјРёСЂР°
+            stack.setCount(0); // убираем из мира
             cir.setReturnValue(true);
             return;
         }
 
-        // --- 2. Р•СЃР»Рё Р·Р°РЅСЏС‚ вЂ” РёС‰РµРј РјРµСЃС‚Рѕ РІ РѕСЃРЅРѕРІРЅРѕРј РёРЅРІРµРЅС‚Р°СЂРµ (9..35) ---
+        // --- 2. Если занят — ищем место в основном инвентаре (9..35) ---
         for (int i = 9; i <= 35; i++) {
             if (mainInventory.get(i).isEmpty()) {
                 mainInventory.set(i, stack.copy());
@@ -95,7 +90,7 @@ public abstract class InventoryPickupMixin {
             }
         }
 
-        // --- 3. Р•СЃР»Рё РЅРµС‚ РјРµСЃС‚Р° РІ РёРЅРІРµРЅС‚Р°СЂРµ вЂ” РЅРµ РїРѕРґР±РёСЂР°РµРј ---
+        // --- 3. Если нет места в основном инвентаре — не подбираем ---
         cir.setReturnValue(false);
     }
 }

@@ -327,6 +327,11 @@ public class AnimationTickHandler {
                 player.renderYawOffset += bodyShift;
                 player.prevRenderYawOffset += bodyShift;
                 
+                if (isLocal) {
+                    // For local player, sync head rotation to full-FPS camera yaw to prevent 20 TPS stutter
+                    player.rotationYawHead = player.rotationYaw;
+                    player.prevRotationYawHead = player.prevRotationYaw;
+                }
                 // Head only needs shifting for the post-roll smooth return. Weapon hold doesn't affect head rotation.
                 float headShift = interpPostRollHead;
                 player.rotationYawHead += headShift;
@@ -995,12 +1000,12 @@ public class AnimationTickHandler {
                     } else {
                         float yawDiff = net.minecraft.util.math.MathHelper.wrapDegrees(player.renderYawOffset - player.prevRenderYawOffset);
                         int turnCooldown = turnCooldowns.getOrDefault(player.getUniqueID(), 0);
-                        if (yawDiff > 0.5f) {
+                        if (yawDiff > 2.5f) {
                             animName = "turn_right";
-                            turnCooldowns.put(player.getUniqueID(), 5);
-                        } else if (yawDiff < -0.5f) {
+                            turnCooldowns.put(player.getUniqueID(), 10);
+                        } else if (yawDiff < -2.5f) {
                             animName = "turn_left";
-                            turnCooldowns.put(player.getUniqueID(), 5);
+                            turnCooldowns.put(player.getUniqueID(), 10);
                         } else {
                             if (turnCooldown > 0) {
                                 turnCooldowns.put(player.getUniqueID(), turnCooldown - 1);
@@ -1050,6 +1055,7 @@ public class AnimationTickHandler {
                 lowerMapped = "hold";
             } else if ("turn_right".equals(animName) || "turn_left".equals(animName)) {
                 upperMapped = "hold";
+                lowerMapped = "hold";
             }
 
             // Check if player is aiming or reloading (from MWC)

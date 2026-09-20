@@ -457,4 +457,14 @@ public class MwccfConfig {
         @Config.Comment("Enable the in-game 3D inspect transform maker GUI and settings button [M]")
         public boolean enableInspectMaker = false;
     }
+
+    @Config.Name("kawaii_ears")
+    @Config.Comment("Kawaii Ears Cosmetic Settings")
+    public static final KawaiiEarsSettings kawaiiEars = new KawaiiEarsSettings();
+
+    public static class KawaiiEarsSettings {
+        @Config.Name("mode")
+        @Config.Comment("Visibility mode: EQUIPPED (requires item equipped in Baubles/Head), ALWAYS (always visible on player), OFF (disabled)")
+        public String mode = "EQUIPPED";
+    }
 }

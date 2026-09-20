@@ -15,6 +15,8 @@ public class ModSounds {
     public static SoundEvent KILL;
     public static SoundEvent LOOTPROG;
     public static SoundEvent DASH;
+    public static SoundEvent EXO_DASH;
+    public static SoundEvent NVG_TOGGLE;
     public static SoundEvent FLOWER_MENU;
     public static SoundEvent FLOWER_MENU_0;
 
@@ -26,9 +28,11 @@ public class ModSounds {
         KILL = createSound("fire.kill");
         LOOTPROG = createSound("loot.lootprog");
         DASH = createSound("dash");
+        EXO_DASH = createSound("exo_dash");
+        NVG_TOGGLE = createSound("nvg_toggle");
         FLOWER_MENU = createSound("flowermenu");
         FLOWER_MENU_0 = createSound("flowermenu0");
-        event.getRegistry().registerAll(HEAD_HIT, FLESH_HIT, KILL, LOOTPROG, DASH, FLOWER_MENU, FLOWER_MENU_0);
+        event.getRegistry().registerAll(HEAD_HIT, FLESH_HIT, KILL, LOOTPROG, DASH, EXO_DASH, NVG_TOGGLE, FLOWER_MENU, FLOWER_MENU_0);
     }
 
     // Вспомогательный метод для удобного создания звуков

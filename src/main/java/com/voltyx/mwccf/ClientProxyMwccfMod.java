@@ -34,6 +34,11 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.ClientLootingManager());
 		com.voltyx.mwccf.dash.DashKeyHandler.register();
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.dash.DashKeyHandler());
+		com.voltyx.mwccf.armor.NVGKeyHandler.register();
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.NVGKeyHandler());
+		com.voltyx.mwccf.armor.ExoDashKeyHandler.register();
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.ExoDashKeyHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.NightVisionOverlayHandler());
 
 		// Shoulder Surfing Keybindings & Handlers
 		net.minecraftforge.fml.client.registry.ClientRegistry.registerKeyBinding(KeyHandler.KEYBIND_CAMERA_LEFT);
@@ -57,6 +62,9 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.geo.XaeroGuiBlockerHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.client.ClientZoneRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.gui.GuiWeaponSlotOverlay());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.immersiveui.client.ImmersiveUIClientEvents());
+
+		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new CommandDumpChests());
 
 		registerBlinkingLayer();
 	}
@@ -130,6 +138,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 
 		// Shoulder Surfing & Lock-On Config & Events
 		LockOnConfig.init(event.getModConfigurationDirectory());
+		com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.init(event.getModConfigurationDirectory());
 		Config.CLIENT = new Config.ClientConfig(new net.minecraftforge.common.config.Configuration(new File(event.getModConfigurationDirectory(), "shouldersurfing.cfg")));
 		ShoulderInstance.getInstance().changePerspective(Config.CLIENT.getDefaultPerspective());
 		MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
@@ -245,6 +254,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 			// Pass the skin type key so the layer only renders for matching players
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.BraceletLayer(entry.getValue(), entry.getKey()));
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.HeadlampLayer(entry.getValue(), entry.getKey()));
+			entry.getValue().addLayer(new com.voltyx.mwccf.geo.KawaiiEarsLayer(entry.getValue(), entry.getKey()));
 		}
 		ItemLoadingScreenRenderer.warmupAll();
 		if (net.minecraftforge.fml.common.Loader.isModLoaded("optifine")) {

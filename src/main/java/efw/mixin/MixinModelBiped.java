@@ -9,6 +9,7 @@ import efw.animation.AnimationApplicator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -173,6 +174,30 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             this.bipedHead.rotationPointY = mainBiped.bipedHead.rotationPointY;
             this.bipedHead.rotationPointZ = mainBiped.bipedHead.rotationPointZ;
 
+            this.bipedRightArm.offsetX = mainBiped.bipedRightArm.offsetX;
+            this.bipedRightArm.offsetY = mainBiped.bipedRightArm.offsetY;
+            this.bipedRightArm.offsetZ = mainBiped.bipedRightArm.offsetZ;
+
+            this.bipedLeftArm.offsetX = mainBiped.bipedLeftArm.offsetX;
+            this.bipedLeftArm.offsetY = mainBiped.bipedLeftArm.offsetY;
+            this.bipedLeftArm.offsetZ = mainBiped.bipedLeftArm.offsetZ;
+
+            this.bipedRightLeg.offsetX = mainBiped.bipedRightLeg.offsetX;
+            this.bipedRightLeg.offsetY = mainBiped.bipedRightLeg.offsetY;
+            this.bipedRightLeg.offsetZ = mainBiped.bipedRightLeg.offsetZ;
+
+            this.bipedLeftLeg.offsetX = mainBiped.bipedLeftLeg.offsetX;
+            this.bipedLeftLeg.offsetY = mainBiped.bipedLeftLeg.offsetY;
+            this.bipedLeftLeg.offsetZ = mainBiped.bipedLeftLeg.offsetZ;
+
+            this.bipedBody.offsetX = mainBiped.bipedBody.offsetX;
+            this.bipedBody.offsetY = mainBiped.bipedBody.offsetY;
+            this.bipedBody.offsetZ = mainBiped.bipedBody.offsetZ;
+
+            this.bipedHead.offsetX = mainBiped.bipedHead.offsetX;
+            this.bipedHead.offsetY = mainBiped.bipedHead.offsetY;
+            this.bipedHead.offsetZ = mainBiped.bipedHead.offsetZ;
+
             // Если это ModelPlayer, синхронизируем слои (рукава, штанины и т.д.)
             if ((Object) this instanceof net.minecraft.client.model.ModelPlayer
                     && mainBiped instanceof net.minecraft.client.model.ModelPlayer) {
@@ -238,14 +263,13 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                                     ModelRenderer mr = (ModelRenderer) field.get(this);
                                     if (mr != null) {
                                         String fn = field.getName().toLowerCase();
-                                        if (fn.equals("left_arm")) {
-                                            mr.rotateAngleX = this.bipedLeftArm.rotateAngleX;
-                                            mr.rotateAngleY = this.bipedLeftArm.rotateAngleY;
-                                            mr.rotateAngleZ = this.bipedLeftArm.rotateAngleZ;
-                                        } else if (fn.equals("right_arm")) {
-                                            mr.rotateAngleX = this.bipedRightArm.rotateAngleX;
-                                            mr.rotateAngleY = this.bipedRightArm.rotateAngleY;
-                                            mr.rotateAngleZ = this.bipedRightArm.rotateAngleZ;
+                                        if (fn.equals("left_arm") || fn.equals("right_arm")) {
+                                            mr.rotateAngleX = 0.0F;
+                                            mr.rotateAngleY = 0.0F;
+                                            mr.rotateAngleZ = 0.0F;
+                                            mr.rotationPointX = 0.0F;
+                                            mr.rotationPointY = 0.0F;
+                                            mr.rotationPointZ = 0.0F;
                                         }
                                     }
                                 } catch (Exception ignored) {}
@@ -329,14 +353,6 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/ModelBiped;setRotationAngles(FFFFFFLnet/minecraft/entity/Entity;)V"))
     public void redirectSetRotationAngles(ModelBiped modelBiped, float limbSwing, float limbSwingAmount,
             float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
-        if (entityIn instanceof EntityLivingBase) {
-            boolean isElytra = ((EntityLivingBase) entityIn).getTicksElytraFlying() > 4;
-            if (!isElytra) {
-                // Do NOT feed back this.bipedHead.rotateAngleX into headPitch!
-                // It causes a recursive feedback loop. Swimming head tilting is smoothly handled in postSetRotationAngles.
-                headPitch = ((EntityLivingBase) entityIn).rotationPitch;
-            }
-        }
         if (entityIn != null) {
             modelBiped.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor,
                     entityIn);
@@ -613,38 +629,34 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             ap.isHoldingWeapon = isHoldingWeapon;
             ap.setPlayer(player);
 
-            float ww = ap.getWeaponSneakWeight(pt);
+            float sw = ap.getSneakOffsetWeight(pt);
             if (!efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
-                if (ww > 0.001f) {
-                    // --- WEAPON SNEAK SYSTEM (from backup) ---
-                    // Arms and head smoothly lower into crouch with proper weapon alignment
-                    float sw = ap.getSneakOffsetWeight(pt);
-                    if (entityIn.isSneaking() || sw > 0.001f) {
-                        float targetBodyY = -3.0F;
-                        float targetLegY = 9.0F;
-                        float targetHeadY = -1.0F;
-                        float targetRightArmY = 1.0F;
-                        float targetLeftArmY = 1.0F;
+                if (entityIn.isSneaking() || sw > 0.001f) {
+                    float ww = ap.getWeaponSneakWeight(pt);
+                    // Base sneak target offsets:
+                    // In unarmed sneak (idle_sneak/walking_sneak), the animation itself adds +4.0 to body and arms, and +4.5 to head.
+                    // Shifting base by -3.0 lowers legs to 9.0F and lowers torso/head/arms naturally by 1.0 to 1.5 pixels.
+                    // In weapon sneak, TACZ crouch_lower adds +2.0 to body, but 0.0 to head and arms.
+                    // To keep head and arms at their natural shoulder positions on the lowered torso:
+                    // torso base is -3.0F, head base is -1.0F, arms base is 1.0F.
+                    // Torso bottom and legs (9.0F) remain at the exact same base heights in both weapon and unarmed sneak,
+                    // preventing any vertical jumps or sinking into the ground when switching weapons!
+                    // ww smoothly blends the arm and head Y targets between unarmed and weapon sneak (no instant snap!).
+                    float targetBodyY = -3.0F;
+                    float targetLegY = 9.0F;
+                    float targetHeadY = -3.0F * (1.0f - ww) + (-1.0F) * ww;
+                    float targetRightArmY = -1.0F * (1.0f - ww) + (1.0F) * ww;
+                    float targetLeftArmY = -1.0F * (1.0f - ww) + (1.0F) * ww;
 
-                        float w = sw * ww;
-                        this.bipedRightLeg.rotationPointY = 12.0F * (1.0f - w) + targetLegY * w;
-                        this.bipedLeftLeg.rotationPointY = 12.0F * (1.0f - w) + targetLegY * w;
-                        this.bipedRightLeg.rotationPointZ = 0.0F * w + this.bipedRightLeg.rotationPointZ * (1.0f - w);
-                        this.bipedLeftLeg.rotationPointZ = 0.0F * w + this.bipedLeftLeg.rotationPointZ * (1.0f - w);
+                    this.bipedRightLeg.rotationPointY = 12.0F * (1.0f - sw) + targetLegY * sw;
+                    this.bipedLeftLeg.rotationPointY = 12.0F * (1.0f - sw) + targetLegY * sw;
+                    this.bipedRightLeg.rotationPointZ = 0.0F;
+                    this.bipedLeftLeg.rotationPointZ = 0.0F;
 
-                        this.bipedBody.rotationPointY = 0.0F * (1.0f - w) + targetBodyY * w;
-                        this.bipedHead.rotationPointY = 0.0F * (1.0f - w) + targetHeadY * w;
-                        this.bipedRightArm.rotationPointY = 2.0F * (1.0f - w) + targetRightArmY * w;
-                        this.bipedLeftArm.rotationPointY = 2.0F * (1.0f - w) + targetLeftArmY * w;
-                    }
-                } else {
-                    // --- NON-WEAPON SNEAK (exact Git baseline) ---
-                    if (entityIn.isSneaking()) {
-                        this.bipedRightLeg.rotationPointY -= 3.0F;
-                        this.bipedLeftLeg.rotationPointY -= 3.0F;
-                        this.bipedBody.rotationPointY -= 3.0F;
-                        this.bipedHead.rotationPointY -= 3.0F;
-                    }
+                    this.bipedBody.rotationPointY = 0.0F * (1.0f - sw) + targetBodyY * sw;
+                    this.bipedHead.rotationPointY = 0.0F * (1.0f - sw) + targetHeadY * sw;
+                    this.bipedRightArm.rotationPointY = 2.0F * (1.0f - sw) + targetRightArmY * sw;
+                    this.bipedLeftArm.rotationPointY = 2.0F * (1.0f - sw) + targetLeftArmY * sw;
                 }
             }
 
@@ -653,6 +665,20 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             applyBone(this.bipedRightLeg, AnimationApplicator.getOverlayForBone(this.bipedRightLeg, model), ap, "rightLeg", pt);
             applyBone(this.bipedLeftLeg, AnimationApplicator.getOverlayForBone(this.bipedLeftLeg, model), ap, "leftLeg", pt);
             applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
+
+            // Fix weapon crouch chest overhang:
+            // In weapon hold_upper, torso is translated forward by -1 in Z.
+            // When crouching, pull the torso and head back over the pelvis smoothly with sneak weight and weapon sneak weight.
+            if ((entityIn.isSneaking() || sw > 0.001f) && !isCrawlingAnim) {
+                float ww = ap.getWeaponSneakWeight(pt);
+                if (ww > 0.0001f) {
+                    this.bipedBody.rotationPointZ += 1.0F * sw * ww;
+                    this.bipedHead.rotationPointZ += 1.0F * sw * ww;
+                    if (model instanceof ModelPlayer) {
+                        ((ModelPlayer) model).bipedBodyWear.rotationPointZ = this.bipedBody.rotationPointZ;
+                    }
+                }
+            }
 
             float bowWeight = 0f;
             float baseW = ap.getPrevWeight() + (ap.getWeight() - ap.getPrevWeight()) * pt;
@@ -712,15 +738,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
 
             if (!disableRightArmAnim) {
-                if (ww <= 0.001f && entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
-                    this.bipedRightArm.rotationPointY -= 3.0F;
-                }
                 applyBone(this.bipedRightArm, AnimationApplicator.getOverlayForBone(this.bipedRightArm, model), ap, "rightArm", pt);
             }
             if (!disableLeftArmAnim) {
-                if (ww <= 0.001f && entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
-                    this.bipedLeftArm.rotationPointY -= 3.0F;
-                }
                 applyBone(this.bipedLeftArm, AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model), ap, "leftArm", pt);
             }
 

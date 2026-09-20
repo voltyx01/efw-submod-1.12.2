@@ -48,6 +48,7 @@ public class ShoulderRenderer
 	public float cameraYaw;
 	public float cameraPitch;
 	private static int ssRendererDebugCount = 0;
+	private boolean isCrosshairPushed = false;
 	public void offsetCrosshair(ScaledResolution window, float partialTicks)
 	{
 		if(this.projected != null)
@@ -63,7 +64,11 @@ public class ShoulderRenderer
 		
 		if(Config.CLIENT.getCrosshairType().isDynamic() && ShoulderInstance.getInstance().doShoulderSurfing())
 		{
-			GlStateManager.pushMatrix();
+			if(!this.isCrosshairPushed)
+			{
+				GlStateManager.pushMatrix();
+				this.isCrosshairPushed = true;
+			}
 			GlStateManager.translate(this.translation.getX(), -this.translation.getY(), 0.0F);
 			this.lastTranslation = this.translation;
 		}
@@ -75,9 +80,10 @@ public class ShoulderRenderer
 	
 	public void clearCrosshairOffset()
 	{
-		if(Config.CLIENT.getCrosshairType().isDynamic() && ShoulderInstance.getInstance().doShoulderSurfing() && !Vec2f.ZERO.equals(this.lastTranslation))
+		if(this.isCrosshairPushed)
 		{
 			GlStateManager.popMatrix();
+			this.isCrosshairPushed = false;
 		}
 	}
 	

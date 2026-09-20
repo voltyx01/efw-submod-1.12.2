@@ -176,8 +176,7 @@ public final class BloodRenderType {
             BloodRenderType.sortRenderEntries(entries);
             BillboardRotations fallbackRotations = BloodRenderType.captureActiveBillboardRotations();
             boolean wasLightmapEnabled = BloodRenderType.captureLightmapTextureEnabled();
-            GlState.pushMatrix();
-            GlState.pushAttrib();
+            GlStateManager.pushMatrix();
             try {
                 BloodRenderType.applyWorldLastState(mc);
                 Tessellator tessellator = Tessellator.getInstance();
@@ -418,36 +417,40 @@ public final class BloodRenderType {
     }
 
     private static void applyWorldLastState(@Nonnull Minecraft mc) {
-        GlState.disableLighting();
-        GlState.enableBlend();
-        GlState.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlState.enableDepth();
-        GlState.depthMask(false);
-        GlState.disableCull();
-        GlState.enableTexture2D();
-        GL11.glAlphaFunc((int)516, (float)4.8828125E-4f);
-        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.disableLighting();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.enableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.disableCull();
+        GlStateManager.enableTexture2D();
+        GlStateManager.alphaFunc(516, 4.8828125E-4f);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
         mc.entityRenderer.enableLightmap();
-        GlStateManager.setActiveTexture((int)OpenGlHelper.defaultTexUnit);
+        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GlStateManager.enableTexture2D();
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.enableTexture2D();
         mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
     }
 
     private static void restoreWorldLastState(@Nonnull Minecraft mc, boolean wasLightmapEnabled) {
-        GL11.glAlphaFunc((int)516, (float)0.003921569f);
-        if (!wasLightmapEnabled) {
-            mc.entityRenderer.disableLightmap();
-        }
-        GlStateManager.setActiveTexture((int)OpenGlHelper.defaultTexUnit);
-        GlState.depthMask(true);
-        GlState.popAttrib();
-        GlState.popMatrix();
-        
-        // MWCCF Fix: Sync GlStateManager cache with OpenGL after GL11.glPopAttrib()
+        mc.entityRenderer.disableLightmap();
+        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GlStateManager.disableTexture2D();
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.enableTexture2D();
+        GlStateManager.depthMask(true);
+        GlStateManager.enableDepth();
         GlStateManager.disableBlend();
         GlStateManager.enableCull();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.alphaFunc(516, 0.1F);
         GlStateManager.disableLighting();
+        GlStateManager.popMatrix();
     }
 
     private static void renderEntries(@Nonnull List<RenderEntry> entries, @Nonnull BufferBuilder buffer, @Nonnull Entity view, float partialTicks, boolean viewUnderwater, double camX, double camY, double camZ, @Nonnull BillboardRotations fallbackRotations) {

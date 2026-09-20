@@ -7,6 +7,7 @@ import net.minecraft.entity.Entity;
 public class Modelhunter_armor extends ModelBiped {
 
     public ModelRenderer head;
+    public ModelRenderer visorMount;
     public ModelRenderer visor_r1;
     public ModelRenderer visor_r2;
     public ModelRenderer visor_r3;
@@ -97,15 +98,19 @@ public class Modelhunter_armor extends ModelBiped {
         this.head.setTextureOffset(40, 15).addBox(-1.5F, -9.0F, -4.0F, (int)3.0, (int)1.0, (int)8.0, 0.3F);
         this.bipedHead.addChild(this.head);
 
+        this.visorMount = new ModelRenderer(this);
+        this.visorMount.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.head.addChild(this.visorMount);
+
         this.visor_r1 = new ModelRenderer(this);
-        this.visor_r1.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r1.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r1, 0.2182F, 0.0F, 0.0F);
         this.visor_r1.mirror = false;
         this.visor_r1.setTextureOffset(85, 27).addBox(-2.0F, -0.5344F, -4.0628F, (int)4.0, (int)2.0, (int)3.0, -0.5F);
-        this.head.addChild(this.visor_r1);
+        this.visorMount.addChild(this.visor_r1);
 
         this.visor_r2 = new ModelRenderer(this);
-        this.visor_r2.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r2.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r2, 0.0F, 0.3054F, 0.0F);
         this.visor_r2.mirror = false;
         this.visor_r2.setTextureOffset(94, 45).addBox(-2.9109F, 2.0163F, -5.6283F, (int)2.0, (int)2.0, (int)5.0, -0.2F);
@@ -117,10 +122,10 @@ public class Modelhunter_armor extends ModelBiped {
         this.visor_r2.setTextureOffset(114, 11).addBox(-2.7809F, 1.9292F, -6.616F, (int)2.0, (int)2.0, (int)1.0, 0.05F);
         this.visor_r2.mirror = false;
         this.visor_r2.setTextureOffset(101, 16).addBox(-2.7809F, 1.9292F, -7.0335F, (int)2.0, (int)2.0, (int)2.0, -0.3F);
-        this.head.addChild(this.visor_r2);
+        this.visorMount.addChild(this.visor_r2);
 
         this.visor_r3 = new ModelRenderer(this);
-        this.visor_r3.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r3.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r3, 0.0F, 0.0873F, 0.0F);
         this.visor_r3.mirror = false;
         this.visor_r3.setTextureOffset(101, 12).addBox(-1.7019F, 1.9292F, -6.3662F, (int)2.0, (int)2.0, (int)2.0, -0.3F);
@@ -132,10 +137,10 @@ public class Modelhunter_armor extends ModelBiped {
         this.visor_r3.setTextureOffset(111, 29).addBox(-1.7019F, 2.0163F, -1.9525F, (int)2.0, (int)2.0, (int)1.0, 0.1F);
         this.visor_r3.mirror = false;
         this.visor_r3.setTextureOffset(95, 56).addBox(-1.7019F, 2.0163F, -4.9525F, (int)2.0, (int)2.0, (int)5.0, -0.2F);
-        this.head.addChild(this.visor_r3);
+        this.visorMount.addChild(this.visor_r3);
 
         this.visor_r4 = new ModelRenderer(this);
-        this.visor_r4.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r4.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r4, 0.0F, -0.0873F, 0.0F);
         this.visor_r4.mirror = false;
         this.visor_r4.setTextureOffset(101, 4).addBox(-0.2981F, 1.9292F, -6.3662F, (int)2.0, (int)2.0, (int)2.0, -0.3F);
@@ -145,18 +150,18 @@ public class Modelhunter_armor extends ModelBiped {
         this.visor_r4.setTextureOffset(96, 66).addBox(-0.2981F, 2.0163F, -4.9525F, (int)2.0, (int)2.0, (int)5.0, -0.2F);
         this.visor_r4.mirror = false;
         this.visor_r4.setTextureOffset(88, 34).addBox(-0.2981F, 1.9292F, -5.9487F, (int)2.0, (int)2.0, (int)1.0, 0.05F);
-        this.head.addChild(this.visor_r4);
+        this.visorMount.addChild(this.visor_r4);
 
         this.visor_r5 = new ModelRenderer(this);
-        this.visor_r5.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r5.setRotationPoint(0.0F, 0.0F, 0.0F);
         this.visor_r5.mirror = false;
         this.visor_r5.setTextureOffset(107, 22).addBox(0.0F, 1.9292F, -5.8744F, (int)2.0, (int)2.0, (int)1.0, -0.2F);
         this.visor_r5.mirror = false;
         this.visor_r5.setTextureOffset(116, 21).addBox(0.0F, 2.0163F, -3.8782F, (int)2.0, (int)2.0, (int)1.0, 0.1F);
-        this.head.addChild(this.visor_r5);
+        this.visorMount.addChild(this.visor_r5);
 
         this.visor_r6 = new ModelRenderer(this);
-        this.visor_r6.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r6.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r6, 0.0F, -0.3054F, 0.0F);
         this.visor_r6.mirror = false;
         this.visor_r6.setTextureOffset(101, 0).addBox(0.7809F, 1.9292F, -7.0335F, (int)2.0, (int)2.0, (int)2.0, -0.3F);
@@ -168,30 +173,28 @@ public class Modelhunter_armor extends ModelBiped {
         this.visor_r6.setTextureOffset(122, 5).addBox(0.9109F, 2.0163F, -2.6283F, (int)2.0, (int)2.0, (int)1.0, 0.1F);
         this.visor_r6.mirror = false;
         this.visor_r6.setTextureOffset(110, 48).addBox(0.9109F, 2.0163F, -5.6283F, (int)2.0, (int)2.0, (int)5.0, -0.2F);
-        this.head.addChild(this.visor_r6);
+        this.visorMount.addChild(this.visor_r6);
 
         this.visor_r7 = new ModelRenderer(this);
-        this.visor_r7.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r7.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r7, -0.0873F, 0.0F, 0.0F);
         this.visor_r7.mirror = false;
         this.visor_r7.setTextureOffset(108, 0).addBox(-4.0F, 1.3031F, -3.5191F, (int)8.0, (int)2.0, (int)3.0, -0.5F);
-        this.head.addChild(this.visor_r7);
+        this.visorMount.addChild(this.visor_r7);
 
         this.visor_r8 = new ModelRenderer(this);
-        this.visor_r8.setRotationPoint(0.0F, -5.4775F, -4.8897F);
+        this.visor_r8.setRotationPoint(0.0F, 0.0F, 0.0F);
         setRotationAngle(this.visor_r8, 0.829F, 0.0F, 0.0F);
         this.visor_r8.mirror = false;
         this.visor_r8.setTextureOffset(127, 30).addBox(-1.0F, -1.4305F, -3.0018F, (int)2.0, (int)2.0, (int)4.0, -0.6F);
-        this.head.addChild(this.visor_r8);
+        this.visorMount.addChild(this.visor_r8);
 
         this.visor_r9 = new ModelRenderer(this);
-        this.visor_r9.setRotationPoint(0.0F, -7.2628F, -4.1938F);
+        this.visor_r9.setRotationPoint(0.0F, -1.7853F, 0.6959F);
         setRotationAngle(this.visor_r9, 0.2618F, 0.0F, 0.0F);
         this.visor_r9.mirror = false;
         this.visor_r9.setTextureOffset(114, 38).addBox(-2.0F, -0.713F, -2.0102F, (int)4.0, (int)3.0, (int)3.0, -0.6F);
-        this.visor_r9.mirror = false;
-        this.visor_r9.setTextureOffset(107, 50).addBox(-2.0F, -0.713F, -2.0102F, (int)4.0, (int)3.0, (int)3.0, -0.6F);
-        this.head.addChild(this.visor_r9);
+        this.visorMount.addChild(this.visor_r9);
 
         this.head_r1 = new ModelRenderer(this);
         this.head_r1.setRotationPoint(0.0F, -4.0F, 5.0F);
@@ -503,6 +506,16 @@ public class Modelhunter_armor extends ModelBiped {
         this.head_r42.setTextureOffset(76, 9).addBox(-4.0F, 4.9969F, -0.5F, (int)8.0, (int)1.0, (int)1.0, -0.001F);
         this.head.addChild(this.head_r42);
 
+    }
+
+    public void setVisorAngle(float angle) {
+        if (this.visorMount != null) {
+            this.visorMount.rotateAngleX = angle;
+        }
+    }
+
+    public void setVisorFolded(boolean folded) {
+        setVisorAngle(folded ? -1.35F : 0.0F);
     }
 
     public void setRotationAngle(ModelRenderer modelRenderer, float x, float y, float z) {

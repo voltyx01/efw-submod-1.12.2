@@ -539,6 +539,8 @@ tooltip.mwccf.bracelet.autoinjector=§bАвтоинжектор:§7 Вкалыв
 tooltip.mwccf.bracelet.morphine=Морфин: %d / %d
 
 item.mcore.headlamp.name=Налобный фонарик
+item.mcore.kawaii_ears.name=Кавайные ушки
+tooltip.mwccf.kawaii_ears.desc=Милые анимированные ушки. Надеваются в слот головы Baubles.
 
 item.mcore.portable_map.name=Портативная карта
 tooltip.mwccf.portable_map.desc=Отображает миникарту, радар и карту мира при наличии заряда.
@@ -729,6 +731,7 @@ item.mcore.battery.name=Батарейка
 tooltip.mcore.battery.charge=Заряд: %d%%
 tooltip.mcore.battery.required=Нужна батарейка
 tooltip.mcore.battery.none=НЕТ
+tooltip.mwccf.battery.charge_hint=ПКМ батарейкой в инвентаре для зарядки
 
 item.mwccf.adrenaline.name=Адреналин
 item.mwccf.morphine_syringe.name=Шприц с морфином
@@ -800,3 +803,18 @@ tile.mwccf.old_radio.name=Старое радио
 inspect.internet_module=Может быть использован в терминале или бодикамере для интернет связи.
 inspect.radio_board=Электронная плата старого радиоприёмника. Содержит рабочие компоненты для сборки радиоустройств.
 tooltip.mcore.internet_module=§7Может быть использован в терминале или бодикамере для интернет связи.
+
+# Armor Abilities & Keys
+key.categories.mwccf=MWCCF
+key.mwccf.nvg_toggle=Вкл/Выкл ПНВ
+key.mwccf.exo_dash=Рывок экзоскелета
+
+tooltip.mwccf.gas_mask=§7Защита от яда и иссушения
+tooltip.mwccf.nvg_toggle=§7Нажмите §e[%s]§7 для вкл/выкл ПНВ
+tooltip.mwccf.hazmat_set=§7Полный комплект: Иммунитет ко всем негативным эффектам
+tooltip.mwccf.firefighter_set=§7Полный комплект: Моментальное тушение огня
+tooltip.mwccf.ghillie_set=§7Полный комплект: Невидимость при приседании
+tooltip.mwccf.juggernaut_set=§7Полный комплект: Стойкость I, Замедление I
+tooltip.mwccf.exo_set=§7Полный комплект: Скорость I, Сила I, Спешка I, Высокий прыжок
+tooltip.mwccf.exo_heavy_set=§7Полный комплект: Стойкость II, Сила II, ПНВ, Высокий прыжок
+tooltip.mwccf.exo_dash=§7Нажмите §e[%s]§7 для рывка

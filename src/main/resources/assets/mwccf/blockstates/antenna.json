@@ -1,15 +1,8 @@
 {
-  "forge_marker": 1,
-  "defaults": {
-    "model": "builtin/generated",
-    "textures": {
-      "particle": "mwccf:blocks/antenna"
-    }
-  },
   "variants": {
-    "facing=north": {},
-    "facing=south": {},
-    "facing=west": {},
-    "facing=east": {}
+    "facing=north": { "model": "mwccf:empty" },
+    "facing=south": { "model": "mwccf:empty" },
+    "facing=west":  { "model": "mwccf:empty" },
+    "facing=east":  { "model": "mwccf:empty" }
   }
 }

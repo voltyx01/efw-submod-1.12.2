@@ -405,6 +405,20 @@
             "mwccf:dash"
         ]
     },
+    "exo_dash": {
+        "category": "players",
+        "sounds": [
+            "mwccf:exo_dash_01",
+            "mwccf:exo_dash_02"
+        ]
+    },
+    "nvg_toggle": {
+        "category": "players",
+        "sounds": [
+            "mwccf:nvg_on",
+            "mwccf:nvg_off"
+        ]
+    },
     "bracelet.displayon": {
         "category": "master",
         "sounds": [

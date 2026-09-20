@@ -10,6 +10,7 @@
     "MixinPreventBackpackEquip",
     "ItemBackpackMixin",
     "ContainerDiaryMixin",
+    "ContainerSlotRestrictionsMixin",
     "MixinStructureTemplate"
   ],
   "client": [
@@ -42,7 +43,16 @@
     "MixinFMLClientHandler",
     "MixinSplashProgress",
     "MixinRender",
-    "MixinLaserBeamRenderer"
+    "MixinLaserBeamRenderer",
+    "MixinGuiContainer",
+    "MixinGuiIngameHotbar",
+    "MixinGuiFurnace",
+    "MixinGuiEnchantment",
+    "MixinContainerRepairOutput",
+    "MixinAdvancementToast",
+    "MixinEnchantment",
+    "MixinSlot",
+    "MixinContainer"
   ],
   "server": [],
   "injectors": {

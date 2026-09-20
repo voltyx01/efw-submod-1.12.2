@@ -113,6 +113,9 @@ public class LayerBlinkingEyes implements LayerRenderer<AbstractClientPlayer> {
         boolean dualEyelid = genderPlayer.isDualEyelid();
 
         GlStateManager.pushMatrix();
+        if (player.isSneaking()) {
+            GlStateManager.translate(0.0F, 0.2F, 0.0F);
+        }
         this.renderPlayer.getMainModel().bipedHead.postRender(scale);
         // Слегка выносим плоскость рисования перед поверхностью головы
         GlStateManager.translate(0.0F, 0.0F, -4.02F * scale);

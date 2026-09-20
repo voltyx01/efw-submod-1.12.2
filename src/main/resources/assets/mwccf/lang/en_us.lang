@@ -738,6 +738,8 @@ tooltip.mwccf.bracelet.autoinjector=§bAuto-Injector:§7 Automatically injects m
 tooltip.mwccf.bracelet.morphine=Morphine: %d / %d
 tooltip.mwccf.use_manual=§7[§eX§7] §eUse
 item.mcore.headlamp.name=Headlamp
+item.mcore.kawaii_ears.name=Kawaii Ears
+tooltip.mwccf.kawaii_ears.desc=Cute animated ears. Equipped in the Baubles head slot.
 
 item.mcore.portable_map.name=Portable Map
 tooltip.mwccf.portable_map.desc=Displays minimap, radar and world map when charged.
@@ -746,6 +748,7 @@ item.mcore.battery.name=Battery
 tooltip.mcore.battery.charge=Charge: %d%%
 tooltip.mcore.battery.required=Requires Battery
 tooltip.mcore.battery.none=NONE
+tooltip.mwccf.battery.charge_hint=Right-click with battery in inventory to charge
 
 item.mwccf.adrenaline.name=Adrenaline
 item.mwccf.morphine_syringe.name=Morphine Syringe
@@ -820,3 +823,18 @@ tile.mwccf.old_radio.name=Old Radio
 inspect.internet_module=Can be used in a terminal or body camera for internet connectivity.
 inspect.radio_board=Electronic circuit board from an old radio receiver. Contains working components for crafting radio equipment.
 tooltip.mcore.internet_module=§7Can be used in a terminal or body camera for internet connectivity.
+
+# Armor Abilities & Keys
+key.categories.mwccf=MWCCF
+key.mwccf.nvg_toggle=Toggle NVG
+key.mwccf.exo_dash=Exo Dash
+
+tooltip.mwccf.gas_mask=§7Immunity to Poison & Wither
+tooltip.mwccf.nvg_toggle=§7Press §e[%s]§7 to toggle Night Vision
+tooltip.mwccf.hazmat_set=§7Full Set: Complete immunity to negative status effects
+tooltip.mwccf.firefighter_set=§7Full Set: Instantly extinguishes fire
+tooltip.mwccf.ghillie_set=§7Full Set: Invisibility while sneaking
+tooltip.mwccf.juggernaut_set=§7Full Set: Resistance I, Slowness I
+tooltip.mwccf.exo_set=§7Full Set: Speed I, Strength I, Haste I, High Jump
+tooltip.mwccf.exo_heavy_set=§7Full Set: Resistance II, Strength II, Night Vision, High Jump
+tooltip.mwccf.exo_dash=§7Press §e[%s]§7 to Dash

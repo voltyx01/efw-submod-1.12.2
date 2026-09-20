@@ -28,7 +28,7 @@ public class MixinPreventBackpackEquip {
         // РќРѕ Р»СѓС‡С€Рµ РїСЂРѕРІРµСЂРёС‚СЊ.
 
         if (slotIndex == 38) { 
-            if (stack.getItem() instanceof ItemBackpack) {
+            if (efw.util.WeaponSlotRestrictions.isBackpack(stack)) {
                 cir.setReturnValue(false);
                 cir.cancel();
             }

@@ -106,16 +106,22 @@ public class ItemCustomArmor extends ItemArmor {
                                 } else if (name.equals("left_arm") || name.startsWith("left_arm_")) {
                                     renderer.showModel = (armorSlot == EntityEquipmentSlot.CHEST);
                                     if (name.equals("left_arm")) {
-                                        renderer.rotateAngleX = this.armorModel.bipedLeftArm.rotateAngleX;
-                                        renderer.rotateAngleY = this.armorModel.bipedLeftArm.rotateAngleY;
-                                        renderer.rotateAngleZ = this.armorModel.bipedLeftArm.rotateAngleZ;
+                                        renderer.rotateAngleX = 0.0F;
+                                        renderer.rotateAngleY = 0.0F;
+                                        renderer.rotateAngleZ = 0.0F;
+                                        renderer.rotationPointX = 0.0F;
+                                        renderer.rotationPointY = 0.0F;
+                                        renderer.rotationPointZ = 0.0F;
                                     }
                                 } else if (name.equals("right_arm") || name.startsWith("right_arm_")) {
                                     renderer.showModel = (armorSlot == EntityEquipmentSlot.CHEST);
                                     if (name.equals("right_arm")) {
-                                        renderer.rotateAngleX = this.armorModel.bipedRightArm.rotateAngleX;
-                                        renderer.rotateAngleY = this.armorModel.bipedRightArm.rotateAngleY;
-                                        renderer.rotateAngleZ = this.armorModel.bipedRightArm.rotateAngleZ;
+                                        renderer.rotateAngleX = 0.0F;
+                                        renderer.rotateAngleY = 0.0F;
+                                        renderer.rotateAngleZ = 0.0F;
+                                        renderer.rotationPointX = 0.0F;
+                                        renderer.rotationPointY = 0.0F;
+                                        renderer.rotationPointZ = 0.0F;
                                     }
                                 } else if (name.contains("shoe") || name.contains("boot")) {
                                     renderer.showModel = (armorSlot == EntityEquipmentSlot.FEET);
@@ -129,9 +135,80 @@ public class ItemCustomArmor extends ItemArmor {
                 modelClass = modelClass.getSuperclass();
             }
 
+            if (this.armorModel instanceof com.voltyx.mwccf.client.model.survivalinstinct.Modelnight_vision_goggles) {
+                float angle = com.voltyx.mwccf.armor.NVGAnimationHelper.getVisorAngle(entityLiving, isNVGActive(itemStack));
+                ((com.voltyx.mwccf.client.model.survivalinstinct.Modelnight_vision_goggles) this.armorModel).setVisorAngle(angle);
+            } else if (this.armorModel instanceof com.voltyx.mwccf.client.model.survivalinstinct.Modelhunter_armor) {
+                float angle = com.voltyx.mwccf.armor.NVGAnimationHelper.getVisorAngle(entityLiving, isNVGActive(itemStack));
+                ((com.voltyx.mwccf.client.model.survivalinstinct.Modelhunter_armor) this.armorModel).setVisorAngle(angle);
+            }
+
             return this.armorModel;
         }
         return super.getArmorModel(entityLiving, itemStack, armorSlot, _default);
+    }
+
+    public static boolean isNVGActive(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        if (!stack.hasTagCompound()) return false;
+        net.minecraft.nbt.NBTTagCompound tag = stack.getTagCompound();
+        int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
+        if (charge <= 0) return false;
+        if (tag.hasKey("nv_active")) {
+            return tag.getBoolean("nv_active");
+        }
+        return false;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(ItemStack stack, net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        String name = this.getRegistryName() != null ? this.getRegistryName().getPath() : "";
+        String nvgKey = com.voltyx.mwccf.armor.NVGKeyHandler.KEY_TOGGLE_NVG != null ? 
+                org.lwjgl.input.Keyboard.getKeyName(com.voltyx.mwccf.armor.NVGKeyHandler.KEY_TOGGLE_NVG.getKeyCode()) : "N";
+        String dashKey = com.voltyx.mwccf.armor.ExoDashKeyHandler.KEY_EXO_DASH != null ? 
+                org.lwjgl.input.Keyboard.getKeyName(com.voltyx.mwccf.armor.ExoDashKeyHandler.KEY_EXO_DASH.getKeyCode()) : "X";
+
+        if (com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler.isNVGHelmet(this)) {
+            net.minecraft.nbt.NBTTagCompound tag = stack.getTagCompound();
+            int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
+            int percent = (int) ((charge / 48000.0f) * 100);
+
+            if (charge <= 0) {
+                tooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.required"));
+            } else {
+                String color = percent > 50 ? "\u00a7a" : (percent > 20 ? "\u00a7e" : "\u00a7c");
+                tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent));
+            }
+            tooltip.add("\u00a78" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.battery.charge_hint"));
+        }
+
+        if (name.contains("gas_mask")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.gas_mask"));
+        }
+        if (name.contains("night_vision") || name.contains("hunter_helmet")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.nvg_toggle", nvgKey));
+        }
+        if (name.contains("hazmat")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.hazmat_set"));
+        }
+        if (name.contains("fire_fighter")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.firefighter_set"));
+        }
+        if (name.contains("guillie") || name.contains("ghillie")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.ghillie_set"));
+        }
+        if (name.contains("juggernaut")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.juggernaut_set"));
+        }
+        if (name.startsWith("exo_heavy")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.exo_heavy_set"));
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.exo_dash", dashKey));
+        } else if (name.startsWith("exo_")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.exo_set"));
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.exo_dash", dashKey));
+        }
     }
 
     @Override

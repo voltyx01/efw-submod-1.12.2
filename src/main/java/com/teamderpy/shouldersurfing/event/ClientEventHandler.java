@@ -296,8 +296,15 @@ public class ClientEventHandler
 				ShoulderRenderer.getInstance().offsetCrosshair(event.getResolution(), event.getPartialTicks());
 			} else {
 				event.setCanceled(true);
+				ShoulderRenderer.getInstance().clearCrosshairOffset();
 			}
-		} else if (doRender && event.getType().equals(RenderGameOverlayEvent.ElementType.BOSSHEALTH)) {
+		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void postRenderGameOverlayEvent(RenderGameOverlayEvent.Post event)
+	{
+		if (event.getType().equals(RenderGameOverlayEvent.ElementType.CROSSHAIRS)) {
 			ShoulderRenderer.getInstance().clearCrosshairOffset();
 		}
 	}

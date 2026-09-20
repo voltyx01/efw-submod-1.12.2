@@ -19,6 +19,10 @@ public class GeoArmorModel extends ModelBiped {
     
     private final Map<String, ModelRenderer> boneMap = new HashMap<>();
     private final Map<String, float[]> bedrockPivotMap = new HashMap<>();
+
+    public ModelRenderer getBone(String name) {
+        return this.boneMap.get(name);
+    }
     
     public ModelRenderer leftBoob;
     public ModelRenderer rightBoob;
@@ -39,6 +43,7 @@ public class GeoArmorModel extends ModelBiped {
         this.bipedLeftArm.cubeList.clear();
         this.bipedRightLeg.cubeList.clear();
         this.bipedLeftLeg.cubeList.clear();
+        this.isChild = false;
 
         this.leftBoob = new com.voltyx.gender.render.WildfireModelRenderer(128, 128);
         this.rightBoob = new com.voltyx.gender.render.WildfireModelRenderer(128, 128);
@@ -268,6 +273,7 @@ public class GeoArmorModel extends ModelBiped {
                                 }
                                 
                                 float inflate = cubeObj.has("inflate") ? cubeObj.get("inflate").getAsFloat() : 0.0F;
+                                boolean mirror = cubeObj.has("mirror") ? cubeObj.get("mirror").getAsBoolean() : false;
 
                                 if (name.equals("armorBody")) {
                                     int sz = (int)Math.max(1, Math.round(rawSz));
@@ -284,6 +290,7 @@ public class GeoArmorModel extends ModelBiped {
                                 if (cubeObj.has("rotation") || cubeObj.has("pivot")) {
                                     // Individual cube rotation requires a hidden sub-renderer
                                     ModelRenderer cubeRend = new ModelRenderer(this, u, v);
+                                    cubeRend.mirror = mirror;
                                     
                                     float[] cubePivot = new float[]{ox, oy, oz}; // fallback
                                     if (cubeObj.has("pivot")) {
@@ -331,22 +338,23 @@ public class GeoArmorModel extends ModelBiped {
                                     }
 
                                     if (faceUvs != null && !faceUvs.isEmpty()) {
-                                        cubeRend.cubeList.add(new FloatModelBox(cubeRend, faceUvs, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, cubeRend.mirror));
+                                        cubeRend.cubeList.add(new FloatModelBox(cubeRend, faceUvs, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, mirror));
                                     } else {
-                                        cubeRend.cubeList.add(new FloatModelBox(cubeRend, u, v, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, cubeRend.mirror));
+                                        cubeRend.cubeList.add(new FloatModelBox(cubeRend, u, v, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, mirror));
                                     }
                                     renderer.addChild(cubeRend);
                                     
                                     if (slimRenderer != null) {
                                         ModelRenderer slimCubeRend = new ModelRenderer(this, u, v);
+                                        slimCubeRend.mirror = mirror;
                                         slimCubeRend.setRotationPoint(cubeRend.rotationPointX, cubeRend.rotationPointY, cubeRend.rotationPointZ);
                                         slimCubeRend.rotateAngleX = cubeRend.rotateAngleX;
                                         slimCubeRend.rotateAngleY = cubeRend.rotateAngleY;
                                         slimCubeRend.rotateAngleZ = cubeRend.rotateAngleZ;
                                         if (faceUvs != null && !faceUvs.isEmpty()) {
-                                            slimCubeRend.cubeList.add(new FloatModelBox(slimCubeRend, faceUvs, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, slimCubeRend.mirror));
+                                            slimCubeRend.cubeList.add(new FloatModelBox(slimCubeRend, faceUvs, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, mirror));
                                         } else {
-                                            slimCubeRend.cubeList.add(new FloatModelBox(slimCubeRend, u, v, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, slimCubeRend.mirror));
+                                            slimCubeRend.cubeList.add(new FloatModelBox(slimCubeRend, u, v, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, mirror));
                                         }
                                         slimRenderer.addChild(slimCubeRend);
                                     }
@@ -364,9 +372,9 @@ public class GeoArmorModel extends ModelBiped {
                                     }
                                     renderer.setTextureOffset(u, v);
                                     if (faceUvs != null && !faceUvs.isEmpty()) {
-                                        renderer.cubeList.add(new FloatModelBox(renderer, faceUvs, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, renderer.mirror));
+                                        renderer.cubeList.add(new FloatModelBox(renderer, faceUvs, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, mirror));
                                     } else {
-                                        renderer.cubeList.add(new FloatModelBox(renderer, u, v, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, renderer.mirror));
+                                        renderer.cubeList.add(new FloatModelBox(renderer, u, v, boxX, boxY, boxZ, rawSx, rawSy, rawSz, inflate, mirror));
                                     }
                                     
                                     if (slimRenderer != null) {
@@ -383,9 +391,9 @@ public class GeoArmorModel extends ModelBiped {
                                         }
                                         slimRenderer.setTextureOffset(u, v);
                                         if (faceUvs != null && !faceUvs.isEmpty()) {
-                                            slimRenderer.cubeList.add(new FloatModelBox(slimRenderer, faceUvs, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, slimRenderer.mirror));
+                                            slimRenderer.cubeList.add(new FloatModelBox(slimRenderer, faceUvs, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, mirror));
                                         } else {
-                                            slimRenderer.cubeList.add(new FloatModelBox(slimRenderer, u, v, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, slimRenderer.mirror));
+                                            slimRenderer.cubeList.add(new FloatModelBox(slimRenderer, u, v, slimBoxX, boxY, boxZ, slimSx, rawSy, rawSz, inflate, mirror));
                                         }
                                     }
                                 }
@@ -407,7 +415,7 @@ public class GeoArmorModel extends ModelBiped {
                             
                             ModelRenderer slimParent = slimBoneMap.get(parentName);
                             ModelRenderer slimChild = slimBoneMap.get(name);
-                            if (slimParent != null && slimChild != null) {
+                            if (slimParent != null && slimChild != null && slimParent != parent) {
                                 slimParent.addChild(slimChild);
                             }
                         }
@@ -590,6 +598,9 @@ public class GeoArmorModel extends ModelBiped {
             this.bipedHead.rotationPointX = this.syncedModel.bipedHead.rotationPointX;
             this.bipedHead.rotationPointY = this.syncedModel.bipedHead.rotationPointY;
             this.bipedHead.rotationPointZ = this.syncedModel.bipedHead.rotationPointZ;
+            this.bipedHead.offsetX = this.syncedModel.bipedHead.offsetX;
+            this.bipedHead.offsetY = this.syncedModel.bipedHead.offsetY;
+            this.bipedHead.offsetZ = this.syncedModel.bipedHead.offsetZ;
 
             this.bipedBody.rotateAngleX = this.syncedModel.bipedBody.rotateAngleX;
             this.bipedBody.rotateAngleY = this.syncedModel.bipedBody.rotateAngleY;
@@ -652,7 +663,7 @@ public class GeoArmorModel extends ModelBiped {
             this.bipedLeftLeg.render(scale);
             this.bipedHeadwear.render(scale);
         } else {
-            if (entityIn != null && entityIn.isSneaking()) {
+            if (entityIn != null && (entityIn.isSneaking() || (entityIn == Minecraft.getMinecraft().player && Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown()))) {
                 GlStateManager.translate(0.0F, 0.2F, 0.0F);
             }
 
@@ -675,7 +686,7 @@ public class GeoArmorModel extends ModelBiped {
                 GlStateManager.scale(0.5F, 0.5F, 0.5F);
                 GlStateManager.translate(0.0F, 24.0F * scale, 0.0F);
             } else {
-                if (entityIn != null && entityIn.isSneaking()) {
+                if (entityIn != null && (entityIn.isSneaking() || (entityIn == Minecraft.getMinecraft().player && Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown()))) {
                     GlStateManager.translate(0.0F, 0.2F, 0.0F);
                 }
             }

@@ -66,7 +66,7 @@ public class GuiMwccfConfig extends GuiConfig {
             ));
         }
 
-        // 3. Отдельная вкладка Lock-On
+        // 4. Отдельная вкладка Lock-On
         if (LockOnConfig.config != null) {
             Configuration lockConfig = LockOnConfig.config;
             List<IConfigElement> lockElements = new ArrayList<>();
@@ -77,6 +77,20 @@ public class GuiMwccfConfig extends GuiConfig {
                 "Lock-On",
                 "mwccf.config.lockon",
                 lockElements
+            ));
+        }
+
+        // 5. Отдельная вкладка Immersive UI
+        if (com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.config != null) {
+            Configuration iuiConfig = com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.config;
+            List<IConfigElement> iuiElements = new ArrayList<>();
+            for (String catName : iuiConfig.getCategoryNames()) {
+                iuiElements.addAll(new ConfigElement(iuiConfig.getCategory(catName)).getChildElements());
+            }
+            list.add(new DummyConfigElement.DummyCategoryElement(
+                "Immersive UI",
+                "mwccf.config.immersiveui",
+                iuiElements
             ));
         }
 
@@ -93,6 +107,9 @@ public class GuiMwccfConfig extends GuiConfig {
             }
             if (LockOnConfig.config != null && LockOnConfig.config.hasChanged()) {
                 LockOnConfig.config.save();
+            }
+            if (com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.config != null) {
+                com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.syncConfig();
             }
         } catch (Throwable t) {
             t.printStackTrace();

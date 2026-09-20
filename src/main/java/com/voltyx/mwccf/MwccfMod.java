@@ -113,8 +113,11 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.zone.network.PacketDeleteZoneAt.Handler.class, com.voltyx.mwccf.zone.network.PacketDeleteZoneAt.class, 24, Side.SERVER);
 		PACKET_HANDLER.registerMessage(efw.network.PacketConfigureNote.Handler.class, efw.network.PacketConfigureNote.class, 25, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.walkietalkie.PacketToggleWalkieTalkie.Handler.class, com.voltyx.mwccf.walkietalkie.PacketToggleWalkieTalkie.class, 26, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketToggleNVG.Handler.class, com.voltyx.mwccf.network.PacketToggleNVG.class, 27, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketExoDash.Handler.class, com.voltyx.mwccf.network.PacketExoDash.class, 28, Side.SERVER);
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.QuestZoneEventHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler());
 
 		// Регистрация Capability грехов
 		CapabilityManager.INSTANCE.register(com.voltyx.mwccf.sins.capability.ISinCapability.class,
@@ -195,6 +198,7 @@ public class MwccfMod {
 		// -------------------------------------------
 		MinecraftForge.EVENT_BUS.register(techguns.TGBlocks.class);
 		MinecraftForge.EVENT_BUS.register(new efw.events.OffhandWeaponBlocker());
+		MinecraftForge.EVENT_BUS.register(new efw.events.WeaponSlotEnforcer());
 	}
 
 	@Mod.EventHandler
@@ -269,8 +273,9 @@ public class MwccfMod {
 
 	@Mod.EventHandler
 	public void onServerStarting(FMLServerStartingEvent event) {
-		// Регистрируем нашу команду
+		// Регистрируем команды
 		event.registerServerCommand(new CommandReloadConfig());
+		event.registerServerCommand(new CommandDumpChests());
 	}
 
 	@SubscribeEvent

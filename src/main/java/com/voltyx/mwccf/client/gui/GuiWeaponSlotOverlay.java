@@ -22,7 +22,7 @@ public class GuiWeaponSlotOverlay {
     @SubscribeEvent
     public void onDrawForeground(GuiContainerEvent.DrawForeground event) {
         GuiContainer gui = event.getGuiContainer();
-        if (gui == null || !(gui instanceof GuiInventory)) {
+        if (gui == null) {
             return;
         }
 
@@ -30,11 +30,16 @@ public class GuiWeaponSlotOverlay {
             return;
         }
 
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player == null) {
+            return;
+        }
+
         for (Slot slot : gui.inventorySlots.inventorySlots) {
-            if (slot != null && slot.inventory instanceof InventoryPlayer) {
-                // In InventoryPlayerMixin:
-                // slotIndex 0 is for primary weapons (rifles/automatics)
-                // slotIndex 1 is for secondary weapons (pistols/handguns)
+            // Проверяем, что слот принадлежит именно инвентарю игрока (а не сундуку, печке и т.д.)
+            if (slot != null && slot.inventory == mc.player.inventory) {
+                // slotIndex 0 в InventoryPlayer — 1-й слот хотбара (винтовки/автоматика)
+                // slotIndex 1 в InventoryPlayer — 2-й слот хотбара (пистолеты)
                 if (slot.getSlotIndex() == 0) {
                     if (!slot.getHasStack()) {
                         drawSlotIcon(slot.xPos, slot.yPos, ICON_SLOT_0);

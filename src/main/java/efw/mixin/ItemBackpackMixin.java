@@ -19,10 +19,8 @@ public abstract class ItemBackpackMixin {
     }
     @Inject(method = "isValidArmor", at = @At("HEAD"), cancellable = true, remap = false)
     private void onIsValidArmor(ItemStack stack, EntityEquipmentSlot armorType, Entity entity, CallbackInfoReturnable<Boolean> cir) {
-        if (stack.getItem() instanceof ItemBackpack) {
-            if (!com.voltyx.mwccf.backpack.BackpackBaubles.hasNoBaubleBackpack(entity)) {
-                cir.setReturnValue(false);
-            }
+        if (armorType == EntityEquipmentSlot.CHEST && stack.getItem() instanceof ItemBackpack) {
+            cir.setReturnValue(false);
         }
     }
 }

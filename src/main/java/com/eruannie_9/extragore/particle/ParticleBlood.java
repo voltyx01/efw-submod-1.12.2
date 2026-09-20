@@ -382,7 +382,16 @@ extends Particle {
     public int getBrightnessForRender(float partialTicks) {
         int base;
         try {
-            base = super.getBrightnessForRender(partialTicks);
+            if (this.isStuck && this.stuckPos != null && this.stuckFace != null && this.world != null) {
+                BlockPos lightPos = this.stuckPos.offset(this.stuckFace);
+                if (this.world.isBlockLoaded(lightPos)) {
+                    base = this.world.getCombinedLight(lightPos, 0);
+                } else {
+                    base = super.getBrightnessForRender(partialTicks);
+                }
+            } else {
+                base = super.getBrightnessForRender(partialTicks);
+            }
         }
         catch (Throwable t) {
             base = 0;

@@ -42,7 +42,7 @@ public class PacketChargeDevice implements IMessage {
                     ItemStack held = player.inventory.getItemStack(); // What is held by the mouse
 
                     if (!held.isEmpty() && held.getItem() == MCoreItems.BATTERY) {
-                        if (!target.isEmpty() && (target.getItem() instanceof ItemHeadlamp || target.getItem() instanceof ItemBracelet || target.getItem() instanceof com.voltyx.mwccf.geo.ItemPortableMap || target.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie)) {
+                        if (!target.isEmpty() && (target.getItem() instanceof ItemHeadlamp || target.getItem() instanceof ItemBracelet || target.getItem() instanceof com.voltyx.mwccf.geo.ItemPortableMap || target.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie || com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler.isNVGHelmet(target.getItem()))) {
                             NBTTagCompound tag = target.getTagCompound();
                             int currentCharge = (tag != null && tag.hasKey("battery_charge")) ? tag.getInteger("battery_charge") : 0;
                             // 50% of 48000 is 24000
@@ -57,6 +57,8 @@ public class PacketChargeDevice implements IMessage {
                                 held.shrink(1);
                                 player.inventory.setItemStack(held.isEmpty() ? ItemStack.EMPTY : held);
                                 
+                                player.world.playSound(null, player.posX, player.posY, player.posZ, net.minecraft.init.SoundEvents.ITEM_ARMOR_EQUIP_IRON, net.minecraft.util.SoundCategory.PLAYERS, 0.8F, 1.2F);
+
                                 // Update the client
                                 player.sendSlotContents(player.openContainer, slot.slotNumber, target);
                                 player.connection.sendPacket(new net.minecraft.network.play.server.SPacketSetSlot(-1, -1, player.inventory.getItemStack()));

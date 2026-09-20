@@ -31,7 +31,7 @@ public class InventoryChargeHandler {
                         ItemStack held = mc.player.inventory.getItemStack();
                         
                         if (!held.isEmpty() && held.getItem() == MCoreItems.BATTERY) {
-                            if (target.getItem() instanceof ItemHeadlamp || target.getItem() instanceof ItemBracelet || target.getItem() instanceof ItemPortableMap || target.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie) {
+                            if (target.getItem() instanceof ItemHeadlamp || target.getItem() instanceof ItemBracelet || target.getItem() instanceof ItemPortableMap || target.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie || com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler.isNVGHelmet(target.getItem())) {
                                 net.minecraft.nbt.NBTTagCompound tag = target.getTagCompound();
                                 int currentCharge = (tag != null && tag.hasKey("battery_charge")) ? tag.getInteger("battery_charge") : 0;
                                 // 50% of 48000 is 24000
@@ -48,6 +48,7 @@ public class InventoryChargeHandler {
                                         target.setTagCompound(tag);
                                     }
                                     tag.setInteger("battery_charge", 48000);
+                                    mc.player.playSound(net.minecraft.init.SoundEvents.ITEM_ARMOR_EQUIP_IRON, 0.8F, 1.2F);
                                     
                                     event.setCanceled(true); // Prevent default action
                                 }

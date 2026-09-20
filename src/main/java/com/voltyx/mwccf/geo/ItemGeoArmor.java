@@ -86,4 +86,24 @@ public class ItemGeoArmor extends ItemArmor {
 
         return modelToUse;
     }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(ItemStack stack, net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        String name = this.getRegistryName() != null ? this.getRegistryName().getPath() : "";
+
+        if (name.contains("gas_mask")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.gas_mask"));
+        }
+        if (name.contains("hazmat")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.hazmat_set"));
+        }
+        if (name.contains("guillie") || name.contains("ghillie")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.ghillie_set"));
+        }
+        if (name.contains("juggernaut")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.juggernaut_set"));
+        }
+    }
 }

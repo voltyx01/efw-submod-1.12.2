@@ -55,20 +55,25 @@ public abstract class AbstractFadeModifier extends AbstractModifier {
                 : value0;
 
         if (type == TransformType.ROTATION) {
-            float x = shortestAngleLerp(source.getX(), animatedVec.getX(), a);
-            float y = shortestAngleLerp(source.getY(), animatedVec.getY(), a);
-            float z = shortestAngleLerp(source.getZ(), animatedVec.getZ(), a);
-            return new Vec3f(x, y, z);
+            float[] euler1 = new float[] {
+                (float) Math.toDegrees(source.getX()),
+                (float) Math.toDegrees(source.getY()),
+                (float) Math.toDegrees(source.getZ())
+            };
+            float[] euler2 = new float[] {
+                (float) Math.toDegrees(animatedVec.getX()),
+                (float) Math.toDegrees(animatedVec.getY()),
+                (float) Math.toDegrees(animatedVec.getZ())
+            };
+            float[] resultDeg = efw.animation.QuatMath.slerpEulerAngles(euler1, euler2, a);
+            return new Vec3f(
+                (float) Math.toRadians(resultDeg[0]),
+                (float) Math.toRadians(resultDeg[1]),
+                (float) Math.toRadians(resultDeg[2])
+            );
         }
 
         return animatedVec.scale(a).add(source.scale(1.0f - a));
-    }
-
-    private static float shortestAngleLerp(float from, float to, float alpha) {
-        float diff = (to - from) % ((float) Math.PI * 2F);
-        if (diff < -(float) Math.PI) diff += ((float) Math.PI * 2F);
-        if (diff >= (float) Math.PI) diff -= ((float) Math.PI * 2F);
-        return from + diff * alpha;
     }
 
     public float calculateProgress(float tickDelta) {
