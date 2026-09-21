@@ -183,6 +183,9 @@ public class SurvivalInstinctArmorHandler {
     public static boolean isNVGHelmet(Item h) {
         if (h == null || h.getRegistryName() == null) return false;
         String name = h.getRegistryName().getPath();
+        boolean isHelmet = (h instanceof net.minecraft.item.ItemArmor && ((net.minecraft.item.ItemArmor) h).armorType == EntityEquipmentSlot.HEAD)
+                || name.endsWith("_helmet");
+        if (!isHelmet) return false;
         return name.contains("night_vision") || name.contains("hunter_helmet") || name.startsWith("exo_heavy");
     }
 

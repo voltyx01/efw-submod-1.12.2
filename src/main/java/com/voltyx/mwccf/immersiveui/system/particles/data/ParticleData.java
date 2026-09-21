@@ -95,6 +95,10 @@ public class ParticleData {
         return lifetime;
     }
 
+    public int getMaxLifetime() {
+        return maxLifetime;
+    }
+
     public void tick() {
         this.oldPos.set(position);
 

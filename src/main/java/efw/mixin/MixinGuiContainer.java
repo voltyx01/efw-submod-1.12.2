@@ -193,27 +193,103 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
             GlStateManager.rotate(rot, 0.0F, 0.0F, 1.0F);
         }
 
-        // Rarity particles
-        if (ImmersiveUIConfig.enableRarityParticles && stack.getRarity() != EnumRarity.COMMON) {
-            int color = 0xFFFFFF;
-            if (stack.getRarity() == EnumRarity.UNCOMMON) color = 0xFFFF55;
-            else if (stack.getRarity() == EnumRarity.RARE) color = 0x55FFFF;
-            else if (stack.getRarity() == EnumRarity.EPIC) color = 0xFF55FF;
+        // Item & Rarity particles
+        if (ImmersiveUIConfig.enableRarityParticles) {
+            String overrideType = null;
+            if (stack.getItem() != null && stack.getItem().getRegistryName() != null) {
+                String regName = stack.getItem().getRegistryName().toString().toLowerCase();
+                overrideType = ImmersiveUIConfig.itemParticleOverrides.get(regName);
+            }
 
-            ParticleEmitter emitter = new ParticleEmitter(this.immersiveui$mouseX, this.immersiveui$mouseY);
-            if (!ParticleStorage.EMITTERS.containsKey(emitter) && (Math.abs(immersiveui$deltaX) > 0.1F || Math.abs(immersiveui$deltaY) > 0.1F)) {
-                ParticleData particle = new GenericParticleData(
-                        0xFF000000 | color,
-                        0x00000000 | color,
-                        Math.abs(immersiveui$deltaY) + Math.abs(immersiveui$deltaX),
-                        this.immersiveui$mouseX + immersiveui$random.nextFloat() * 2.0F - 1.0F,
-                        this.immersiveui$mouseY + immersiveui$random.nextFloat() * 2.0F - 1.0F,
-                        immersiveui$random.nextFloat() * 0.45F + 0.8F,
-                        immersiveui$random.nextInt(18) + 12,
-                        emitter
-                );
-                particle.direction = new Vector2f(-immersiveui$deltaX, -immersiveui$deltaY).normalize();
-                ParticleStorage.addParticle(emitter, particle);
+            boolean shouldSpawn = overrideType != null || stack.getRarity() != EnumRarity.COMMON;
+            if (shouldSpawn) {
+                ParticleEmitter emitter = new ParticleEmitter(this.immersiveui$mouseX, this.immersiveui$mouseY);
+                if (!ParticleStorage.EMITTERS.containsKey(emitter) && (Math.abs(immersiveui$deltaX) > 0.1F || Math.abs(immersiveui$deltaY) > 0.1F)) {
+                    float moveSpeed = (Math.abs(immersiveui$deltaY) + Math.abs(immersiveui$deltaX)) * ImmersiveUIConfig.particleSpeedMultiplier;
+                    int minLife = Math.max(1, ImmersiveUIConfig.particleLifetimeMin);
+                    int maxLife = Math.max(minLife, ImmersiveUIConfig.particleLifetimeMax);
+                    int lifetime = minLife + immersiveui$random.nextInt(maxLife - minLife + 1);
+
+                    float posX = this.immersiveui$mouseX + immersiveui$random.nextFloat() * 2.0F - 1.0F;
+                    float posY = this.immersiveui$mouseY + immersiveui$random.nextFloat() * 2.0F - 1.0F;
+                    Vector2f moveDir = new Vector2f(immersiveui$deltaX, immersiveui$deltaY).normalize();
+
+                    ParticleData particle = null;
+
+                    ItemStack crackStack = null;
+                    if ("item".equalsIgnoreCase(overrideType) || "self".equalsIgnoreCase(overrideType)) {
+                        crackStack = stack;
+                    } else if (overrideType != null && (overrideType.contains(":") || net.minecraft.item.Item.REGISTRY.containsKey(new net.minecraft.util.ResourceLocation(overrideType)))) {
+                        net.minecraft.item.Item targetItem = net.minecraft.item.Item.REGISTRY.getObject(new net.minecraft.util.ResourceLocation(overrideType));
+                        if (targetItem != null) {
+                            crackStack = new ItemStack(targetItem);
+                        }
+                    }
+
+                    if (crackStack != null) {
+                        net.minecraft.client.renderer.block.model.IBakedModel model =
+                                Minecraft.getMinecraft().getRenderItem().getItemModelWithOverrides(crackStack, this.mc.world, this.mc.player);
+                        net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = model != null ? model.getParticleTexture() : null;
+                        if (sprite != null) {
+                            com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData icp =
+                                    new com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData(sprite, moveSpeed, lifetime, posX, posY, emitter);
+                            icp.direction = moveDir;
+                            particle = icp;
+                        }
+                    } else if ("flame".equalsIgnoreCase(overrideType) || "fire".equalsIgnoreCase(overrideType)) {
+                        com.voltyx.mwccf.immersiveui.system.particles.data.FlameParticleData fp =
+                                new com.voltyx.mwccf.immersiveui.system.particles.data.FlameParticleData(posX, posY, lifetime, emitter);
+                        fp.speed = moveSpeed;
+                        fp.direction = moveDir;
+                        particle = fp;
+                    } else if ("galactic".equalsIgnoreCase(overrideType) || "enchant".equalsIgnoreCase(overrideType)) {
+                        com.voltyx.mwccf.immersiveui.system.particles.data.GalacticParticleData gp =
+                                new com.voltyx.mwccf.immersiveui.system.particles.data.GalacticParticleData(moveSpeed, lifetime, posX, posY, emitter);
+                        gp.direction = moveDir;
+                        particle = gp;
+                    } else {
+                        int color = 0xFFFFFF;
+                        if (overrideType != null) {
+                            if ("epic".equalsIgnoreCase(overrideType) || "purple".equalsIgnoreCase(overrideType)) color = 0xFF55FF;
+                            else if ("rare".equalsIgnoreCase(overrideType) || "aqua".equalsIgnoreCase(overrideType) || "cyan".equalsIgnoreCase(overrideType)) color = 0x55FFFF;
+                            else if ("uncommon".equalsIgnoreCase(overrideType) || "yellow".equalsIgnoreCase(overrideType)) color = 0xFFFF55;
+                            else if ("common".equalsIgnoreCase(overrideType) || "white".equalsIgnoreCase(overrideType)) color = 0xFFFFFF;
+                            else if ("red".equalsIgnoreCase(overrideType)) color = 0xFF5555;
+                            else if ("green".equalsIgnoreCase(overrideType)) color = 0x55FF55;
+                            else if ("blue".equalsIgnoreCase(overrideType)) color = 0x5555FF;
+                            else if ("gold".equalsIgnoreCase(overrideType) || "orange".equalsIgnoreCase(overrideType)) color = 0xFFAA00;
+                            else {
+                                try {
+                                    String hex = overrideType.startsWith("#") ? overrideType.substring(1) :
+                                            (overrideType.startsWith("0x") ? overrideType.substring(2) : overrideType);
+                                    color = (int) Long.parseLong(hex, 16) & 0xFFFFFF;
+                                } catch (Exception ignored) {
+                                    color = 0xFFFFFF;
+                                }
+                            }
+                        } else {
+                            if (stack.getRarity() == EnumRarity.UNCOMMON) color = 0xFFFF55;
+                            else if (stack.getRarity() == EnumRarity.RARE) color = 0x55FFFF;
+                            else if (stack.getRarity() == EnumRarity.EPIC) color = 0xFF55FF;
+                        }
+
+                        particle = new GenericParticleData(
+                                0xFF000000 | color,
+                                0x00000000 | color,
+                                moveSpeed,
+                                posX,
+                                posY,
+                                immersiveui$random.nextFloat() * 0.4F + 0.6F,
+                                lifetime,
+                                emitter
+                        );
+                        particle.direction = moveDir;
+                    }
+
+                    if (particle != null) {
+                        ParticleStorage.addParticle(emitter, particle);
+                    }
+                }
             }
         }
 

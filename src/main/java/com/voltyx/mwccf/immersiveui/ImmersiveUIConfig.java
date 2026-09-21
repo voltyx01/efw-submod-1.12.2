@@ -22,6 +22,14 @@ public class ImmersiveUIConfig {
     public static float matchingItemHoverAmplitude = 0.8F;
     public static boolean enableVanillaSlotHighlighting = false;
     public static boolean enableRarityParticles = true;
+    public static String[] customItemParticles = new String[] {
+            "minecraft:nether_star=epic",
+            "minecraft:golden_apple=rare"
+    };
+    public static final java.util.Map<String, String> itemParticleOverrides = new java.util.HashMap<>();
+    public static float particleSpeedMultiplier = 0.4F;
+    public static int particleLifetimeMin = 5;
+    public static int particleLifetimeMax = 10;
 
     // Screen Shake
     public static boolean enableScreenShake = true;
@@ -108,6 +116,47 @@ public class ImmersiveUIConfig {
         matchingItemHoverAmplitude = config.getFloat("matchingItemHoverAmplitude", inventory, 0.8F, 0.0F, 5.0F, "Affects the hover amplitude of items that match to the item that is carried in the cursor.");
         enableVanillaSlotHighlighting = config.getBoolean("enableVanillaSlotHighlighting", inventory, false, "Enables vanilla slot highlighting.");
         enableRarityParticles = config.getBoolean("enableRarityParticles", inventory, true, "Enables particles for rare items.");
+        customItemParticles = config.getStringList("customItemParticles", inventory, customItemParticles,
+                "Custom particle types, colors, or item crack textures per item ID. Format: 'modid:item_name=particle_or_item', or 'modid:item_name - particle_or_item'.\n" +
+                "Supported particle values:\n" +
+                " - Item ID: 'item', 'self', or another item ID like 'minecraft:apple' (spawns flying texture pieces of the item)\n" +
+                " - Rarity names: 'epic' (purple), 'rare' (aqua), 'uncommon' (yellow), 'common' / 'white' (white)\n" +
+                " - Predefined styles: 'flame' (fire), 'galactic' (enchant runes)\n" +
+                " - Hex color: '#RRGGBB' or '0xRRGGBB' (e.g. '#FF0000' for red, '#00FF00' for green)");
+        particleSpeedMultiplier = config.getFloat("particleSpeedMultiplier", inventory, 0.4F, 0.01F, 5.0F, "Speed multiplier for GUI rarity/custom particles.");
+        particleLifetimeMin = config.getInt("particleLifetimeMin", inventory, 5, 1, 100, "Minimum lifetime in ticks for GUI particles (controls travel distance).");
+        particleLifetimeMax = config.getInt("particleLifetimeMax", inventory, 10, 1, 100, "Maximum lifetime in ticks for GUI particles (controls travel distance).");
+
+        itemParticleOverrides.clear();
+        for (String entry : customItemParticles) {
+            if (entry == null || entry.trim().isEmpty()) continue;
+            String trimmed = entry.trim();
+            String id = null;
+            String particle = null;
+            if (trimmed.contains("=")) {
+                String[] parts = trimmed.split("=", 2);
+                id = parts[0].trim().toLowerCase();
+                particle = parts[1].trim().toLowerCase();
+            } else if (trimmed.contains(" - ")) {
+                String[] parts = trimmed.split(" - ", 2);
+                id = parts[0].trim().toLowerCase();
+                particle = parts[1].trim().toLowerCase();
+            } else if (trimmed.contains("-")) {
+                String[] parts = trimmed.split("-", 2);
+                id = parts[0].trim().toLowerCase();
+                particle = parts[1].trim().toLowerCase();
+            } else if (trimmed.contains(":")) {
+                int lastColon = trimmed.lastIndexOf(':');
+                int firstColon = trimmed.indexOf(':');
+                if (lastColon > firstColon) {
+                    id = trimmed.substring(0, lastColon).trim().toLowerCase();
+                    particle = trimmed.substring(lastColon + 1).trim().toLowerCase();
+                }
+            }
+            if (id != null && particle != null && !id.isEmpty() && !particle.isEmpty()) {
+                itemParticleOverrides.put(id, particle);
+            }
+        }
 
         // Screen Shake
         enableScreenShake = config.getBoolean("enableScreenShake", shake, true, "Enables screen shake.");
