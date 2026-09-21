@@ -171,14 +171,62 @@ public class CommandDumpChests extends CommandBase {
                     }
                 }
 
-                uniqueMap.put(id, new ItemEntry(id, ru, en));
+                // Tooltips extraction
+                String tipRU = findTooltipFromLang(langRU, stack);
+                String tipEN = findTooltipFromLang(langEN, stack);
+
+                // In-game live tooltip lines (e.g. lore, enchantments, stats, charge, custom lines)
+                List<String> inGameLines = new ArrayList<>();
+                try {
+                    net.minecraft.entity.player.EntityPlayer player = null;
+                    if (FMLCommonHandler.instance().getSide().isClient()) {
+                        player = Minecraft.getMinecraft().player;
+                    }
+                    if (player == null && sender.getCommandSenderEntity() instanceof net.minecraft.entity.player.EntityPlayer) {
+                        player = (net.minecraft.entity.player.EntityPlayer) sender.getCommandSenderEntity();
+                    }
+                    List<String> raw = stack.getTooltip(player, net.minecraft.client.util.ITooltipFlag.TooltipFlags.NORMAL);
+                    for (int i = 1; i < raw.size(); i++) {
+                        String clean = TextFormatting.getTextWithoutFormattingCodes(raw.get(i)).trim();
+                        if (!clean.isEmpty()) {
+                            inGameLines.add(clean);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+
+                if (!inGameLines.isEmpty()) {
+                    String inGameStr = String.join(" | ", inGameLines);
+                    boolean isClientRU = true;
+                    try {
+                        if (FMLCommonHandler.instance().getSide().isClient()) {
+                            String code = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode();
+                            isClientRU = code.toLowerCase(Locale.ROOT).startsWith("ru");
+                        }
+                    } catch (Throwable ignored) {}
+
+                    if (isClientRU) {
+                        if ("none".equals(tipRU) || inGameStr.length() > tipRU.length()) {
+                            tipRU = inGameStr;
+                        }
+                    } else {
+                        if ("none".equals(tipEN) || inGameStr.length() > tipEN.length()) {
+                            tipEN = inGameStr;
+                        }
+                    }
+                }
+
+                // Protect column splitting by replacing inner " - " with " — "
+                if (tipRU != null) tipRU = tipRU.replace(" - ", " — ");
+                if (tipEN != null) tipEN = tipEN.replace(" - ", " — ");
+
+                uniqueMap.put(id, new ItemEntry(id, ru, en, tipRU, tipEN));
             }
         }
 
         File outFile = new File(".", filename);
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), StandardCharsets.UTF_8))) {
             for (ItemEntry entry : uniqueMap.values()) {
-                writer.write(entry.id + " - " + entry.nameRU + " - " + entry.nameEN);
+                writer.write(entry.id + " - " + entry.nameRU + " - " + entry.nameEN + " - " + entry.tooltipRU + " - " + entry.tooltipEN);
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -192,6 +240,66 @@ public class CommandDumpChests extends CommandBase {
         } catch (IOException e) {
             sender.sendMessage(new TextComponentString(TextFormatting.AQUA + "[MWCCF] Файл создан: " + outFile.getAbsolutePath()));
         }
+    }
+
+    private static String findTooltipFromLang(Map<String, String> langMap, ItemStack stack) {
+        Item item = stack.getItem();
+        ResourceLocation reg = item.getRegistryName();
+        String unlocalized = stack.getTranslationKey();
+
+        List<String> foundLines = new ArrayList<>();
+        List<String> baseKeys = new ArrayList<>();
+        baseKeys.add(unlocalized);
+        baseKeys.add(unlocalized + ".desc");
+        baseKeys.add(unlocalized + ".description");
+        baseKeys.add(unlocalized + ".tooltip");
+        baseKeys.add(unlocalized + ".tip");
+        baseKeys.add(unlocalized + ".info");
+
+        if (reg != null) {
+            baseKeys.add("tooltip." + reg.toString() + ".desc");
+            baseKeys.add("tooltip." + reg.getPath() + ".desc");
+            baseKeys.add("tooltip." + reg.toString());
+            baseKeys.add("tooltip." + reg.getPath());
+            baseKeys.add("item." + reg.toString() + ".desc");
+            baseKeys.add("item." + reg.getPath() + ".desc");
+            baseKeys.add("tile." + reg.toString() + ".desc");
+            baseKeys.add("tile." + reg.getPath() + ".desc");
+        }
+
+        if (unlocalized.startsWith("item.")) {
+            baseKeys.add("tooltip." + unlocalized.substring(5) + ".desc");
+            baseKeys.add("tooltip." + unlocalized.substring(5));
+        }
+
+        for (String bk : baseKeys) {
+            if (!bk.equals(unlocalized)) {
+                if (langMap.containsKey(bk)) {
+                    String val = langMap.get(bk).trim();
+                    if (!val.isEmpty() && !val.equals(bk) && !foundLines.contains(val)) {
+                        foundLines.add(val);
+                    }
+                }
+            }
+
+            for (int i = 0; i <= 10; i++) {
+                String[] suffixes = { "." + i, "_" + i, ".desc." + i, ".desc" + i, ".line" + i };
+                for (String sfx : suffixes) {
+                    String subKey = bk + sfx;
+                    if (langMap.containsKey(subKey)) {
+                        String val = langMap.get(subKey).trim();
+                        if (!val.isEmpty() && !val.equals(subKey) && !foundLines.contains(val)) {
+                            foundLines.add(val);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (foundLines.isEmpty()) {
+            return "none";
+        }
+        return String.join(" | ", foundLines);
     }
 
     private static String findTranslation(Map<String, String> langMap, String... keys) {
@@ -330,11 +438,15 @@ public class CommandDumpChests extends CommandBase {
         final String id;
         final String nameRU;
         final String nameEN;
+        final String tooltipRU;
+        final String tooltipEN;
 
-        ItemEntry(String id, String nameRU, String nameEN) {
+        ItemEntry(String id, String nameRU, String nameEN, String tooltipRU, String tooltipEN) {
             this.id = id;
             this.nameRU = nameRU;
             this.nameEN = nameEN;
+            this.tooltipRU = tooltipRU != null && !tooltipRU.isEmpty() ? tooltipRU : "none";
+            this.tooltipEN = tooltipEN != null && !tooltipEN.isEmpty() ? tooltipEN : "none";
         }
     }
 }
