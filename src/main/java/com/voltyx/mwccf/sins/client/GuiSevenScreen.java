@@ -75,20 +75,66 @@ public class GuiSevenScreen extends GuiScreen {
     public static final int TAB_MANUALS = 2;
     public static final int TAB_APPEARANCE = 3;
 
-    // Palette Colors (Warm Noir / Deep Vintage Umber)
-    private static final int COLOR_BG_TOP = 0xFF181310;
-    private static final int COLOR_BG_BOTTOM = 0xFF0E0B09;
-    private static final int COLOR_BG = 0xFF14100D;
-    private static final int COLOR_PANEL_TOP = 0xF41E1814;
-    private static final int COLOR_PANEL_BOTTOM = 0xF7120E0C;
-    private static final int COLOR_PAPER = 0xFFC9C3B6;
-    private static final int COLOR_PAPER_DIM = 0xFF8B8578;
-    private static final int COLOR_INK = 0xFF3A3630;
-    private static final int COLOR_BLOOD = 0xFF7A2418;
-    private static final int COLOR_BLOOD_BRIGHT = 0xFFA8341F;
-    private static final int COLOR_GOLD = 0xFFC98A2E;
-    private static final int COLOR_GOLD_BRIGHT = 0xFFE8A53D;
-    private static final int COLOR_LINE = 0xFF221F1C;
+    // Dynamic Palette Colors (Supports SLATE / Cold Dark Slate and WARM / Vintage Umber)
+    private static int COLOR_BG_TOP = 0xFF14171C;
+    private static int COLOR_BG_BOTTOM = 0xFF0B0D10;
+    private static int COLOR_BG = 0xFF101317;
+    private static int COLOR_PANEL_TOP = 0xF4181C22;
+    private static int COLOR_PANEL_BOTTOM = 0xF70E1014;
+    private static int COLOR_PAPER = 0xFFD2D8E0;
+    private static int COLOR_PAPER_DIM = 0xFF7D8794;
+    private static int COLOR_INK = 0xFF2B323D;
+    private static int COLOR_BLOOD = 0xFF2A394D;
+    private static int COLOR_BLOOD_BRIGHT = 0xFF4A688F;
+    private static int COLOR_GOLD = 0xFF587299;
+    private static int COLOR_GOLD_BRIGHT = 0xFF8BAAC9;
+    private static int COLOR_LINE = 0xFF1C222B;
+    private static int COLOR_PERIMETER_GLOW = 0xFF8BAAC9;
+    private static int COLOR_ARROW_HOVER = 0x33587299;
+    private static int COLOR_CARD_BG_TOP = 0xF214171C;
+    private static int COLOR_CARD_BG_BOTTOM = 0xF20B0D10;
+
+    private static void applyTheme(String themeName) {
+        if ("WARM".equalsIgnoreCase(themeName) || "WARM_NOIR".equalsIgnoreCase(themeName)) {
+            // Warm Noir / Deep Vintage Umber & Blood/Gold
+            COLOR_BG_TOP = 0xFF181310;
+            COLOR_BG_BOTTOM = 0xFF0E0B09;
+            COLOR_BG = 0xFF14100D;
+            COLOR_PANEL_TOP = 0xF41E1814;
+            COLOR_PANEL_BOTTOM = 0xF7120E0C;
+            COLOR_PAPER = 0xFFC9C3B6;
+            COLOR_PAPER_DIM = 0xFF8B8578;
+            COLOR_INK = 0xFF3A3630;
+            COLOR_BLOOD = 0xFF7A2418;
+            COLOR_BLOOD_BRIGHT = 0xFFA8341F;
+            COLOR_GOLD = 0xFFC98A2E;
+            COLOR_GOLD_BRIGHT = 0xFFE8A53D;
+            COLOR_LINE = 0xFF221F1C;
+            COLOR_PERIMETER_GLOW = 0xFFFFCB6B;
+            COLOR_ARROW_HOVER = 0x33C98A2E;
+            COLOR_CARD_BG_TOP = 0xF2141210;
+            COLOR_CARD_BG_BOTTOM = 0xF20A0908;
+        } else {
+            // Cold Dark Slate / Subtle Pale Dark Blue
+            COLOR_BG_TOP = 0xFF14171C;
+            COLOR_BG_BOTTOM = 0xFF0B0D10;
+            COLOR_BG = 0xFF101317;
+            COLOR_PANEL_TOP = 0xF4181C22;
+            COLOR_PANEL_BOTTOM = 0xF70E1014;
+            COLOR_PAPER = 0xFFD2D8E0;
+            COLOR_PAPER_DIM = 0xFF7D8794;
+            COLOR_INK = 0xFF2B323D;
+            COLOR_BLOOD = 0xFF2A394D;
+            COLOR_BLOOD_BRIGHT = 0xFF4A688F;
+            COLOR_GOLD = 0xFF587299;
+            COLOR_GOLD_BRIGHT = 0xFF8BAAC9;
+            COLOR_LINE = 0xFF1C222B;
+            COLOR_PERIMETER_GLOW = 0xFF8BAAC9;
+            COLOR_ARROW_HOVER = 0x33587299;
+            COLOR_CARD_BG_TOP = 0xF214171C;
+            COLOR_CARD_BG_BOTTOM = 0xF20B0D10;
+        }
+    }
 
     private int currentState = STATE_CLASS_SELECT;
     public int currentTab = TAB_GRIEVANCE;
@@ -547,6 +593,11 @@ public class GuiSevenScreen extends GuiScreen {
 
         this.lastFrameTime = System.nanoTime();
 
+        GenderPlayer plr = getGenderPlayer();
+        if (plr != null) {
+            applyTheme(plr.getUiTheme());
+        }
+
         ISinCapability cap = getSinCap();
         if (cap != null && cap.getChosenSin() != null) {
             this.currentState = (this.currentState == STATE_LEVEL_UP) ? STATE_LEVEL_UP : STATE_MAIN_HUD;
@@ -648,6 +699,18 @@ public class GuiSevenScreen extends GuiScreen {
         int stepY = 22;
 
         int curY = startY;
+
+        String curTheme = plr.getUiTheme();
+        boolean isWarm = "WARM".equalsIgnoreCase(curTheme) || "WARM_NOIR".equalsIgnoreCase(curTheme);
+        String themeLabel = "Тема интерфейса: " + (isWarm ? TextFormatting.GOLD + "Оранжевая (Старая)" : TextFormatting.AQUA + "Тёмно-серая");
+        this.buttonList.add(new WildfireButton(99, startX, curY, btnW, btnH, themeLabel, () -> {
+            String nextTheme = isWarm ? "SLATE" : "WARM";
+            plr.updateUiTheme(nextTheme);
+            GenderPlayer.saveGenderInfo(plr);
+            applyTheme(nextTheme);
+            initGui();
+        }));
+        curY += stepY;
 
         this.buttonList
                 .add(new WildfireButton(100, startX, curY, btnW, btnH, getGenderButtonLabel(plr.getGender()), () -> {
@@ -924,7 +987,7 @@ public class GuiSevenScreen extends GuiScreen {
         // Настройки груди доступны для любого пола.
 
         for (GuiButton btn : this.buttonList) {
-            if (btn.id >= 100 && btn.id <= 120) {
+            if (btn.id >= 99 && btn.id <= 120) {
                 if (btn.y + btn.height <= 38 || btn.y >= (int) VIRTUAL_H - 10) {
                     btn.visible = false;
                 }
@@ -1789,7 +1852,7 @@ public class GuiSevenScreen extends GuiScreen {
         int y = 38;
 
         // Card background & outline
-        drawGradientRect(x, y, x + w, y + h, 0xEE141210, 0xF50A0908);
+        drawGradientRect(x, y, x + w, y + h, COLOR_CARD_BG_TOP, COLOR_CARD_BG_BOTTOM);
         drawBoxOutline(x, y, w, h, COLOR_GOLD);
 
         int cx = x + 8;
@@ -1813,7 +1876,7 @@ public class GuiSevenScreen extends GuiScreen {
             String name = FLOWER_PARAM_NAMES[i];
 
             if (sel) {
-                drawRect(cx - 3, cy - 1, cx + w - 13, cy + 9, 0x33FFD700);
+                drawRect(cx - 3, cy - 1, cx + w - 13, cy + 9, 0x33587299);
             }
 
             String prefix = sel ? (TextFormatting.GOLD + "► ") : "  ";
@@ -2043,7 +2106,7 @@ public class GuiSevenScreen extends GuiScreen {
         boolean arrowHover = mouseX >= rightX && mouseX <= rightX + arrowW && mouseY >= lvlY && mouseY <= lvlY + lvlH;
 
         if (arrowHover && hasDpor) {
-            drawRect(rightX, lvlY, rightX + arrowW, lvlY + lvlH, 0x33C98A2E);
+            drawRect(rightX, lvlY, rightX + arrowW, lvlY + lvlH, COLOR_ARROW_HOVER);
         }
         drawLine(rightX + arrowW, lvlY, rightX + arrowW, lvlY + lvlH, COLOR_LINE);
 
@@ -2411,7 +2474,7 @@ public class GuiSevenScreen extends GuiScreen {
     }
 
     private void drawSingleCard(int index, SinCard card, int cx, int cy, boolean isHovered, float borderGlowT) {
-        drawGradientRect(cx, cy, cx + LVLUP_CARD_W, cy + LVLUP_CARD_H, 0xF2141210, 0xF20A0908);
+        drawGradientRect(cx, cy, cx + LVLUP_CARD_W, cy + LVLUP_CARD_H, COLOR_CARD_BG_TOP, COLOR_CARD_BG_BOTTOM);
         drawBoxOutline(cx, cy, LVLUP_CARD_W, LVLUP_CARD_H, isHovered ? COLOR_GOLD_BRIGHT : COLOR_BLOOD);
 
         if (borderGlowT >= 0.0f && borderGlowT < 1.0f) {
@@ -2478,7 +2541,7 @@ public class GuiSevenScreen extends GuiScreen {
         float perimeter = 2.0f * (w + h);
         float dist = loopT * perimeter;
 
-        int glowColor = 0xFFFFCB6B;
+        int glowColor = COLOR_PERIMETER_GLOW;
         int chip = 10;
         int thickness = 3;
 

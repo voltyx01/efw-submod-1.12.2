@@ -122,6 +122,7 @@ public class GenderPlayer {
 
 	public SyncStatus syncStatus = SyncStatus.UNKNOWN;
 	private boolean showBreastsInArmor = ClientConfiguration.SHOW_IN_ARMOR.getDefault();
+	private String uiTheme = ClientConfiguration.UI_THEME.getDefault();
 
 	private final ClientConfiguration cfg;
 	private final BreastPhysics lBreastPhysics, rBreastPhysics;
@@ -164,6 +165,7 @@ public class GenderPlayer {
 		this.cfg.setDefault(ClientConfiguration.BLINK_FREQUENCY);
 		this.cfg.setDefault(ClientConfiguration.EYELID_OFFSET_X);
 		this.cfg.setDefault(ClientConfiguration.EYELID_OFFSET_Y);
+		this.cfg.setDefault(ClientConfiguration.UI_THEME);
 		this.cfg.finish();
 	}
 
@@ -247,6 +249,14 @@ public class GenderPlayer {
 		return updateValue(ClientConfiguration.FLOPPY_MULTIPLIER, value, v -> this.floppyMultiplier = v);
 	}
 
+	public String getUiTheme() {
+		return this.uiTheme != null ? this.uiTheme : ClientConfiguration.UI_THEME.getDefault();
+	}
+
+	public boolean updateUiTheme(String value) {
+		return updateValue(ClientConfiguration.UI_THEME, value, v -> this.uiTheme = v);
+	}
+
 	public SyncStatus getSyncStatus() {
 		return this.syncStatus;
 	}
@@ -280,6 +290,7 @@ public class GenderPlayer {
 		ClientConfiguration.BREASTS_OFFSET_Z.save(obj, breasts.getZOffset());
 		ClientConfiguration.BREASTS_UNIBOOB.save(obj, breasts.isUniboob());
 		ClientConfiguration.BREASTS_CLEAVAGE.save(obj, breasts.getCleavage());
+		ClientConfiguration.UI_THEME.save(obj, plr.getUiTheme());
 		return obj;
 	}
 
@@ -311,6 +322,8 @@ public class GenderPlayer {
 		breasts.updateZOffset(ClientConfiguration.BREASTS_OFFSET_Z.read(obj));
 		breasts.updateUniboob(ClientConfiguration.BREASTS_UNIBOOB.read(obj));
 		breasts.updateCleavage(ClientConfiguration.BREASTS_CLEAVAGE.read(obj));
+
+		if (obj.has("ui_theme")) plr.updateUiTheme(ClientConfiguration.UI_THEME.read(obj));
 
 		return plr;
 	}
@@ -348,6 +361,8 @@ public class GenderPlayer {
 			breasts.updateUniboob(config.get(ClientConfiguration.BREASTS_UNIBOOB));
 			breasts.updateCleavage(config.get(ClientConfiguration.BREASTS_CLEAVAGE));
 
+			plr.updateUiTheme(config.get(ClientConfiguration.UI_THEME));
+
 			if (markForSync) {
 				plr.needsSync = true;
 			}
@@ -384,6 +399,7 @@ public class GenderPlayer {
 		config.set(ClientConfiguration.BREASTS_OFFSET_Z, plr.getBreasts().getZOffset());
 		config.set(ClientConfiguration.BREASTS_UNIBOOB, plr.getBreasts().isUniboob());
 		config.set(ClientConfiguration.BREASTS_CLEAVAGE, plr.getBreasts().getCleavage());
+		config.set(ClientConfiguration.UI_THEME, plr.getUiTheme());
 
 		config.save();
 		plr.needsSync = true;

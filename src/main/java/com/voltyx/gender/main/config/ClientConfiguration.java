@@ -32,6 +32,8 @@ public class ClientConfiguration extends Configuration {
     public static final FloatConfigKey BOUNCE_MULTIPLIER = new FloatConfigKey("bounce_multiplier", 0.34F, 0, 1);
     public static final FloatConfigKey FLOPPY_MULTIPLIER = new FloatConfigKey("floppy_multiplier", 0.95F, 0, 1);
 
+    public static final StringConfigKey UI_THEME = new StringConfigKey("ui_theme", "SLATE");
+
     public ClientConfiguration(String saveLoc, String cfgName) {
         super(saveLoc, cfgName);
     }
