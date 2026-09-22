@@ -120,8 +120,14 @@ public class AnimationPlayer {
 
         int blendTicks = getActionBlendTicks(clip.name);
         boolean isSwordToSword = false;
-        if (this.previousActionClip != null && this.previousActionClip.name != null && clip.name != null) {
-            if (this.previousActionClip.name.contains("sword_attack") && clip.name.contains("sword_attack")) {
+        if (this.previousActionClip != null && this.previousActionClip.name != null) {
+            if (this.previousActionClip.name.contains("fire")) {
+                blendTicks = 2;
+            } else if (clip.name != null && (
+                    (this.previousActionClip.name.contains("sword_attack") && clip.name.contains("sword_attack"))
+                    || (this.previousActionClip.name.contains("fist_attack") && clip.name.contains("fist_attack"))
+                    || (this.previousActionClip.name.contains("spear_attack") && clip.name.contains("spear_attack"))
+            )) {
                 blendTicks = 3;
                 isSwordToSword = true;
             }
@@ -130,14 +136,14 @@ public class AnimationPlayer {
             this.actionSnapped = false;
             this.actionLayer.setAnimation(playerAnim);
         } else if (isSwordToSword) {
-            // Sword-to-sword transition: snap the rightArm rotation immediately so it
-            // doesn't arc/flip across the ~172° gap between the two attack poses.
-            // All other bones (torso, leftArm, body) still blend smoothly via inOutSine.
+            // Melee combo transition: snap the swinging arm rotation immediately so it
+            // doesn't arc/flip across opposite strike poses.
+            // All other bones (torso, offhand, body) still blend smoothly via inOutSine.
             final int ticks = blendTicks;
             this.actionLayer.replaceAnimationWithFade(new AbstractFadeModifier(ticks) {
                 @Override
                 public float getAlpha(String modelName, TransformType type, float progress) {
-                    if ("rightArm".equals(modelName) && type == TransformType.ROTATION) {
+                    if (("rightArm".equals(modelName) || "leftArm".equals(modelName)) && type == TransformType.ROTATION) {
                         return 1.0f; // skip rotation blend – use target frame immediately
                     }
                     return Ease.inOutSine(progress);
@@ -253,7 +259,11 @@ public class AnimationPlayer {
     }
 
     public void play(AnimationClip clip, float speed) {
-        if (clip == currentClip && playing)
+        play(clip, speed, false);
+    }
+
+    public void play(AnimationClip clip, float speed, boolean forceRestart) {
+        if (!forceRestart && clip == currentClip && playing)
             return;
 
         String oldClipName = this.currentClip != null ? this.currentClip.name : this.lastClipName;
@@ -393,6 +403,9 @@ public class AnimationPlayer {
             return 10;
         }
         if (animName != null && (animName.contains("pistol") || animName.contains("rifle"))) {
+            if (animName.contains("fire")) {
+                return 0;
+            }
             if (animName.endsWith("run_upper")) {
                 return 4;
             }
@@ -411,7 +424,8 @@ public class AnimationPlayer {
                 || animName.equals("shovel") || animName.equals("hoe"))) {
             return 3;
         }
-        if (animName != null && (animName.contains("sword_attack") || animName.contains("fist_attack"))) {
+        if (animName != null && (animName.contains("sword_attack") || animName.contains("fist_attack")
+                || animName.contains("spear_attack") || animName.contains("heavy_slam"))) {
             return 4;
         }
         return 6;
@@ -518,11 +532,24 @@ public class AnimationPlayer {
     }
 
     public float getActionProgress() {
-        IAnimation anim = actionLayer.getAnimation();
-        if (anim instanceof KeyframeAnimationPlayer) {
-            return ((KeyframeAnimationPlayer) anim).getProgress();
+        KeyframeAnimationPlayer ap = findActionPlayer(actionLayer.getAnimation());
+        if (ap != null) {
+            return ap.getProgress();
         }
         return 0.0f;
+    }
+
+    private KeyframeAnimationPlayer findActionPlayer(IAnimation anim) {
+        if (anim == null) return null;
+        if (anim instanceof KeyframeAnimationPlayer) {
+            return (KeyframeAnimationPlayer) anim;
+        } else if (anim instanceof AbstractFadeModifier) {
+            AbstractFadeModifier fm = (AbstractFadeModifier) anim;
+            KeyframeAnimationPlayer found = findActionPlayer(fm.getAnimation());
+            if (found != null) return found;
+            return findActionPlayer(fm.getBeginAnimation());
+        }
+        return null;
     }
 
     public float getActionSpeed() {

@@ -1,8 +1,8 @@
-{
+﻿{
 	"credit": "Made with Blockbench",
 	"parent": "item/handheld",
 	"textures": {
-		"layer0": "mwccf:items/lance_with_knife"
+		"layer0": "mwccf:item/lance_with_knife"
 	},
 	"display": {
 		"thirdperson_righthand": {

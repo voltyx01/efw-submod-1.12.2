@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/wine",
+﻿{
+  "parent": "mwccf:custom/wine",
   "textures": {
-    "4": "mwccf:blocks/wine",
-    "particle": "mwccf:items/wine"
+    "4": "mwccf:block/wine",
+    "particle": "mwccf:item/wine"
   }
 }

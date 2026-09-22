@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/rope_trap",
+﻿{
+  "parent": "mwccf:block/rope_trap",
   "display": {
     "thirdperson": {
       "rotation": [

@@ -20,7 +20,9 @@ public class ItemCrackParticleData extends ParticleData {
     public ItemCrackParticleData(TextureAtlasSprite sprite, float speed, int lifeTime, float xStart, float yStart, ParticleEmitter emitter) {
         super(new Texture2D(TextureMap.LOCATION_BLOCKS_TEXTURE, 16, 16), speed, lifeTime, xStart, yStart, emitter);
         this.sprite = sprite;
-        this.enableBlend = false;
+        this.enableBlend = true;
+        this.blendSrc = GL11.GL_SRC_ALPHA;
+        this.blendDst = GL11.GL_ONE_MINUS_SRC_ALPHA;
         this.size = 2.5F; // small piece size in GUI pixels
 
         Random rand = new Random();
@@ -66,8 +68,8 @@ public class ItemCrackParticleData extends ParticleData {
             GlStateManager.blendFunc(blendSrc, blendDst);
         }
 
-        float curX = position.x;
-        float curY = position.y;
+        float curX = getInterpolatedX(partialTick);
+        float curY = getInterpolatedY(partialTick);
         float renderScale = size * (resizeWithLifetime ? Math.max(0.2F, lifePercentage) : 1.0F);
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -88,7 +90,12 @@ public class ItemCrackParticleData extends ParticleData {
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         if (enableBlend) {
-            GlStateManager.disableBlend();
+            GlStateManager.tryBlendFuncSeparate(
+                    GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ZERO
+            );
         }
         GlStateManager.popMatrix();
     }

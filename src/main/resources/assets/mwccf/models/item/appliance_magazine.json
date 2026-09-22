@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/home_appliance_magazine"
+    "layer0": "mwccf:item/home_appliance_magazine"
   }
 }

@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/refrigerator",
+﻿{
+  "parent": "mwccf:block/refrigerator",
   "display": {
     "thirdperson": {
       "rotation": [

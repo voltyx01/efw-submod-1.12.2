@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/barricade",
+﻿{
+  "parent": "mwccf:block/barricade",
   "display": {
     "thirdperson": {
       "rotation": [

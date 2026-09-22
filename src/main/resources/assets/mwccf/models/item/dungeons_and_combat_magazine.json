@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/dungeons_and_combat_magazine"
+    "layer0": "mwccf:item/dungeons_and_combat_magazine"
   }
 }

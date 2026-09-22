@@ -101,7 +101,8 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 				"shovel.json", "shovel_sneak.json", "sleeping.json", "swimming.json", "sword_attack.json",
 				"sword_attack2.json", "sword_attack_sneak.json", "sword_attack_sneak2.json",
 				"turn_left.json", "turn_right.json", "up_in_water.json", "walking.json",
-				"walking_backwards.json", "walking_sneak.json", "walking_sneak_backwards.json", "roll.json"
+				"walking_backwards.json", "walking_sneak.json", "walking_sneak_backwards.json", "roll.json",
+				"fist_attack.json", "fist_attack2.json", "spear_attack.json", "spear_attack2.json", "heavy_slam.json", "polearm_idle.json"
 		};
 
 		for (String file : files) {
@@ -211,6 +212,8 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 				}
 			};
 		});
+		net.minecraftforge.fml.client.registry.RenderingRegistry.registerEntityRenderingHandler(com.voltyx.mwccf.si.EntityNail.class,
+				com.voltyx.mwccf.si.RenderNail::new);
 	}
 
 	@SubscribeEvent

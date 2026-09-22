@@ -1,6 +1,7 @@
-{
-  "parent": "item/generated",
+﻿{
+  "parent": "mwccf:custom/bandages",
   "textures": {
-    "layer0": "mwccf:items/bandage"
+    "0": "mwccf:block/bandages",
+    "particle": "mwccf:item/bandage"
   }
 }

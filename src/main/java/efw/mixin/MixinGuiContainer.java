@@ -95,6 +95,9 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
     @Unique
     private float immersiveui$timer = 0.0F;
 
+    @Unique
+    private float immersiveui$particleTimer = 0.0F;
+
     @Inject(method = "initGui", at = @At("HEAD"))
     public void immersiveui$onInitGui(CallbackInfo ci) {
         immersiveui$oX = Integer.MIN_VALUE;
@@ -103,6 +106,7 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
         immersiveui$deltaTime = 0.016F;
         immersiveui$currentAngle = 0.0F;
         immersiveui$currentAngleVelocity = 0.0F;
+        immersiveui$particleTimer = 0.0F;
         immersiveui$expandingProgress.clear();
     }
 
@@ -195,99 +199,63 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
 
         // Item & Rarity particles
         if (ImmersiveUIConfig.enableRarityParticles) {
-            String overrideType = null;
-            if (stack.getItem() != null && stack.getItem().getRegistryName() != null) {
-                String regName = stack.getItem().getRegistryName().toString().toLowerCase();
-                overrideType = ImmersiveUIConfig.itemParticleOverrides.get(regName);
-            }
-
+            String overrideType = ImmersiveUIConfig.getParticleOverride(stack);
             boolean shouldSpawn = overrideType != null || stack.getRarity() != EnumRarity.COMMON;
+
             if (shouldSpawn) {
-                ParticleEmitter emitter = new ParticleEmitter(this.immersiveui$mouseX, this.immersiveui$mouseY);
-                if (!ParticleStorage.EMITTERS.containsKey(emitter) && (Math.abs(immersiveui$deltaX) > 0.1F || Math.abs(immersiveui$deltaY) > 0.1F)) {
-                    float moveSpeed = (Math.abs(immersiveui$deltaY) + Math.abs(immersiveui$deltaX)) * ImmersiveUIConfig.particleSpeedMultiplier;
+                boolean isMoving = Math.abs(immersiveui$deltaX) > 0.1F || Math.abs(immersiveui$deltaY) > 0.1F;
+                boolean isIdle = !isMoving && ImmersiveUIConfig.enableIdleParticles && (immersiveui$random.nextFloat() < ImmersiveUIConfig.idleParticleChance);
+
+                boolean shouldEmit = false;
+                if (isMoving) {
+                    immersiveui$particleTimer += immersiveui$deltaTime;
+                    if (immersiveui$particleTimer >= 0.025F) { // Steady ~40Hz emission rate independent of monitor FPS
+                        immersiveui$particleTimer = 0.0F;
+                        shouldEmit = true;
+                    }
+                } else if (isIdle) {
+                    shouldEmit = true;
+                }
+
+                if (shouldEmit) {
+                    ParticleEmitter emitter = new ParticleEmitter(this.immersiveui$mouseX, this.immersiveui$mouseY);
+
+                    int count = isMoving ? Math.max(1, ImmersiveUIConfig.particleCount) : 1;
+                    float moveMagnitude = (Math.abs(immersiveui$deltaY) + Math.abs(immersiveui$deltaX));
+                    float baseSpeed = isMoving
+                            ? moveMagnitude * ImmersiveUIConfig.particleSpeedMultiplier
+                            : 0.35F * ImmersiveUIConfig.particleSpeedMultiplier;
+
                     int minLife = Math.max(1, ImmersiveUIConfig.particleLifetimeMin);
                     int maxLife = Math.max(minLife, ImmersiveUIConfig.particleLifetimeMax);
-                    int lifetime = minLife + immersiveui$random.nextInt(maxLife - minLife + 1);
 
-                    float posX = this.immersiveui$mouseX + immersiveui$random.nextFloat() * 2.0F - 1.0F;
-                    float posY = this.immersiveui$mouseY + immersiveui$random.nextFloat() * 2.0F - 1.0F;
-                    Vector2f moveDir = new Vector2f(immersiveui$deltaX, immersiveui$deltaY).normalize();
+                    Vector2f baseDir = isMoving
+                            ? new Vector2f(immersiveui$deltaX, immersiveui$deltaY).normalize()
+                            : new Vector2f(0.0F, -1.0F);
 
-                    ParticleData particle = null;
+                    for (int i = 0; i < count; i++) {
+                        int lifetime = minLife + (maxLife > minLife ? immersiveui$random.nextInt(maxLife - minLife + 1) : 0);
 
-                    ItemStack crackStack = null;
-                    if ("item".equalsIgnoreCase(overrideType) || "self".equalsIgnoreCase(overrideType)) {
-                        crackStack = stack;
-                    } else if (overrideType != null && (overrideType.contains(":") || net.minecraft.item.Item.REGISTRY.containsKey(new net.minecraft.util.ResourceLocation(overrideType)))) {
-                        net.minecraft.item.Item targetItem = net.minecraft.item.Item.REGISTRY.getObject(new net.minecraft.util.ResourceLocation(overrideType));
-                        if (targetItem != null) {
-                            crackStack = new ItemStack(targetItem);
-                        }
-                    }
+                        // Spread across item area (compact cluster)
+                        float spawnRadius = ImmersiveUIConfig.particleSpawnRadius;
+                        float posX = this.immersiveui$mouseX + (immersiveui$random.nextFloat() * 2.0F - 1.0F) * spawnRadius;
+                        float posY = this.immersiveui$mouseY + (immersiveui$random.nextFloat() * 2.0F - 1.0F) * spawnRadius;
 
-                    if (crackStack != null) {
-                        net.minecraft.client.renderer.block.model.IBakedModel model =
-                                Minecraft.getMinecraft().getRenderItem().getItemModelWithOverrides(crackStack, this.mc.world, this.mc.player);
-                        net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = model != null ? model.getParticleTexture() : null;
-                        if (sprite != null) {
-                            com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData icp =
-                                    new com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData(sprite, moveSpeed, lifetime, posX, posY, emitter);
-                            icp.direction = moveDir;
-                            particle = icp;
-                        }
-                    } else if ("flame".equalsIgnoreCase(overrideType) || "fire".equalsIgnoreCase(overrideType)) {
-                        com.voltyx.mwccf.immersiveui.system.particles.data.FlameParticleData fp =
-                                new com.voltyx.mwccf.immersiveui.system.particles.data.FlameParticleData(posX, posY, lifetime, emitter);
-                        fp.speed = moveSpeed;
-                        fp.direction = moveDir;
-                        particle = fp;
-                    } else if ("galactic".equalsIgnoreCase(overrideType) || "enchant".equalsIgnoreCase(overrideType)) {
-                        com.voltyx.mwccf.immersiveui.system.particles.data.GalacticParticleData gp =
-                                new com.voltyx.mwccf.immersiveui.system.particles.data.GalacticParticleData(moveSpeed, lifetime, posX, posY, emitter);
-                        gp.direction = moveDir;
-                        particle = gp;
-                    } else {
-                        int color = 0xFFFFFF;
-                        if (overrideType != null) {
-                            if ("epic".equalsIgnoreCase(overrideType) || "purple".equalsIgnoreCase(overrideType)) color = 0xFF55FF;
-                            else if ("rare".equalsIgnoreCase(overrideType) || "aqua".equalsIgnoreCase(overrideType) || "cyan".equalsIgnoreCase(overrideType)) color = 0x55FFFF;
-                            else if ("uncommon".equalsIgnoreCase(overrideType) || "yellow".equalsIgnoreCase(overrideType)) color = 0xFFFF55;
-                            else if ("common".equalsIgnoreCase(overrideType) || "white".equalsIgnoreCase(overrideType)) color = 0xFFFFFF;
-                            else if ("red".equalsIgnoreCase(overrideType)) color = 0xFF5555;
-                            else if ("green".equalsIgnoreCase(overrideType)) color = 0x55FF55;
-                            else if ("blue".equalsIgnoreCase(overrideType)) color = 0x5555FF;
-                            else if ("gold".equalsIgnoreCase(overrideType) || "orange".equalsIgnoreCase(overrideType)) color = 0xFFAA00;
-                            else {
-                                try {
-                                    String hex = overrideType.startsWith("#") ? overrideType.substring(1) :
-                                            (overrideType.startsWith("0x") ? overrideType.substring(2) : overrideType);
-                                    color = (int) Long.parseLong(hex, 16) & 0xFFFFFF;
-                                } catch (Exception ignored) {
-                                    color = 0xFFFFFF;
-                                }
-                            }
+                        // Direction with tight cone spread angle
+                        Vector2f pDir;
+                        if (isMoving) {
+                            float spread = (immersiveui$random.nextFloat() - 0.5F) * ImmersiveUIConfig.particleSpreadAngle;
+                            pDir = Vector2f.rotate(new Vector2f(baseDir), spread);
                         } else {
-                            if (stack.getRarity() == EnumRarity.UNCOMMON) color = 0xFFFF55;
-                            else if (stack.getRarity() == EnumRarity.RARE) color = 0x55FFFF;
-                            else if (stack.getRarity() == EnumRarity.EPIC) color = 0xFF55FF;
+                            pDir = Vector2f.rotate(new Vector2f(baseDir), (immersiveui$random.nextFloat() - 0.5F) * 140.0F);
                         }
 
-                        particle = new GenericParticleData(
-                                0xFF000000 | color,
-                                0x00000000 | color,
-                                moveSpeed,
-                                posX,
-                                posY,
-                                immersiveui$random.nextFloat() * 0.4F + 0.6F,
-                                lifetime,
-                                emitter
-                        );
-                        particle.direction = moveDir;
-                    }
+                        float pSpeed = baseSpeed * (0.75F + immersiveui$random.nextFloat() * 0.5F);
 
-                    if (particle != null) {
-                        ParticleStorage.addParticle(emitter, particle);
+                        ParticleData particle = immersiveui$createParticle(overrideType, stack, emitter, posX, posY, pDir, pSpeed, lifetime);
+                        if (particle != null) {
+                            ParticleStorage.addParticle(emitter, particle);
+                        }
                     }
                 }
             }
@@ -298,6 +266,182 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
         GlStateManager.popMatrix();
 
         ci.cancel();
+    }
+
+    private static final java.util.Map<String, Class<? extends ParticleData>> IMMERSIVEUI$PARTICLE_CLASS_CACHE = new java.util.HashMap<>();
+
+    private static Class<? extends ParticleData> immersiveui$resolveParticleClass(String name) {
+        if (name == null || name.trim().isEmpty()) return null;
+        String trimmed = name.trim();
+        if (IMMERSIVEUI$PARTICLE_CLASS_CACHE.containsKey(trimmed)) {
+            return IMMERSIVEUI$PARTICLE_CLASS_CACHE.get(trimmed);
+        }
+
+        Class<?> clazz = null;
+        // 1. Try exact class name (e.g. "com.example.ParticleName")
+        try {
+            clazz = Class.forName(trimmed);
+        } catch (ClassNotFoundException ignored) {}
+
+        // 2. Try default particle package if simple name (e.g. "FlameParticleData", "GalacticParticleData")
+        if (clazz == null && !trimmed.contains(".")) {
+            try {
+                clazz = Class.forName("com.voltyx.mwccf.immersiveui.system.particles.data." + trimmed);
+            } catch (ClassNotFoundException ignored) {}
+            if (clazz == null && !trimmed.endsWith("ParticleData")) {
+                try {
+                    clazz = Class.forName("com.voltyx.mwccf.immersiveui.system.particles.data." + trimmed + "ParticleData");
+                } catch (ClassNotFoundException ignored) {}
+            }
+        }
+
+        if (clazz != null && ParticleData.class.isAssignableFrom(clazz)) {
+            @SuppressWarnings("unchecked")
+            Class<? extends ParticleData> pClass = (Class<? extends ParticleData>) clazz;
+            IMMERSIVEUI$PARTICLE_CLASS_CACHE.put(trimmed, pClass);
+            return pClass;
+        }
+
+        IMMERSIVEUI$PARTICLE_CLASS_CACHE.put(trimmed, null);
+        return null;
+    }
+
+    private ParticleData immersiveui$createFromParticleClass(Class<? extends ParticleData> clazz, ItemStack stack, ParticleEmitter emitter,
+                                                            float posX, float posY, Vector2f dir, float speed, int lifetime) {
+        try {
+            if (com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData.class.isAssignableFrom(clazz)) {
+                net.minecraft.client.renderer.block.model.IBakedModel model =
+                        Minecraft.getMinecraft().getRenderItem().getItemModelWithOverrides(stack, this.mc.world, this.mc.player);
+                net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = model != null ? model.getParticleTexture() : null;
+                if (sprite != null) {
+                    return new com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData(sprite, speed, lifetime, posX, posY, emitter);
+                }
+            }
+
+            for (java.lang.reflect.Constructor<?> ctor : clazz.getConstructors()) {
+                Class<?>[] p = ctor.getParameterTypes();
+                // (float x, float y, int lifetime, ParticleEmitter emitter) e.g. FlameParticleData
+                if (p.length == 4 && p[0] == float.class && p[1] == float.class && p[2] == int.class && ParticleEmitter.class.isAssignableFrom(p[3])) {
+                    return (ParticleData) ctor.newInstance(posX, posY, lifetime, emitter);
+                }
+                // (float speed, int lifetime, float x, float y, ParticleEmitter emitter) e.g. GalacticParticleData
+                if (p.length == 5 && p[0] == float.class && p[1] == int.class && p[2] == float.class && p[3] == float.class && ParticleEmitter.class.isAssignableFrom(p[4])) {
+                    return (ParticleData) ctor.newInstance(speed, lifetime, posX, posY, emitter);
+                }
+                // (float x, float y, ParticleEmitter emitter)
+                if (p.length == 3 && p[0] == float.class && p[1] == float.class && ParticleEmitter.class.isAssignableFrom(p[2])) {
+                    return (ParticleData) ctor.newInstance(posX, posY, emitter);
+                }
+                // (float x, float y, int lifetime)
+                if (p.length == 3 && p[0] == float.class && p[1] == float.class && p[2] == int.class) {
+                    return (ParticleData) ctor.newInstance(posX, posY, lifetime);
+                }
+                // (float x, float y)
+                if (p.length == 2 && p[0] == float.class && p[1] == float.class) {
+                    return (ParticleData) ctor.newInstance(posX, posY);
+                }
+                // ()
+                if (p.length == 0) {
+                    return (ParticleData) ctor.newInstance();
+                }
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return null;
+    }
+
+    private ParticleData immersiveui$createParticle(String overrideType, ItemStack stack, ParticleEmitter emitter,
+                                                    float posX, float posY, Vector2f dir, float speed, int lifetime) {
+        ParticleData particle = null;
+
+        // 1. Check if item ID is specified for item crack particles (e.g. 'minecraft:apple' or 'item' or 'self')
+        ItemStack crackStack = null;
+        if ("item".equalsIgnoreCase(overrideType) || "self".equalsIgnoreCase(overrideType)) {
+            crackStack = stack;
+        } else if (overrideType != null && (overrideType.contains(":") && net.minecraft.item.Item.REGISTRY.containsKey(new net.minecraft.util.ResourceLocation(overrideType)))) {
+            net.minecraft.item.Item targetItem = net.minecraft.item.Item.REGISTRY.getObject(new net.minecraft.util.ResourceLocation(overrideType));
+            if (targetItem != null) {
+                crackStack = new ItemStack(targetItem);
+            }
+        }
+
+        if (crackStack != null) {
+            net.minecraft.client.renderer.block.model.IBakedModel model =
+                    Minecraft.getMinecraft().getRenderItem().getItemModelWithOverrides(crackStack, this.mc.world, this.mc.player);
+            net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = model != null ? model.getParticleTexture() : null;
+            if (sprite != null) {
+                particle = new com.voltyx.mwccf.immersiveui.system.particles.data.ItemCrackParticleData(sprite, speed, lifetime, posX, posY, emitter);
+            }
+        }
+
+        // 2. Check if Particle Class Name is specified (e.g. 'com.example.ParticleName' or 'FlameParticleData')
+        if (particle == null && overrideType != null) {
+            Class<? extends ParticleData> pClass = immersiveui$resolveParticleClass(overrideType);
+            if (pClass != null) {
+                particle = immersiveui$createFromParticleClass(pClass, stack, emitter, posX, posY, dir, speed, lifetime);
+            }
+        }
+
+        // 3. Predefined particle styles
+        if (particle == null) {
+            if ("flame".equalsIgnoreCase(overrideType) || "fire".equalsIgnoreCase(overrideType)) {
+                particle = new com.voltyx.mwccf.immersiveui.system.particles.data.FlameParticleData(posX, posY, lifetime, emitter);
+            } else if ("galactic".equalsIgnoreCase(overrideType) || "enchant".equalsIgnoreCase(overrideType)) {
+                particle = new com.voltyx.mwccf.immersiveui.system.particles.data.GalacticParticleData(speed, lifetime, posX, posY, emitter);
+            } else {
+                int color = 0xFFFFFF;
+                if (overrideType != null) {
+                    if ("epic".equalsIgnoreCase(overrideType) || "purple".equalsIgnoreCase(overrideType)) color = 0xFF55FF;
+                    else if ("rare".equalsIgnoreCase(overrideType) || "aqua".equalsIgnoreCase(overrideType) || "cyan".equalsIgnoreCase(overrideType)) color = 0x55FFFF;
+                    else if ("uncommon".equalsIgnoreCase(overrideType) || "yellow".equalsIgnoreCase(overrideType)) color = 0xFFFF55;
+                    else if ("common".equalsIgnoreCase(overrideType) || "white".equalsIgnoreCase(overrideType)) color = 0xFFFFFF;
+                    else if ("red".equalsIgnoreCase(overrideType)) color = 0xFF5555;
+                    else if ("green".equalsIgnoreCase(overrideType)) color = 0x55FF55;
+                    else if ("blue".equalsIgnoreCase(overrideType)) color = 0x5555FF;
+                    else if ("gold".equalsIgnoreCase(overrideType) || "orange".equalsIgnoreCase(overrideType)) color = 0xFFAA00;
+                    else {
+                        try {
+                            String hex = overrideType.startsWith("#") ? overrideType.substring(1) :
+                                    (overrideType.startsWith("0x") ? overrideType.substring(2) : overrideType);
+                            color = (int) Long.parseLong(hex, 16) & 0xFFFFFF;
+                        } catch (Exception ignored) {
+                            color = 0xFFFFFF;
+                        }
+                    }
+                } else {
+                    if (stack.getRarity() == EnumRarity.UNCOMMON) color = 0xFFFF55;
+                    else if (stack.getRarity() == EnumRarity.RARE) color = 0x55FFFF;
+                    else if (stack.getRarity() == EnumRarity.EPIC) color = 0xFF55FF;
+                }
+
+                particle = new GenericParticleData(
+                        0xFF000000 | color,
+                        0x00000000 | color,
+                        speed,
+                        posX,
+                        posY,
+                        immersiveui$random.nextFloat() * 0.4F + 0.6F,
+                        lifetime,
+                        emitter
+                );
+            }
+        }
+
+        // 4. Initialize sub-tick motion (eliminates low-FPS stutter / freeze on spawn) and smooth continuous wave
+        if (particle != null) {
+            float partialTick = Minecraft.getMinecraft().getRenderPartialTicks();
+            particle.initSubTickMotion(posX, posY, dir, speed, partialTick);
+            particle.size *= ImmersiveUIConfig.particleScale;
+
+            if (ImmersiveUIConfig.particleWaveAmplitude > 0.01F) {
+                particle.waveAmplitude = ImmersiveUIConfig.particleWaveAmplitude * (0.85F + immersiveui$random.nextFloat() * 0.3F);
+                particle.waveFrequency = ImmersiveUIConfig.particleWaveFrequency;
+                particle.wavePhase = immersiveui$random.nextFloat() * (float) (2.0 * Math.PI);
+                particle.waveNormal = new Vector2f(-dir.y, dir.x).normalize();
+            }
+        }
+        return particle;
     }
 
     @Inject(method = "drawScreen", at = @At("TAIL"))

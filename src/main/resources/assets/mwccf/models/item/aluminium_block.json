@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/aluminium_block",
+﻿{
+  "parent": "mwccf:block/aluminium_block",
   "display": {
     "thirdperson": {
       "rotation": [

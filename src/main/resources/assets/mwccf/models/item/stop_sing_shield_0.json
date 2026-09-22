@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/stop_sing_shield_0",
+﻿{
+  "parent": "mwccf:custom/stop_sing_shield_0",
   "textures": {
-    "0": "mwccf:blocks/stop_sing_shield.json",
-    "particle": "mwccf:items/stop_sing_shield"
+    "0": "mwccf:block/stop_sing_shield.json",
+    "particle": "mwccf:item/stop_sing_shield"
   }
 }

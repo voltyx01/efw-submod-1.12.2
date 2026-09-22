@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/handheld",
   "textures": {
-    "layer0": "mwccf:items/metal_baseball_bat"
+    "layer0": "mwccf:item/metal_baseball_bat"
   }
 }

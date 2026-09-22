@@ -52,7 +52,7 @@ public class EfwModItems {
 
         ForgeRegistries.ITEMS.register(NOTE);
         ForgeRegistries.ITEMS.register(C_DIARY);
-        ForgeRegistries.ITEMS.register(MACHETE);
+        // ForgeRegistries.ITEMS.register(MACHETE); // Handled by Survival Instinct SIItems.MACHETE
         ForgeRegistries.ITEMS.register(MODERN_AXE);
         ForgeRegistries.ITEMS.register(MED_KIT);
         ForgeRegistries.ITEMS.register(BANDAGE);
@@ -83,8 +83,8 @@ public class EfwModItems {
         ModelLoader.setCustomModelResourceLocation(C_DIARY, 0,
                 new ModelResourceLocation("efw:c_diary", "inventory"));
 
-        ModelLoader.setCustomModelResourceLocation(MACHETE, 0,
-                new ModelResourceLocation("mwccf:machete", "inventory"));
+        // ModelLoader.setCustomModelResourceLocation(MACHETE, 0,
+        //         new ModelResourceLocation("mwccf:machete", "inventory"));
 
         ModelLoader.setCustomModelResourceLocation(MODERN_AXE, 0,
                 new ModelResourceLocation("mwccf:modern_axe", "inventory"));

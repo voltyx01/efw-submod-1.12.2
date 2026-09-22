@@ -478,5 +478,65 @@
         "sounds": [
             "mwccf:flowermenu0"
         ]
+    },
+    "chainsaw_swing": {
+        "category": "player",
+        "sounds": [
+            "mwccf:chainsaw_swing"
+        ]
+    },
+    "circularsaw_swing": {
+        "category": "player",
+        "sounds": [
+            "mwccf:circularsaw_swing"
+        ]
+    },
+    "crowbar_swing": {
+        "category": "player",
+        "sounds": [
+            "mwccf:crowbar_swing"
+        ]
+    },
+    "crowbar_slam": {
+        "category": "player",
+        "sounds": [
+            "mwccf:crowbar_slam"
+        ]
+    },
+    "pipe_slam": {
+        "category": "player",
+        "sounds": [
+            "mwccf:pipe_slam"
+        ]
+    },
+    "electric_guitar_swing": {
+        "category": "player",
+        "sounds": [
+            "mwccf:electric_guitar_swing"
+        ]
+    },
+    "electric_guitar_smash": {
+        "category": "player",
+        "sounds": [
+            "mwccf:electric_guitar_smash"
+        ]
+    },
+    "electric_fist_01": {
+        "category": "player",
+        "sounds": [
+            "mwccf:electric_fist_01"
+        ]
+    },
+    "nailgun_shoot": {
+        "category": "player",
+        "sounds": [
+            "mwccf:nailgun_shoot"
+        ]
+    },
+    "bear_trap_close": {
+        "category": "block",
+        "sounds": [
+            "mwccf:bear_trap_close"
+        ]
     }
 }

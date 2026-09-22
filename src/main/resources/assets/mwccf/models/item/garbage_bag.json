@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/trash_bag"
+    "layer0": "mwccf:item/trash_bag"
   }
 }

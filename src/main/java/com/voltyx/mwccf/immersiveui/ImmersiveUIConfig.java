@@ -26,10 +26,25 @@ public class ImmersiveUIConfig {
             "minecraft:nether_star=epic",
             "minecraft:golden_apple=rare"
     };
+    public static String[] customClassParticles = new String[] {
+            "Weapon=flame",
+            "ItemSword=epic"
+    };
     public static final java.util.Map<String, String> itemParticleOverrides = new java.util.HashMap<>();
+    public static final java.util.Map<String, String> classParticleOverrides = new java.util.LinkedHashMap<>();
+    private static final java.util.Map<Class<?>, String> classResolvedCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static float particleSpeedMultiplier = 0.4F;
-    public static int particleLifetimeMin = 5;
-    public static int particleLifetimeMax = 10;
+    public static int particleLifetimeMin = 6;
+    public static int particleLifetimeMax = 12;
+    public static int particleCount = 2;
+    public static float particleSpawnRadius = 2.5F;
+    public static float particleSpreadAngle = 10.0F;
+    public static float particleWaveAmplitude = 1.0F;
+    public static float particleWaveFrequency = 0.45F;
+    public static float particleScale = 1.0F;
+    public static boolean enableIdleParticles = true;
+    public static float idleParticleChance = 0.25F;
 
     // Screen Shake
     public static boolean enableScreenShake = true;
@@ -115,46 +130,54 @@ public class ImmersiveUIConfig {
         enableMatchingItemHovering = config.getBoolean("enableMatchingItemHovering", inventory, true, "Enables hovering of matching items.");
         matchingItemHoverAmplitude = config.getFloat("matchingItemHoverAmplitude", inventory, 0.8F, 0.0F, 5.0F, "Affects the hover amplitude of items that match to the item that is carried in the cursor.");
         enableVanillaSlotHighlighting = config.getBoolean("enableVanillaSlotHighlighting", inventory, false, "Enables vanilla slot highlighting.");
-        enableRarityParticles = config.getBoolean("enableRarityParticles", inventory, true, "Enables particles for rare items.");
+        enableRarityParticles = config.getBoolean("enableRarityParticles", inventory, true, "Enables particles for rare items and custom configured items.");
+
         customItemParticles = config.getStringList("customItemParticles", inventory, customItemParticles,
-                "Custom particle types, colors, or item crack textures per item ID. Format: 'modid:item_name=particle_or_item', or 'modid:item_name - particle_or_item'.\n" +
-                "Supported particle values:\n" +
-                " - Item ID: 'item', 'self', or another item ID like 'minecraft:apple' (spawns flying texture pieces of the item)\n" +
-                " - Rarity names: 'epic' (purple), 'rare' (aqua), 'uncommon' (yellow), 'common' / 'white' (white)\n" +
+                "Custom particle types, particle class names, colors, or item crack textures per item registry ID.\n" +
+                "Format: 'item_id = particle_or_item'. Examples: 'minecraft:diamond_sword=FlameParticleData', 'minecraft:nether_star=com.example.ParticleName', 'minecraft:golden_apple=minecraft:apple'.\n" +
+                "Supported values on the right side:\n" +
+                " - Particle Class Name: 'com.example.ParticleName', or simple names like 'FlameParticleData', 'GalacticParticleData', 'ItemCrackParticleData', 'GenericParticleData'\n" +
+                " - Item ID for crack texture pieces: 'item', 'self', or another item ID like 'minecraft:apple'\n" +
                 " - Predefined styles: 'flame' (fire), 'galactic' (enchant runes)\n" +
-                " - Hex color: '#RRGGBB' or '0xRRGGBB' (e.g. '#FF0000' for red, '#00FF00' for green)");
+                " - Rarity names: 'epic' (purple), 'rare' (aqua), 'uncommon' (yellow), 'common' / 'white' (white)\n" +
+                " - Colors: 'red', 'green', 'blue', 'gold' / 'orange'\n" +
+                " - Hex color: '#RRGGBB' or '0xRRGGBB'");
+
+        customClassParticles = config.getStringList("customClassParticles", inventory, customClassParticles,
+                "Custom particles mapped by Item Java Class name. Matches simple name (e.g. 'Weapon', 'ItemSword'), full name (e.g. 'com.paneedah.weaponlib.Weapon'), or superclasses/interfaces.\n" +
+                "Format: 'ItemClassName = particle_or_item'. Examples: 'Weapon=FlameParticleData', 'ItemSword=epic', 'ItemBow=galactic'.");
+
         particleSpeedMultiplier = config.getFloat("particleSpeedMultiplier", inventory, 0.4F, 0.01F, 5.0F, "Speed multiplier for GUI rarity/custom particles.");
-        particleLifetimeMin = config.getInt("particleLifetimeMin", inventory, 5, 1, 100, "Minimum lifetime in ticks for GUI particles (controls travel distance).");
-        particleLifetimeMax = config.getInt("particleLifetimeMax", inventory, 10, 1, 100, "Maximum lifetime in ticks for GUI particles (controls travel distance).");
+        particleLifetimeMin = config.getInt("particleLifetimeMin", inventory, 6, 1, 100, "Minimum lifetime in ticks for GUI particles.");
+        particleLifetimeMax = config.getInt("particleLifetimeMax", inventory, 12, 1, 100, "Maximum lifetime in ticks for GUI particles.");
+        particleCount = config.getInt("particleCount", inventory, 2, 1, 20, "Number of particles spawned per emission burst. Increase for a richer, denser cloud/trail ('сплошь').");
+        particleSpawnRadius = config.getFloat("particleSpawnRadius", inventory, 2.5F, 0.0F, 32.0F, "Spawn radius in pixels across the item icon where particles can spawn.");
+        particleSpreadAngle = config.getFloat("particleSpreadAngle", inventory, 10.0F, 0.0F, 180.0F, "Cone dispersion/spread angle in degrees for particle velocity.");
+        particleWaveAmplitude = config.getFloat("particleWaveAmplitude", inventory, 1.0F, 0.0F, 25.0F, "Wave amplitude (undulation strength) perpendicular to motion. Gives particles a flowing wave motion ('волна'). Set to 0 to disable.");
+        particleWaveFrequency = config.getFloat("particleWaveFrequency", inventory, 0.45F, 0.01F, 2.0F, "Wave oscillation frequency / speed.");
+        particleScale = config.getFloat("particleScale", inventory, 1.0F, 0.1F, 5.0F, "Overall size/scale multiplier for GUI particles.");
+        enableIdleParticles = config.getBoolean("enableIdleParticles", inventory, true, "Enables subtle floating particles while holding or hovering an item, even when the cursor is not moving.");
+        idleParticleChance = config.getFloat("idleParticleChance", inventory, 0.25F, 0.0F, 1.0F, "Chance per frame to emit gentle particles when holding still.");
 
         itemParticleOverrides.clear();
+        classParticleOverrides.clear();
+        classResolvedCache.clear();
+
+        for (String entry : customClassParticles) {
+            parseParticleEntry(entry, classParticleOverrides, true);
+        }
+
         for (String entry : customItemParticles) {
             if (entry == null || entry.trim().isEmpty()) continue;
             String trimmed = entry.trim();
-            String id = null;
-            String particle = null;
-            if (trimmed.contains("=")) {
-                String[] parts = trimmed.split("=", 2);
-                id = parts[0].trim().toLowerCase();
-                particle = parts[1].trim().toLowerCase();
-            } else if (trimmed.contains(" - ")) {
-                String[] parts = trimmed.split(" - ", 2);
-                id = parts[0].trim().toLowerCase();
-                particle = parts[1].trim().toLowerCase();
-            } else if (trimmed.contains("-")) {
-                String[] parts = trimmed.split("-", 2);
-                id = parts[0].trim().toLowerCase();
-                particle = parts[1].trim().toLowerCase();
-            } else if (trimmed.contains(":")) {
-                int lastColon = trimmed.lastIndexOf(':');
-                int firstColon = trimmed.indexOf(':');
-                if (lastColon > firstColon) {
-                    id = trimmed.substring(0, lastColon).trim().toLowerCase();
-                    particle = trimmed.substring(lastColon + 1).trim().toLowerCase();
-                }
-            }
-            if (id != null && particle != null && !id.isEmpty() && !particle.isEmpty()) {
-                itemParticleOverrides.put(id, particle);
+            int sepIndex = trimmed.indexOf('=');
+            if (sepIndex < 0) sepIndex = trimmed.indexOf(" - ");
+            if (sepIndex < 0) sepIndex = trimmed.indexOf('-');
+            String keyPart = sepIndex > 0 ? trimmed.substring(0, sepIndex).trim() : "";
+            if (keyPart.toLowerCase().startsWith("class:") || (!keyPart.contains(":") && (keyPart.contains(".") || (keyPart.length() > 0 && Character.isUpperCase(keyPart.charAt(0)))))) {
+                parseParticleEntry(entry, classParticleOverrides, true);
+            } else {
+                parseParticleEntry(entry, itemParticleOverrides, false);
             }
         }
 
@@ -182,5 +205,104 @@ public class ImmersiveUIConfig {
         if (config.hasChanged()) {
             config.save();
         }
+    }
+
+    private static void parseParticleEntry(String entry, java.util.Map<String, String> targetMap, boolean isClassMap) {
+        if (entry == null || entry.trim().isEmpty()) return;
+        String trimmed = entry.trim();
+        String id = null;
+        String particle = null;
+
+        if (trimmed.contains("=")) {
+            String[] parts = trimmed.split("=", 2);
+            id = parts[0].trim();
+            particle = parts[1].trim().toLowerCase();
+        } else if (trimmed.contains(" - ")) {
+            String[] parts = trimmed.split(" - ", 2);
+            id = parts[0].trim();
+            particle = parts[1].trim().toLowerCase();
+        } else if (trimmed.contains("-")) {
+            String[] parts = trimmed.split("-", 2);
+            id = parts[0].trim();
+            particle = parts[1].trim().toLowerCase();
+        } else if (trimmed.contains(":")) {
+            int lastColon = trimmed.lastIndexOf(':');
+            int firstColon = trimmed.indexOf(':');
+            if (lastColon > firstColon) {
+                id = trimmed.substring(0, lastColon).trim();
+                particle = trimmed.substring(lastColon + 1).trim().toLowerCase();
+            }
+        }
+
+        if (id != null && particle != null && !id.isEmpty() && !particle.isEmpty()) {
+            if (id.toLowerCase().startsWith("class:")) {
+                id = id.substring(6).trim();
+            }
+            if (isClassMap) {
+                targetMap.put(id, particle);
+            } else {
+                targetMap.put(id.toLowerCase(), particle);
+            }
+        }
+    }
+
+    public static String getParticleOverride(net.minecraft.item.ItemStack stack) {
+        if (stack == null || stack.isEmpty() || stack.getItem() == null) return null;
+
+        // 1. Direct registry ID match
+        if (stack.getItem().getRegistryName() != null) {
+            String fullId = stack.getItem().getRegistryName().toString().toLowerCase();
+            String res = itemParticleOverrides.get(fullId);
+            if (res != null) return res;
+            String path = stack.getItem().getRegistryName().getPath().toLowerCase();
+            res = itemParticleOverrides.get(path);
+            if (res != null) return res;
+        }
+
+        // 2. Class-based match
+        Class<?> itemClass = stack.getItem().getClass();
+        String cached = classResolvedCache.get(itemClass);
+        if (cached != null) {
+            return cached.isEmpty() ? null : cached;
+        }
+
+        String matched = resolveClassParticle(itemClass);
+        classResolvedCache.put(itemClass, matched != null ? matched : "");
+        return matched;
+    }
+
+    private static String resolveClassParticle(Class<?> itemClass) {
+        if (classParticleOverrides.isEmpty()) return null;
+
+        java.util.List<Class<?>> hierarchy = new java.util.ArrayList<>();
+        Class<?> curr = itemClass;
+        while (curr != null && curr != Object.class) {
+            hierarchy.add(curr);
+            for (Class<?> iface : curr.getInterfaces()) {
+                if (!hierarchy.contains(iface)) hierarchy.add(iface);
+            }
+            curr = curr.getSuperclass();
+        }
+
+        for (java.util.Map.Entry<String, String> entry : classParticleOverrides.entrySet()) {
+            String pattern = entry.getKey();
+            String particle = entry.getValue();
+
+            for (Class<?> c : hierarchy) {
+                String simple = c.getSimpleName();
+                String full = c.getName();
+
+                if (simple.equalsIgnoreCase(pattern) || full.equalsIgnoreCase(pattern)) {
+                    return particle;
+                }
+                if (pattern.endsWith("*")) {
+                    String prefix = pattern.substring(0, pattern.length() - 1).toLowerCase();
+                    if (simple.toLowerCase().startsWith(prefix) || full.toLowerCase().startsWith(prefix)) {
+                        return particle;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

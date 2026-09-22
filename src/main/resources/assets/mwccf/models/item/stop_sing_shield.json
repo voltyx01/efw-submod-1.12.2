@@ -1,15 +1,15 @@
-{
-  "parent": "survival_instinct:custom/stop_sing_shield",
+﻿{
+  "parent": "mwccf:custom/stop_sing_shield",
   "textures": {
-    "0": "mwccf:blocks/stop_sing_shield.json",
-    "particle": "mwccf:items/stop_sing_shield"
+    "0": "mwccf:block/stop_sing_shield.json",
+    "particle": "mwccf:item/stop_sing_shield"
   },
   "overrides": [
     {
       "predicate": {
         "blocking": 1
       },
-      "model": "mwccf:items/stop_sing_shield_0"
+      "model": "mwccf:item/stop_sing_shield_0"
     }
   ]
 }

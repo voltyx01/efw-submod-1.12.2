@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/cash_register",
+﻿{
+  "parent": "mwccf:block/cash_register",
   "display": {
     "thirdperson": {
       "rotation": [

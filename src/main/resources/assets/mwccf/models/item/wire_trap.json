@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/wire_trap",
+﻿{
+  "parent": "mwccf:block/wire_trap",
   "display": {
     "thirdperson": {
       "rotation": [

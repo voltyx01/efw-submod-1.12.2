@@ -311,6 +311,9 @@ public class MwccfMod {
 		event.getRegistry().register(com.voltyx.mwccf.item.ItemSyringe.INSTANCE);
 		event.getRegistry().register(com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie.INSTANCE);
 
+		// Survival Instinct Items
+		event.getRegistry().registerAll(com.voltyx.mwccf.si.SIItems.ITEMS.toArray(new Item[0]));
+
 		event.getRegistry().register(new net.minecraft.item.ItemBlock(com.voltyx.mwccf.mcore.MCoreBlocks.STEEL_BLOCK)
 				.setRegistryName(com.voltyx.mwccf.mcore.MCoreBlocks.STEEL_BLOCK.getRegistryName()));
 		event.getRegistry().register(new net.minecraft.item.ItemBlock(com.voltyx.mwccf.mcore.MCoreBlocks.TITANIUM_BLOCK)
@@ -334,6 +337,12 @@ public class MwccfMod {
 				.name("headlamp_light")
 				.tracker(64, 3, false)
 				.build());
+		event.getRegistry().register(net.minecraftforge.fml.common.registry.EntityEntryBuilder.create()
+				.entity(com.voltyx.mwccf.si.EntityNail.class)
+				.id(new net.minecraft.util.ResourceLocation(MODID, "nail_projectile"), 1100)
+				.name("nail_projectile")
+				.tracker(64, 1, true)
+				.build());
 	}
 
 	@SubscribeEvent
@@ -341,11 +350,13 @@ public class MwccfMod {
 		event.getRegistry().registerAll(elements.getPotions().stream().map(Supplier::get).toArray(Potion[]::new));
 		event.getRegistry().register(com.voltyx.mwccf.dash.PotionEnergyBoost.INSTANCE);
 		event.getRegistry().register(com.voltyx.mwccf.potion.PotionAdrenalineEffect.INSTANCE);
+		event.getRegistry().register(com.voltyx.mwccf.si.PotionBleeding.INSTANCE);
 	}
 
 	@SubscribeEvent
 	public void registerSounds(RegistryEvent.Register<net.minecraft.util.SoundEvent> event) {
 		elements.registerSounds(event);
+		event.getRegistry().registerAll(com.voltyx.mwccf.si.SISounds.SOUNDS.toArray(new net.minecraft.util.SoundEvent[0]));
 	}
 
 	@SubscribeEvent
@@ -353,6 +364,11 @@ public class MwccfMod {
 	public void registerModels(ModelRegistryEvent event) {
 		elements.getElements().forEach(element -> element.registerModels(event));
 		for (Item item : com.voltyx.mwccf.mcore.MCoreItems.ITEMS) {
+			net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation(item, 0,
+					new net.minecraft.client.renderer.block.model.ModelResourceLocation(item.getRegistryName(),
+							"inventory"));
+		}
+		for (Item item : com.voltyx.mwccf.si.SIItems.ITEMS) {
 			net.minecraftforge.client.model.ModelLoader.setCustomModelResourceLocation(item, 0,
 					new net.minecraft.client.renderer.block.model.ModelResourceLocation(item.getRegistryName(),
 							"inventory"));

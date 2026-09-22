@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/soda_energetic",
+﻿{
+  "parent": "mwccf:custom/soda_energetic",
   "textures": {
-    "3": "mwccf:blocks/soda_energetic",
-    "particle": "mwccf:items/energy_can"
+    "3": "mwccf:block/soda_energetic",
+    "particle": "mwccf:item/energy_can"
   }
 }

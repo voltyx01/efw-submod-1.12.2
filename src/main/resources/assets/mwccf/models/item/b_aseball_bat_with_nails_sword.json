@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/handheld",
   "textures": {
-    "layer0": "mwccf:items/baseball_bat_with_nails"
+    "layer0": "mwccf:item/baseball_bat_with_nails"
   }
 }

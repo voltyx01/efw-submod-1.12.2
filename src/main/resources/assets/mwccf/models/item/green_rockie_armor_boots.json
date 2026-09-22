@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/rockie_boots_green"
+    "layer0": "mwccf:item/rockie_boots_green"
   }
 }

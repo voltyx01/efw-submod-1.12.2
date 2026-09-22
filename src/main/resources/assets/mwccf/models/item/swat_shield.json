@@ -1,15 +1,15 @@
-{
-  "parent": "survival_instinct:custom/swat_shield",
+﻿{
+  "parent": "mwccf:custom/swat_shield",
   "textures": {
-    "0": "mwccf:blocks/swat_shield",
-    "particle": "mwccf:items/cloth_balaclava"
+    "0": "mwccf:block/swat_shield",
+    "particle": "mwccf:item/cloth_balaclava"
   },
   "overrides": [
     {
       "predicate": {
         "blocking": 1
       },
-      "model": "mwccf:items/swat_shield_0"
+      "model": "mwccf:item/swat_shield_0"
     }
   ]
 }

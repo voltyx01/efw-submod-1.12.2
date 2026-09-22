@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/rotten_orange"
+    "layer0": "mwccf:item/rotten_orange"
   }
 }

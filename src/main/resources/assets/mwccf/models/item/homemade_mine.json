@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/homemade_mine",
+﻿{
+  "parent": "mwccf:block/homemade_mine",
   "display": {
     "thirdperson": {
       "rotation": [

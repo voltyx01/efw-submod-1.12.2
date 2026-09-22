@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/hunter_helmet_green"
+    "layer0": "mwccf:item/hunter_helmet_green"
   }
 }

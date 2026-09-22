@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/empty_can"
+    "layer0": "mwccf:item/empty_can"
   }
 }

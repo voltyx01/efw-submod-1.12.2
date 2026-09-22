@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/red_soda",
+﻿{
+  "parent": "mwccf:custom/red_soda",
   "textures": {
-    "0": "mwccf:blocks/red_soda",
-    "particle": "mwccf:items/red_soda"
+    "0": "mwccf:block/red_soda",
+    "particle": "mwccf:item/red_soda"
   }
 }

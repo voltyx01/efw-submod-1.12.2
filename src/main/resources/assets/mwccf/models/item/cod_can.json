@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/cod_can",
+﻿{
+  "parent": "mwccf:custom/cod_can",
   "textures": {
-    "0": "mwccf:blocks/cod_can",
-    "particle": "mwccf:items/cod"
+    "0": "mwccf:block/cod_can",
+    "particle": "mwccf:item/cod"
   }
 }

@@ -1,8 +1,8 @@
-{
+﻿{
 	"credit": "Made with Blockbench",
 	"parent": "item/handheld",
 	"textures": {
-		"layer0": "mwccf:items/american_fist"
+		"layer0": "mwccf:item/american_fist"
 	},
 	"display": {
 		"thirdperson_righthand": {

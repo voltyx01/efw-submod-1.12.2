@@ -3223,6 +3223,10 @@
 						"0.1": {
 							"post": [0, -0.35, -0.8],
 							"lerp_mode": "catmullrom"
+						},
+						"0.2": {
+							"post": [0, -0.35, -1],
+							"lerp_mode": "catmullrom"
 						}
 					}
 				},
@@ -3383,6 +3387,10 @@
 						},
 						"0.1": {
 							"post": [0, -0.45, -1.25625],
+							"lerp_mode": "catmullrom"
+						},
+						"0.2": {
+							"post": [0, -0.45, -1.45625],
 							"lerp_mode": "catmullrom"
 						}
 					}

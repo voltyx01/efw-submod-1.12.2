@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/explosive_barrel",
+﻿{
+  "parent": "mwccf:block/explosive_barrel",
   "display": {
     "thirdperson": {
       "rotation": [

@@ -90,6 +90,10 @@ public class KeyframeAnimationPlayer implements IAnimation {
 
         float t = getInterpolatedTime(prevTime, currentTime, tickDelta, clip.length, clip.loop);
 
+        boolean isFireClip = clip.name != null && clip.name.contains("fire");
+        boolean isTorso = "torso".equals(modelName) || "body".equals(modelName);
+        boolean isHead = "head".equals(modelName);
+
         if (type == TransformType.ROTATION) {
             java.util.List<efw.animation.KeyFrame> rotKeys = track.rotation;
             if ((rotKeys == null || rotKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
@@ -101,6 +105,17 @@ public class KeyframeAnimationPlayer implements IAnimation {
                 float x = deg[0];
                 float y = deg[1];
                 float z = deg[2];
+                if (isFireClip && (isTorso || isHead)) {
+                    float decay = t >= 0.20f ? 0.0f : (t > 0.10f ? (0.20f - t) / 0.10f : 1.0f);
+                    float[] baseDeg = BoneTrack.interpolate(rotKeys, 0f, false);
+                    float dx = x - baseDeg[0];
+                    float dy = y - baseDeg[1];
+                    float dz = z - baseDeg[2];
+                    float mult = (isTorso ? 1.8f : 2.5f) * decay;
+                    x = baseDeg[0] + dx * mult;
+                    y = baseDeg[1] + dy * mult;
+                    z = baseDeg[2] + dz * mult;
+                }
                 float rotX = (float) Math.toRadians(x);
                 float rotY = (float) Math.toRadians(y);
                 float rotZ = (float) Math.toRadians(z);
@@ -114,8 +129,22 @@ public class KeyframeAnimationPlayer implements IAnimation {
             }
             if (posKeys != null && !posKeys.isEmpty()) {
                 float[] pos = BoneTrack.interpolate(posKeys, t, clip.loop);
+                float posX = pos[0];
+                float posY = pos[1];
+                float posZ = pos[2];
+                if (isFireClip && (isTorso || isHead)) {
+                    float decay = t >= 0.20f ? 0.0f : (t > 0.10f ? (0.20f - t) / 0.10f : 1.0f);
+                    float[] basePos = BoneTrack.interpolate(posKeys, 0f, false);
+                    float dpx = posX - basePos[0];
+                    float dpy = posY - basePos[1];
+                    float dpz = posZ - basePos[2];
+                    float mult = (isTorso ? 1.8f : 1.5f) * decay;
+                    posX = basePos[0] + dpx * mult;
+                    posY = basePos[1] + dpy * mult;
+                    posZ = basePos[2] + dpz * mult;
+                }
                 // Position is additive to vanilla base position. Invert Y to match Minecraft's coordinate system.
-                return new Vec3f(value0.getX() + pos[0], value0.getY() - pos[1], value0.getZ() + pos[2]);
+                return new Vec3f(value0.getX() + posX, value0.getY() - posY, value0.getZ() + posZ);
             }
         }
         return value0;

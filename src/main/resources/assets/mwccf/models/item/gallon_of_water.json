@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/gallon_of_water",
+﻿{
+  "parent": "mwccf:custom/gallon_of_water",
   "textures": {
-    "0": "mwccf:blocks/gallon_of_water",
-    "particle": "mwccf:items/gallon_of_waterpng"
+    "0": "mwccf:block/gallon_of_water",
+    "particle": "mwccf:item/gallon_of_waterpng"
   }
 }

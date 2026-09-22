@@ -39,7 +39,7 @@ public class ParticleData {
     private final float maxSpeed;
     private final int maxLifetime;
     private final Vector2f startPos;
-    private Vector2f oldPos;
+    protected Vector2f oldPos;
     private final ParticleEmitter emitter;
 
     public Vector2f position;
@@ -59,6 +59,11 @@ public class ParticleData {
     public boolean enableBlend;
     public boolean resizeWithLifetime;
     private int tickCount;
+
+    public float waveAmplitude = 0.0F;
+    public float waveFrequency = 0.0F;
+    public float wavePhase = 0.0F;
+    public Vector2f waveNormal = null;
 
     public ParticleData(Texture2D texture, float maxSpeed, int maxLifetime, float xStart, float yStart, ParticleEmitter emitter) {
         this.texture = texture;
@@ -99,6 +104,41 @@ public class ParticleData {
         return maxLifetime;
     }
 
+    public void initSubTickMotion(float startX, float startY, Vector2f dir, float spd, float partialTick) {
+        this.direction = dir;
+        this.speed = spd;
+        float vx = dir.x * spd;
+        float vy = dir.y * spd;
+        this.oldPos.set(startX - vx * partialTick, startY - vy * partialTick);
+        this.position.set(oldPos.x + vx, oldPos.y + vy);
+    }
+
+    public float getInterpolatedX(float partialTick) {
+        float curX = oldPos.x + (position.x - oldPos.x) * partialTick;
+        if (waveAmplitude > 0.001F) {
+            if (waveNormal == null) {
+                waveNormal = new Vector2f(-direction.y, direction.x).normalize();
+            }
+            float exactTicks = (float) tickCount + partialTick;
+            float lifeFactor = maxLifetime > 0 ? Math.max(0.0F, ((float) lifetime - partialTick) / (float) maxLifetime) : 1.0F;
+            curX += waveNormal.x * (float) Math.sin(exactTicks * waveFrequency + wavePhase) * (waveAmplitude * lifeFactor);
+        }
+        return curX;
+    }
+
+    public float getInterpolatedY(float partialTick) {
+        float curY = oldPos.y + (position.y - oldPos.y) * partialTick;
+        if (waveAmplitude > 0.001F) {
+            if (waveNormal == null) {
+                waveNormal = new Vector2f(-direction.y, direction.x).normalize();
+            }
+            float exactTicks = (float) tickCount + partialTick;
+            float lifeFactor = maxLifetime > 0 ? Math.max(0.0F, ((float) lifetime - partialTick) / (float) maxLifetime) : 1.0F;
+            curY += waveNormal.y * (float) Math.sin(exactTicks * waveFrequency + wavePhase) * (waveAmplitude * lifeFactor);
+        }
+        return curY;
+    }
+
     public void tick() {
         this.oldPos.set(position);
 
@@ -122,7 +162,9 @@ public class ParticleData {
 
     public void render(float partialTick) {
         Texture2D tex = getTexture();
-        float lifePercentage = (float) lifetime / (float) maxLifetime;
+        if (tex == null || tex.rl == null) return;
+
+        float lifePercentage = maxLifetime > 0 ? (float) lifetime / (float) maxLifetime : 1.0F;
         int color = RenderUtils.lerpColor(startColor, endColor, 1.0F - lifePercentage);
 
         int alpha = (color >> 24) & 0xFF;
@@ -139,8 +181,8 @@ public class ParticleData {
             GlStateManager.blendFunc(blendSrc, blendDst);
         }
 
-        float curX = oldPos.x + (position.x - oldPos.x) * partialTick;
-        float curY = oldPos.y + (position.y - oldPos.y) * partialTick;
+        float curX = getInterpolatedX(partialTick);
+        float curY = getInterpolatedY(partialTick);
         float renderScale = size * (resizeWithLifetime ? lifePercentage : 1.0F);
 
         RenderUtils.renderTextureFromCenter(curX, curY, tex.texOffX, tex.texOffY,
@@ -154,7 +196,6 @@ public class ParticleData {
                     GlStateManager.SourceFactor.ONE,
                     GlStateManager.DestFactor.ZERO
             );
-            GlStateManager.disableBlend();
         }
         GlStateManager.popMatrix();
     }

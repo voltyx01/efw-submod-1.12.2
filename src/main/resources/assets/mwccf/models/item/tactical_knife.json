@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/handheld",
   "textures": {
-    "layer0": "mwccf:items/tactical_knife"
+    "layer0": "mwccf:item/tactical_knife"
   }
 }

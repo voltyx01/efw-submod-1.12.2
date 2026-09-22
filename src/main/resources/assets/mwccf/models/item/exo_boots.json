@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/exo_boots"
+    "layer0": "mwccf:item/exo_boots"
   }
 }

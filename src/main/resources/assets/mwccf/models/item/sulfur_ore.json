@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/sulfur_ore",
+﻿{
+  "parent": "mwccf:block/sulfur_ore",
   "display": {
     "thirdperson": {
       "rotation": [

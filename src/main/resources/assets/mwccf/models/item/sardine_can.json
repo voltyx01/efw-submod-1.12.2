@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/sardine_can",
+﻿{
+  "parent": "mwccf:custom/sardine_can",
   "textures": {
-    "0": "mwccf:blocks/sardine_can",
-    "particle": "mwccf:items/sardine"
+    "0": "mwccf:block/sardine_can",
+    "particle": "mwccf:item/sardine"
   }
 }

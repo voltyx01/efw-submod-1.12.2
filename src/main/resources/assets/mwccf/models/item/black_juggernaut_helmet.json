@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/juggernaut_helmet_black"
+    "layer0": "mwccf:item/juggernaut_helmet_black"
   }
 }

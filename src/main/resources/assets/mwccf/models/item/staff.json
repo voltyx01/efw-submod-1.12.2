@@ -1,8 +1,8 @@
-{
+﻿{
 	"credit": "Made with Blockbench",
 	"parent": "item/handheld",
 	"textures": {
-		"layer0": "mwccf:items/lance"
+		"layer0": "mwccf:item/lance"
 	},
 	"display": {
 		"thirdperson_righthand": {

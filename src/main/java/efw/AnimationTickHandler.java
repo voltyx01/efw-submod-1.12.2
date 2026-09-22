@@ -20,6 +20,21 @@ import java.util.HashMap;
 @SideOnly(Side.CLIENT)
 public class AnimationTickHandler {
 
+    public static final Map<EntityPlayer, Integer> shootTicksMap = new WeakHashMap<>();
+    public static final Map<EntityPlayer, Boolean> newShotTriggeredMap = new WeakHashMap<>();
+    private static final Map<EntityPlayer, Long> lastHandledShotTimeMap = new WeakHashMap<>();
+
+    public static void triggerShoot(EntityPlayer player) {
+        if (player == null) return;
+        shootTicksMap.put(player, 4);
+        newShotTriggeredMap.put(player, true);
+    }
+
+    public static boolean isPlayerShooting(EntityPlayer player) {
+        Integer ticks = shootTicksMap.get(player);
+        return ticks != null && ticks > 0;
+    }
+
     // Used to detect when a dash starts on the client side
     public static final Map<EntityPlayer, Integer> dashTicksRemaining = new WeakHashMap<>();
 
@@ -167,7 +182,6 @@ public class AnimationTickHandler {
     private static boolean wasReloadingAnimPlaying = false;
     private static int postReloadTimer = 0;
     private static boolean ignoreReloadState = false;
-    private static int lieFireTicks = 0;
     private static int recentlyHitBlockTicks = 0;
     private static net.minecraft.item.Item lastHeldItem = null;
     // Last mining tool animation played — used to detect block-break false-sword
@@ -373,6 +387,20 @@ public class AnimationTickHandler {
         net.minecraft.entity.player.EntityPlayer player = event.player;
         efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(player);
 
+        Integer sTicks = shootTicksMap.get(player);
+        if (sTicks != null && sTicks > 0) {
+            shootTicksMap.put(player, sTicks - 1);
+        }
+
+        try {
+            Long lastShot = com.paneedah.weaponlib.ClientEventHandler.lastShotTimeByEntity.get(player.getEntityId());
+            Long prevShot = lastHandledShotTimeMap.get(player);
+            if (lastShot != null && (prevShot == null || lastShot > prevShot)) {
+                lastHandledShotTimeMap.put(player, lastShot);
+                triggerShoot(player);
+            }
+        } catch (Throwable ignored) {}
+
         // --- REMOTE PLAYER LOGIC ---
         if (player != net.minecraft.client.Minecraft.getMinecraft().player) {
             NetworkAnimState state = networkAnimStates.get(player);
@@ -386,6 +414,9 @@ public class AnimationTickHandler {
             boolean isAiming = false;
             efw.animation.WeaponTypeHelper.WeaponType weaponType = efw.animation.WeaponTypeHelper.WeaponType.NONE;
             boolean isFrozen = false;
+            boolean isRemoteShooting = isPlayerShooting(player);
+            boolean isRemoteNewShot = Boolean.TRUE.equals(newShotTriggeredMap.remove(player));
+
             if (state != null) {
                 if (state.baseAnim != null && state.baseAnim.endsWith("_FROZEN")) {
                     isFrozen = true;
@@ -453,6 +484,28 @@ public class AnimationTickHandler {
                     ap.stopAction(12);
                 } else if (!"roll".equals(ap.getCurrentActionName())) {
                     ap.cancelAction();
+                }
+            }
+
+            if (weaponType == efw.animation.WeaponTypeHelper.WeaponType.NONE && player.getHeldItemMainhand() != null) {
+                weaponType = efw.animation.WeaponTypeHelper.getWeaponType(player.getHeldItemMainhand());
+            }
+
+            if (weaponType != efw.animation.WeaponTypeHelper.WeaponType.NONE && isRemoteShooting && !"roll".equals(ap.getCurrentActionName())) {
+                String remotePrefix = (weaponType == efw.animation.WeaponTypeHelper.WeaponType.PISTOL) ? "pistol_" : "rifle_";
+                boolean isRemoteLying = (state != null && state.baseAnim != null && state.baseAnim.contains("lie")) || isPlayerCrawling(player);
+                if (isRemoteLying) {
+                    String lieShootClip = remotePrefix + (isAiming ? "lie_aim_fire" : "lie_normal_fire");
+                    AnimationClip fc = AnimationRegistry.getClip(lieShootClip);
+                    if (fc != null && (!lieShootClip.equals(ap.getCurrentAnimationName()) || !ap.isPlaying() || isRemoteNewShot)) {
+                        ap.play(fc, 1.0f, isRemoteNewShot);
+                    }
+                } else {
+                    String fireClipName = remotePrefix + (isAiming ? "aim_fire" : "normal_fire") + "_upper";
+                    AnimationClip fc = AnimationRegistry.getClip(fireClipName);
+                    if (fc != null && (isRemoteNewShot || !ap.isActionPlaying() || !fireClipName.equals(ap.getCurrentActionName()) || ap.getActionProgress() >= 0.95f)) {
+                        ap.setAction(fc, 0f, 1.0f);
+                    }
                 }
             }
 
@@ -553,6 +606,7 @@ public class AnimationTickHandler {
         }
         // ---------------------------
 
+        boolean localPlayerShotThisTick = false;
         boolean isSprinting = player.isSprinting();
 
         net.minecraft.item.ItemStack currentStack = player.getHeldItemMainhand();
@@ -567,9 +621,6 @@ public class AnimationTickHandler {
             ignoreReloadState = false;
             isTacticalReloadMap.remove(player);
         }
-
-        if (lieFireTicks > 0)
-            lieFireTicks--;
 
         boolean currentlyReloadingAnim = ap.isActionPlaying() && ap.getCurrentActionName() != null
                 && ap.getCurrentActionName().contains("reload");
@@ -714,10 +765,23 @@ public class AnimationTickHandler {
                             // Block just broke — this swing is a false trigger, skip it
                             actionAnim = null;
                         } else {
-                            alternateSwordAnim = !alternateSwordAnim;
-                            actionAnim = isSneaking
-                                    ? (alternateSwordAnim ? "sword_attack_sneak2" : "sword_attack_sneak")
-                                    : (alternateSwordAnim ? "sword_attack2" : "sword_attack");
+                            String regName = item.getRegistryName() != null ? item.getRegistryName().getPath().toLowerCase() : "";
+                            if (item instanceof com.voltyx.mwccf.si.ItemSIFist || regName.contains("fist")) {
+                                alternateSwordAnim = !alternateSwordAnim;
+                                actionAnim = alternateSwordAnim ? "fist_attack2" : "fist_attack";
+                            } else if (item instanceof com.voltyx.mwccf.si.ItemSIPolearm || regName.contains("lance") || regName.contains("glaive") || regName.contains("pitchfork")) {
+                                alternateSwordAnim = !alternateSwordAnim;
+                                actionAnim = alternateSwordAnim ? "spear_attack2" : "spear_attack";
+                            } else if (regName.contains("sledge") || regName.contains("brick_hammer") || regName.contains("lever") || regName.contains("pipe") || regName.contains("guitar")) {
+                                actionAnim = "heavy_slam";
+                            } else if (item instanceof net.minecraft.item.ItemAxe || item instanceof com.voltyx.mwccf.si.ItemSIAxe || regName.contains("axe")) {
+                                actionAnim = isSneaking ? "axe_sneak" : "axe";
+                            } else {
+                                alternateSwordAnim = !alternateSwordAnim;
+                                actionAnim = isSneaking
+                                        ? (alternateSwordAnim ? "sword_attack_sneak2" : "sword_attack_sneak")
+                                        : (alternateSwordAnim ? "sword_attack2" : "sword_attack");
+                            }
                         }
                     }
                 } else {
@@ -725,10 +789,9 @@ public class AnimationTickHandler {
                     if (isMiningBlock) {
                         actionAnim = null; // Для копания оставляем ванильную анимацию
                     } else {
-                        // Для ударов пустой рукой используем анимацию (которая сейчас sword)
+                        // Для ударов пустой рукой используем кулачные удары
                         alternateSwordAnim = !alternateSwordAnim;
-                        actionAnim = isSneaking ? (alternateSwordAnim ? "sword_attack_sneak2" : "sword_attack_sneak")
-                                : (alternateSwordAnim ? "sword_attack2" : "sword_attack");
+                        actionAnim = alternateSwordAnim ? "fist_attack2" : "fist_attack";
                     }
                 }
                 if (actionAnim != null) {
@@ -1011,7 +1074,11 @@ public class AnimationTickHandler {
                                 turnCooldowns.put(player.getUniqueID(), turnCooldown - 1);
                                 animName = ap.getCurrentAnimationName() != null && ap.getCurrentAnimationName().startsWith("turn_") ? ap.getCurrentAnimationName() : "idle_standing";
                             } else {
-                                animName = "idle_standing";
+                                if (currentStack.getItem() instanceof com.voltyx.mwccf.si.ItemSIPolearm) {
+                                    animName = "polearm_idle";
+                                } else {
+                                    animName = "idle_standing";
+                                }
                             }
                         }
                     }
@@ -1027,6 +1094,10 @@ public class AnimationTickHandler {
                 || isPlayerCrawling(player) || player.height < 1.0F);
 
         boolean isWater = player.isInWater() || (animName != null && (animName.contains("water") || animName.contains("swim")));
+
+        boolean isShooting = isPlayerShooting(player);
+        boolean isNewShot = Boolean.TRUE.equals(newShotTriggeredMap.remove(player));
+        if (isNewShot) localPlayerShotThisTick = true;
 
         if (weaponType != efw.animation.WeaponTypeHelper.WeaponType.NONE && animName != null
                 && !"roll".equals(animName) && !isWater) {
@@ -1117,7 +1188,7 @@ public class AnimationTickHandler {
                         }
 
                         if (stateName.contains("SHOOT") || stateName.contains("FIR")) {
-                            lieFireTicks = 20; // 1 second
+                            triggerShoot(player);
                         }
                     }
                 }
@@ -1166,7 +1237,9 @@ public class AnimationTickHandler {
                     ap.cancelAction();
                 }
 
-                if (isAiming && !isMoving) {
+                if (isShooting) {
+                    upperMapped = isAiming ? "lie_aim_fire" : "lie_normal_fire";
+                } else if (isAiming && !isMoving) {
                     upperMapped = "lie_aim";
                 } else if (isMoving) {
                     upperMapped = "lie_move";
@@ -1174,7 +1247,7 @@ public class AnimationTickHandler {
                     upperMapped = "lie";
                 }
 
-                String baseCandidate = prefix + upperMapped; // e.g. rifle_lie_aim, rifle_lie_move, rifle_lie
+                String baseCandidate = prefix + upperMapped; // e.g. rifle_lie_aim, rifle_lie_move, rifle_lie, rifle_lie_normal_fire, rifle_lie_aim_fire
                 if (efw.animation.AnimationRegistry.getClip(baseCandidate) == null) {
                     baseCandidate = prefix + (isMoving ? "lie_move" : "lie");
                 }
@@ -1188,6 +1261,8 @@ public class AnimationTickHandler {
                     upperMapped = "run";
                 } else if (isReloading) {
                     upperMapped = "reload";
+                } else if (isShooting) {
+                    upperMapped = isAiming ? "aim_fire" : "normal_fire";
                 } else if (isAiming) {
                     upperMapped = "aim";
                 }
@@ -1198,7 +1273,11 @@ public class AnimationTickHandler {
                 efw.animation.AnimationClip weaponClipUpper = efw.animation.AnimationRegistry.getClip(actionCandidate);
                 if (weaponClipUpper != null) {
                     ap.lastWeaponClip = weaponClipUpper;
-                    if (!ap.isActionPlaying() || !actionCandidate.equals(ap.getCurrentActionName())) {
+                    if (isShooting) {
+                        if (isNewShot || !ap.isActionPlaying() || !actionCandidate.equals(ap.getCurrentActionName()) || ap.getActionProgress() >= 0.95f) {
+                            ap.setAction(weaponClipUpper, 0f, 1.0f);
+                        }
+                    } else if (!ap.isActionPlaying() || !actionCandidate.equals(ap.getCurrentActionName())) {
                         float speed = actionCandidate.contains("reload") ? (0.83f * reloadSpeedMult) : 1.0f;
                         ap.setAction(weaponClipUpper, 0f, speed);
                     } else {
@@ -1231,7 +1310,8 @@ public class AnimationTickHandler {
         // ---------------------------------
         // Roll is triggered only via triggerRoll(), do not restart it here
 
-        if (animName != null && (!animName.equals(ap.getCurrentAnimationName()) || !ap.isPlaying())) {
+        boolean forceRestartBase = isLying && isShooting && isNewShot;
+        if (animName != null && (!animName.equals(ap.getCurrentAnimationName()) || !ap.isPlaying() || forceRestartBase)) {
             boolean wasLying = ap.getCurrentAnimationName() != null && ap.getCurrentAnimationName().contains("lie");
             boolean isLyingAnim = animName.contains("lie");
             
@@ -1242,7 +1322,7 @@ public class AnimationTickHandler {
 
             efw.animation.AnimationClip clip = efw.animation.AnimationRegistry.getClip(animName);
             if (clip != null) {
-                ap.play(clip);
+                ap.play(clip, 1.0f, forceRestartBase);
             } else {
                 ap.stop();
             }
@@ -1365,6 +1445,7 @@ public class AnimationTickHandler {
         if (currentActionAnim != null && Math.abs(currentActionSpeed - lastSentActionSpeed) > 0.01f) changed = true;
         if (isRolling && (Float.isNaN(lastSentDashYaw) || Math.abs(currentDashYaw - lastSentDashYaw) > 0.1f)) changed = true;
         if (!isRolling && !Float.isNaN(lastSentDashYaw)) changed = true;
+        if (localPlayerShotThisTick) changed = true;
 
         if (changed) {
             lastSentBaseAnim = currentBaseAnim;

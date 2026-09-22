@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/handheld",
   "textures": {
-    "layer0": "mwccf:items/hand_axe"
+    "layer0": "mwccf:item/hand_axe"
   }
 }

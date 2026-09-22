@@ -1,7 +1,7 @@
-{
-  "parent": "survival_instinct:custom/blue_soda",
+﻿{
+  "parent": "mwccf:custom/blue_soda",
   "textures": {
-    "0": "mwccf:blocks/blue_soda",
-    "particle": "mwccf:items/blue_soda"
+    "0": "mwccf:block/blue_soda",
+    "particle": "mwccf:item/blue_soda"
   }
 }

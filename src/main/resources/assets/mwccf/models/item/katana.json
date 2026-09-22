@@ -1,8 +1,8 @@
-{
+﻿{
 	"credit": "Made with Blockbench",
 	"parent": "item/handheld",
 	"textures": {
-		"layer0": "mwccf:items/katana"
+		"layer0": "mwccf:item/katana"
 	},
 	"display": {
 		"thirdperson_righthand": {

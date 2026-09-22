@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/handheld",
   "textures": {
-    "layer0": "mwccf:items/wrench"
+    "layer0": "mwccf:item/wrench"
   }
 }

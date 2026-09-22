@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/steellium_block",
+﻿{
+  "parent": "mwccf:block/steellium_block",
   "display": {
     "thirdperson": {
       "rotation": [

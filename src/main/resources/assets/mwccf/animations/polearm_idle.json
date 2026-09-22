@@ -1,0 +1,31 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"polearm_idle": {
+			"loop": true,
+			"bones": {
+				"torso": {
+					"rotation": {
+						"vector": [0, 8, 0]
+					}
+				},
+				"rightArm": {
+					"rotation": {
+						"vector": [-40, -12, 5]
+					},
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"leftArm": {
+					"rotation": {
+						"vector": [-55, 22, -10]
+					},
+					"position": {
+						"vector": [1, 0, 0.5]
+					}
+				}
+			}
+		}
+	}
+}

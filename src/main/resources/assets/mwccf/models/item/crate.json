@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/crate",
+﻿{
+  "parent": "mwccf:block/crate",
   "display": {
     "thirdperson": {
       "rotation": [

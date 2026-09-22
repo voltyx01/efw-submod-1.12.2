@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/chocolate_bar"
+    "layer0": "mwccf:item/chocolate_bar"
   }
 }

@@ -1,7 +1,7 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/circular_saw"
+    "layer0": "mwccf:item/circular_saw"
   },
   "display": {
     "thirdperson_righthand": {

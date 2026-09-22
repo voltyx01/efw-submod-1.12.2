@@ -1,7 +1,7 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/wires"
+    "layer0": "mwccf:item/wires"
   },
   "render_type": "translucent"
 }

@@ -1,8 +1,8 @@
-{
+﻿{
 	"credit": "Made with Blockbench",
 	"parent": "item/handheld",
 	"textures": {
-		"layer0": "mwccf:items/steellium_pipe"
+		"layer0": "mwccf:item/steellium_pipe"
 	},
 	"display": {
 		"thirdperson_righthand": {

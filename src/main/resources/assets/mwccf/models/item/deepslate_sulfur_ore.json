@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/deepslate_sulfur_ore",
+﻿{
+  "parent": "mwccf:block/deepslate_sulfur_ore",
   "display": {
     "thirdperson": {
       "rotation": [

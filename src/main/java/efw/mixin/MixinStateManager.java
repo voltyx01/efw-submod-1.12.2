@@ -40,10 +40,13 @@ public class MixinStateManager {
                     String sName = targetState.toString().toUpperCase();
                     if (sName.contains("FIRING") || sName.contains("ATTACKING") || sName.contains("MELEE")) {
                         com.voltyx.mwccf.dash.DashCapability.IDashData cap = player.getCapability(com.voltyx.mwccf.dash.DashCapability.ROLL_CAP, null);
-                        if (cap != null && (cap.isDashing() || efw.AnimationTickHandler.isPlayerRolling(player))) {
+                        if (cap != null && (cap.isDashing() || (player.world.isRemote && efw.AnimationTickHandler.isPlayerRolling(player)))) {
                             cir.setReturnValue(false);
                             return;
                         }
+                    }
+                    if (player.world.isRemote && sName.contains("FIRING")) {
+                        efw.AnimationTickHandler.triggerShoot(player);
                     }
                 }
 

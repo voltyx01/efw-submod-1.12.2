@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/trash_can",
+﻿{
+  "parent": "mwccf:block/trash_can",
   "display": {
     "thirdperson": {
       "rotation": [

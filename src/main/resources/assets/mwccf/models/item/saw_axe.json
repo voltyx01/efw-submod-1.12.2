@@ -1,8 +1,8 @@
-{
+﻿{
 	"credit": "Made with Blockbench",
 	"parent": "item/handheld",
 	"textures": {
-		"layer0": "mwccf:items/saw_axe"
+		"layer0": "mwccf:item/saw_axe"
 	},
 	"display": {
 		"thirdperson_righthand": {

@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/handheld",
   "textures": {
-    "layer0": "mwccf:items/steellium_axe"
+    "layer0": "mwccf:item/steellium_axe"
   }
 }

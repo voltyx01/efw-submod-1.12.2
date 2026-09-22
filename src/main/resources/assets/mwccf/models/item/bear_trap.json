@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/bear_trap",
+﻿{
+  "parent": "mwccf:block/bear_trap",
   "display": {
     "thirdperson": {
       "rotation": [

@@ -1,5 +1,5 @@
-{
-  "parent": "mwccf:blocks/stop_sing",
+﻿{
+  "parent": "mwccf:block/stop_sing",
   "display": {
     "thirdperson": {
       "rotation": [

@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "item/generated",
   "textures": {
-    "layer0": "mwccf:items/police_vest"
+    "layer0": "mwccf:item/police_vest"
   }
 }
