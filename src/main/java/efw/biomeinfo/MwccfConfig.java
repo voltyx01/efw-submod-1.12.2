@@ -467,4 +467,90 @@ public class MwccfConfig {
         @Config.Comment("Visibility mode: EQUIPPED (requires item equipped in Baubles/Head), ALWAYS (always visible on player), OFF (disabled)")
         public String mode = "EQUIPPED";
     }
+
+    @Config.Name("better_combat")
+    @Config.Comment("Better Combat Settings")
+    public static final BetterCombatSettings betterCombat = new BetterCombatSettings();
+
+    public static class BetterCombatSettings {
+        @Config.Comment("Master switch for Better Combat functionality")
+        public boolean enabled = true;
+
+        @Config.Comment("Upswing (windup) duration multiplier relative to attack cooldown. Default 0.5")
+        @Config.RangeDouble(min = 0.0, max = 2.0)
+        public double upswingMultiplier = 0.5;
+
+        @Config.Comment("Bypass damage receive throttling of LivingEntity from player attacks (allow fast attacks)")
+        public boolean allowFastAttacks = true;
+
+        @Config.Comment("Allows client-side target search and server attack execution against player's mounted entity")
+        public boolean allowAttackingMount = false;
+
+        @Config.Comment("The minimum number of ticks between two attacks")
+        @Config.RangeInt(min = 1, max = 20)
+        public int attackIntervalCap = 2;
+
+        @Config.Comment("Allows vanilla sweeping mechanic to work")
+        public boolean allowVanillaSweeping = false;
+
+        @Config.Comment("Allows Better Combat sweeping mechanic to hit multiple targets in swing area")
+        public boolean allowReworkedSweeping = true;
+
+        @Config.Comment("The maximum additional targets a weapon swing hits without further penalty")
+        @Config.RangeInt(min = 1, max = 20)
+        public int reworkedSweepingExtraTargetCount = 4;
+
+        @Config.Comment("Maximum damage penalty when striking multiple targets (0.5 = 50% damage penalty)")
+        @Config.RangeDouble(min = 0.0, max = 1.0)
+        public double reworkedSweepingMaximumDamagePenalty = 0.5;
+
+        @Config.Comment("Play sound on reworked sweeping hits")
+        public boolean reworkedSweepingPlaysSound = true;
+
+        @Config.Comment("Spawn sweep particles on reworked sweeping hits")
+        public boolean reworkedSweepingEmitsParticles = true;
+
+        @Config.Comment("Applies movement speed multiplier while attacking (1.0 = no penalty, 0.5 = 50% speed)")
+        @Config.RangeDouble(min = 0.0, max = 1.0)
+        public double movementSpeedWhileAttacking = 0.5;
+
+        @Config.Comment("Attacks faster than a vanilla sword will deal smaller knockback proportionally")
+        public boolean knockbackReducedForFastAttacks = true;
+
+        @Config.Comment("Combo is reset after idling (comboResetRate * weapon_cooldown)")
+        @Config.RangeDouble(min = 1.0, max = 10.0)
+        public double comboResetRate = 3.0;
+
+        @Config.Comment("Multiplier for attack_range during target lookup")
+        @Config.RangeDouble(min = 1.0, max = 5.0)
+        public double targetSearchRangeMultiplier = 2.0;
+
+        @Config.Comment("Attack speed multiplier when dual wielding")
+        @Config.RangeDouble(min = 0.5, max = 3.0)
+        public double dualWieldingAttackSpeedMultiplier = 1.2;
+
+        @Config.Comment("Off-hand damage multiplier when dual wielding")
+        @Config.RangeDouble(min = 0.1, max = 3.0)
+        public double dualWieldingOffHandDamageMultiplier = 1.0;
+
+        @Config.Comment("Enable continuous attack when holding down the attack key (Left Click)")
+        public boolean isHoldToAttackEnabled = true;
+
+        @Config.Comment("Allow mining blocks with weapons by holding attack on a mineable block")
+        public boolean isMiningWithWeaponsEnabled = true;
+
+        @Config.Comment("Allow weapon swings to pass through non-solid blocks like tall grass")
+        public boolean isSwingThruGrassEnabled = true;
+
+        @Config.Comment("Attack instead of mining when enemies are close and targeting a block")
+        public boolean isAttackInsteadOfMineWhenEnemiesCloseEnabled = true;
+
+        @Config.Comment("Volume of weapon swing sounds (0 to 100)")
+        @Config.RangeInt(min = 0, max = 100)
+        public int weaponSwingSoundVolume = 100;
+
+        @Config.Comment("Enable attack range and two-handed status in item tooltips")
+        public boolean isTooltipAttackRangeEnabled = true;
+    }
 }
+

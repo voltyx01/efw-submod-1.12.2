@@ -33,6 +33,24 @@ public class AnimationRegistry {
                 System.err.println("[ERROR] Parser returned empty for: " + path);
             } else {
                 clips.putAll(loaded);
+                String fileName = loc.getPath();
+                if (fileName.contains("/")) {
+                    fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                }
+                if (fileName.endsWith(".json")) {
+                    fileName = fileName.substring(0, fileName.length() - 5);
+                }
+                for (AnimationClip clip : loaded.values()) {
+                    if (!clips.containsKey(fileName)) {
+                        clips.put(fileName, clip);
+                    }
+                    if (!clips.containsKey("bettercombat:" + fileName)) {
+                        clips.put("bettercombat:" + fileName, clip);
+                    }
+                    if (!clips.containsKey("bettercombat:" + clip.name)) {
+                        clips.put("bettercombat:" + clip.name, clip);
+                    }
+                }
                 System.out.println("[SUCCESS] Registered " + loaded.size() + " clips from: " + path);
             }
         } catch (Exception e) {
@@ -47,7 +65,12 @@ public class AnimationRegistry {
     }
 
     public static AnimationClip getClip(String name) {
-        return clips.get(name);
+        if (name == null) return null;
+        AnimationClip clip = clips.get(name);
+        if (clip == null && name.contains(":")) {
+            clip = clips.get(name.substring(name.indexOf(':') + 1));
+        }
+        return clip;
     }
 
     public static AnimationPlayer getPlayer(EntityPlayer player) {

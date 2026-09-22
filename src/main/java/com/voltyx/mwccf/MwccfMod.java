@@ -199,6 +199,9 @@ public class MwccfMod {
 		MinecraftForge.EVENT_BUS.register(techguns.TGBlocks.class);
 		MinecraftForge.EVENT_BUS.register(new efw.events.OffhandWeaponBlocker());
 		MinecraftForge.EVENT_BUS.register(new efw.events.WeaponSlotEnforcer());
+
+		// Initialize Better Combat Network
+		net.bettercombat.network.BetterCombatNetwork.init();
 	}
 
 	@Mod.EventHandler
@@ -212,7 +215,12 @@ public class MwccfMod {
 		proxy.init(event);
 		if (event.getSide() == Side.CLIENT) {
 			MinecraftForge.EVENT_BUS.register(new AnimationTickHandler());
+			MinecraftForge.EVENT_BUS.register(new net.bettercombat.client.BetterCombatEvents());
 		}
+
+		// Initialize Better Combat
+		net.bettercombat.logic.WeaponRegistry.initialize();
+		MinecraftForge.EVENT_BUS.register(new net.bettercombat.BetterCombatCommonEvents());
 
 		com.eruannie_9.extragore.ExtraGore.init(event);
 		MinecraftForge.EVENT_BUS.register(new HeadshotDamageHandler());

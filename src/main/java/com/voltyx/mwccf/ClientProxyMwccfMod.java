@@ -102,7 +102,22 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 				"sword_attack2.json", "sword_attack_sneak.json", "sword_attack_sneak2.json",
 				"turn_left.json", "turn_right.json", "up_in_water.json", "walking.json",
 				"walking_backwards.json", "walking_sneak.json", "walking_sneak_backwards.json", "roll.json",
-				"fist_attack.json", "fist_attack2.json", "spear_attack.json", "spear_attack2.json", "heavy_slam.json", "polearm_idle.json"
+				"fist_attack.json", "fist_attack2.json", "spear_attack.json", "spear_attack2.json", "heavy_slam.json", "polearm_idle.json",
+				// Better Combat Attacks
+				"dual_handed_slash_cross.json", "dual_handed_slash_uncross.json", "dual_handed_stab.json",
+				"one_handed_punch.json", "one_handed_slam.json",
+				"one_handed_slash_horizontal_left.json", "one_handed_slash_horizontal_right.json",
+				"one_handed_slash_switch_blade_left.json", "one_handed_slash_switch_blade_right.json",
+				"one_handed_stab.json", "one_handed_stab_mounted.json",
+				"one_handed_swipe_horizontal_right.json", "one_handed_uppercut_right.json",
+				"two_handed_slam.json", "two_handed_slam_heavy.json",
+				"two_handed_slash_horizontal_left.json", "two_handed_slash_horizontal_right.json",
+				"two_handed_slash_vertical_left.json", "two_handed_slash_vertical_right.json",
+				"two_handed_spin.json", "two_handed_stab_left.json", "two_handed_stab_right.json",
+				// Better Combat Poses
+				"pose_one_handed_backwards.json", "pose_two_handed_bow.json", "pose_two_handed_crossbow.json",
+				"pose_two_handed_heavy.json", "pose_two_handed_katana.json", "pose_two_handed_polearm.json",
+				"pose_two_handed_scythe.json", "pose_two_handed_sword.json"
 		};
 
 		for (String file : files) {

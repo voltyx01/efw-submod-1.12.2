@@ -301,15 +301,15 @@ public class AnimationParser {
     }
 
     private static float getVanillaBaseX(String boneName) {
-        if ("rightArm".equals(boneName) || "rightItem".equals(boneName)) return -5.0f;
-        if ("leftArm".equals(boneName) || "leftItem".equals(boneName)) return 5.0f;
+        if ("rightArm".equals(boneName)) return -5.0f;
+        if ("leftArm".equals(boneName)) return 5.0f;
         if ("rightLeg".equals(boneName)) return -1.9f;
         if ("leftLeg".equals(boneName)) return 1.9f;
         return 0.0f;
     }
 
     private static float getVanillaBaseY(String boneName) {
-        if ("rightArm".equals(boneName) || "leftArm".equals(boneName) || "rightItem".equals(boneName) || "leftItem".equals(boneName)) return 2.0f;
+        if ("rightArm".equals(boneName) || "leftArm".equals(boneName)) return 2.0f;
         if ("rightLeg".equals(boneName) || "leftLeg".equals(boneName)) return 12.0f;
         // head and body are 0.0f
         return 0.0f;
