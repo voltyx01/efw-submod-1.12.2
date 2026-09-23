@@ -39,6 +39,14 @@ public class AnimationPlayer {
     public boolean isHoldingWeapon = false;
     public AnimationClip lastWeaponClip = null;
 
+    // Two-phase BetterCombat transmission speed (ported from BC 1.20.1 TransmissionSpeedModifier)
+    private float bcUpswingSpeed = 1.0f;
+    private float bcDownwindSpeed = 1.0f;
+    private float bcUpswingEndTick = 0.0f;  // real time ticks at which phase switches
+    private float bcAttackEndTick = 0.0f;
+    private float bcElapsed = 0.0f;
+    private boolean bcTransmissionActive = false;
+
     private float currentArmPitchWeight = 0.0f;
     private float prevArmPitchWeight = 0.0f;
     private float currentSneakOffsetWeight = 0.0f;
@@ -114,44 +122,125 @@ public class AnimationPlayer {
         this.actionClip = clip;
         this.actionSpeed = speed;
         this.actionFadingOut = false;
+        this.bcTransmissionActive = false; // plain setAction has no two-phase speed
 
         KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
         playerAnim.setSpeed(speed);
 
         int blendTicks = getActionBlendTicks(clip.name);
-        boolean isSwordToSword = false;
-        if (this.previousActionClip != null && this.previousActionClip.name != null) {
-            if (this.previousActionClip.name.contains("fire")) {
-                blendTicks = 2;
-            } else if (clip.name != null && (
-                    (this.previousActionClip.name.contains("sword_attack") && clip.name.contains("sword_attack"))
-                    || (this.previousActionClip.name.contains("fist_attack") && clip.name.contains("fist_attack"))
-                    || (this.previousActionClip.name.contains("spear_attack") && clip.name.contains("spear_attack"))
-            )) {
-                blendTicks = 3;
-                isSwordToSword = true;
-            }
+        if (clip.isEmotecraft && clip.beginTick > 0) {
+            blendTicks = clip.beginTick;
         }
+        boolean isPreviousAttack = this.actionLayer.isActive() && isAttackClip(this.actionClip);
+        boolean isCurrentAttack = isAttackClip(clip);
+        boolean isAttackToAttack = isPreviousAttack && isCurrentAttack;
+
         if (this.actionSnapped || blendTicks <= 0) {
             this.actionSnapped = false;
+            this.actionLayer.clearModifiers();
             this.actionLayer.setAnimation(playerAnim);
-        } else if (isSwordToSword) {
-            // Melee combo transition: snap the swinging arm rotation immediately so it
-            // doesn't arc/flip across opposite strike poses.
-            // All other bones (torso, offhand, body) still blend smoothly via inOutSine.
-            final int ticks = blendTicks;
-            this.actionLayer.replaceAnimationWithFade(new AbstractFadeModifier(ticks) {
-                @Override
-                public float getAlpha(String modelName, TransformType type, float progress) {
-                    if (("rightArm".equals(modelName) || "leftArm".equals(modelName)) && type == TransformType.ROTATION) {
-                        return 1.0f; // skip rotation blend – use target frame immediately
-                    }
-                    return Ease.inOutSine(progress);
-                }
-            }, playerAnim, true);
+        } else if (isAttackToAttack) {
+            this.actionSnapped = false;
+            this.actionLayer.clearModifiers();
+            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease::outCubic), playerAnim, true);
         } else {
             this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), playerAnim, true);
         }
+    }
+
+    /**
+     * Start a BetterCombat attack with two-phase transmission speed, ported from BC 1.20.1.
+     * Phase 1 (upswing): plays at upswingSpeed (slower windup).
+     * Phase 2 (downwind): plays at downwindSpeed (fast release/follow-through).
+     * blendIn: number of ticks to cross-fade from previous animation.
+     */
+    public void setActionBetterCombat(AnimationClip clip, float upswingSpeed, float downwindSpeed,
+                                      float upswingEndTick, float attackEndTick, int blendIn) {
+        if (clip == null) {
+            stopAction();
+            return;
+        }
+
+        // Attack-to-attack: was an attack active on actionLayer (holding frame or fading out)?
+        boolean isPreviousAttack = this.actionLayer.isActive() && isAttackClip(this.actionClip);
+        boolean isCurrentAttack = isAttackClip(clip);
+        boolean isAttackToAttack = isPreviousAttack && isCurrentAttack;
+
+        if (this.actionClip != null && this.actionClip != clip) {
+            this.previousActionClip = this.actionClip;
+        }
+        this.actionClip = clip;
+        this.actionSpeed = upswingSpeed;
+        this.actionFadingOut = false;
+
+        // Store transmission schedule
+        this.bcUpswingSpeed = upswingSpeed;
+        this.bcDownwindSpeed = downwindSpeed;
+        this.bcUpswingEndTick = upswingEndTick;
+        this.bcAttackEndTick = attackEndTick;
+        this.bcElapsed = 0.0f;
+        this.bcTransmissionActive = true;
+
+        KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
+        playerAnim.setSpeed(upswingSpeed);
+        // Hold the last frame when animation finishes so the weapon stays at impact pose
+        // until stopAction() explicitly fades it out (matches BC 1.20.1 behaviour)
+        playerAnim.setHoldLastFrame(true);
+
+        if (blendIn <= 0 || this.actionSnapped) {
+            this.actionSnapped = false;
+            this.actionLayer.clearModifiers();
+            this.actionLayer.setAnimation(playerAnim);
+        } else if (isAttackToAttack) {
+            this.actionSnapped = false;
+            this.actionLayer.clearModifiers();
+            // Fast 2-tick blend between attacks: quickly moves into windup pose without instant teleport
+            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease::outCubic), playerAnim, true);
+        } else {
+            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendIn, Ease::inOutSine), playerAnim, true);
+        }
+    }
+
+    /**
+     * Called each game tick to advance the transmission speed gear-shift for BC attacks.
+     * Must be called from the client tick handler for the local player.
+     */
+    public void tickBetterCombatTransmission() {
+        if (!bcTransmissionActive) return;
+        bcElapsed += 1.0f;
+        // Switch from upswing to downwind speed when we pass the upswing phase
+        float targetSpeed = bcElapsed > bcUpswingEndTick ? bcDownwindSpeed : bcUpswingSpeed;
+        if (Math.abs(targetSpeed - actionSpeed) > 0.001f) {
+            actionSpeed = targetSpeed;
+            // Apply to the actual KeyframeAnimationPlayer inside the layer
+            IAnimation anim = actionLayer.getAnimation();
+            if (anim instanceof KeyframeAnimationPlayer) {
+                ((KeyframeAnimationPlayer) anim).setSpeed(targetSpeed);
+            } else if (anim instanceof AbstractFadeModifier) {
+                IAnimation inner = ((AbstractFadeModifier) anim).getAnimation();
+                if (inner instanceof KeyframeAnimationPlayer) {
+                    ((KeyframeAnimationPlayer) inner).setSpeed(targetSpeed);
+                }
+            }
+        }
+    }
+
+    public static boolean isAttackClip(AnimationClip c) {
+        return c != null && (c.isBetterCombat || (c.name != null && (
+                c.name.contains("slash") || c.name.contains("stab")
+                || c.name.contains("punch") || c.name.contains("slam")
+                || c.name.contains("spin") || c.name.contains("swipe")
+                || c.name.contains("uppercut") || c.name.startsWith("dual_handed_")
+                || c.name.startsWith("one_handed_") || c.name.startsWith("two_handed_")
+                || c.name.contains("sword_attack") || c.name.contains("fist_attack") || c.name.contains("spear_attack"))));
+    }
+
+    public boolean isActionAttack() {
+        return isAttackClip(actionClip);
+    }
+
+    public AnimationClip getActionClip() {
+        return actionClip;
     }
 
     public void stopAction(int blendTicks) {
@@ -181,6 +270,7 @@ public class AnimationPlayer {
 
     public void snapAction() {
         this.actionClip = null;
+        this.actionLayer.clearModifiers();
         this.actionLayer.setAnimation(null);
         this.actionFadingOut = false;
         this.actionSnapped = true;
@@ -326,6 +416,14 @@ public class AnimationPlayer {
 
         this.stack.tick();
 
+        // Auto fade-out when action animation finishes naturally (not via stopAction)
+        if (!this.actionFadingOut && this.actionClip != null) {
+            KeyframeAnimationPlayer kfp = findActionPlayer(this.actionLayer.getAnimation());
+            if (kfp != null && !kfp.isActive()) {
+                stopAction();
+            }
+        }
+
         if (this.actionFadingOut && !this.actionLayer.isActive()) {
             this.actionClip = null;
             this.actionFadingOut = false;
@@ -427,6 +525,10 @@ public class AnimationPlayer {
         if (animName != null && (animName.contains("sword_attack") || animName.contains("fist_attack")
                 || animName.contains("spear_attack") || animName.contains("heavy_slam"))) {
             return 4;
+        }
+        if (animName != null && (animName.contains("slash") || animName.contains("two_handed")
+                || animName.contains("one_handed") || animName.contains("slam"))) {
+            return 3;
         }
         return 6;
     }
@@ -572,4 +674,6 @@ public class AnimationPlayer {
     public String getPrevAnimationName() { return null; }
     public String getCurrentActionName() { return isActionPlaying() && actionClip != null ? actionClip.name : null; }
     public String getFadeActionName() { return actionFadingOut && actionClip != null ? actionClip.name : null; }
+    public boolean isActionEmotecraft() { return this.actionClip != null && this.actionClip.isEmotecraft; }
+    public boolean isActive() { return this.stack != null && this.stack.isActive(); }
 }

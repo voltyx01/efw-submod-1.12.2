@@ -661,10 +661,13 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
 
             ModelBiped model = (ModelBiped) (Object) this;
+            boolean isBCAttack = ap != null && ap.hasActionWeight() && ap.isActionAttack();
 
             applyBone(this.bipedRightLeg, AnimationApplicator.getOverlayForBone(this.bipedRightLeg, model), ap, "rightLeg", pt);
             applyBone(this.bipedLeftLeg, AnimationApplicator.getOverlayForBone(this.bipedLeftLeg, model), ap, "leftLeg", pt);
             applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
+
+
 
             // Fix weapon crouch chest overhang:
             // In weapon hold_upper, torso is translated forward by -1 in Z.
@@ -723,7 +726,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             boolean disableRightArmAnim = false;
             boolean disableLeftArmAnim = false;
 
-            if (this.swingProgress > 0.0F && !isMWCWeapon) {
+            if (this.swingProgress > 0.0F && !isMWCWeapon && !isBCAttack) {
                 EnumHandSide swingingHandSide = (player.swingingHand == net.minecraft.util.EnumHand.OFF_HAND) ? this.getMainHand(entityIn).opposite() : this.getMainHand(entityIn);
                 if (swingingHandSide == net.minecraft.util.EnumHandSide.RIGHT) {
                     disableRightArmAnim = true;
@@ -743,6 +746,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             if (!disableLeftArmAnim) {
                 applyBone(this.bipedLeftArm, AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model), ap, "leftArm", pt);
             }
+
+
 
             // Torch Arm Raising
             TorchAnimationHandler.AnimState torchState = TorchAnimationHandler.getState(player);
@@ -801,7 +806,14 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 float targetY;
                 float targetZ;
 
-                if (isCrawlingAnim) {
+                boolean isAttackClip = ap.hasActionWeight() && ap.isActionAttack();
+                if (isAttackClip) {
+                    // Attack animations (Better Combat): pitch is disabled in the animation, so camera pitch applies directly.
+                    // Head yaw and roll come directly from the animation keyframes without adding vanilla netHeadYaw!
+                    targetX = headX;
+                    targetY = baseHeadY;
+                    targetZ = baseHeadZ;
+                } else if (isCrawlingAnim) {
                     // Like TaCZ (anim 1.20.1): when crawling, the head does NOT pitch up/down into the ground.
                     // The only tracking reaction to aiming is a subtle roll/tilt to the left and right.
                     targetX = baseHeadX;

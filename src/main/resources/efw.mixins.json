@@ -23,6 +23,7 @@
     "MixinGuiWorldSelection",
     "MixinMinecraftLoadWorld",
     "MixinMinecraftAttack",
+    "MixinEntityPlayerClient",
     "MixinRenderLivingBase",
     "MixinModelBiped",
     "MixinLayerHeldItem",

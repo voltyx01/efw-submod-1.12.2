@@ -193,7 +193,9 @@ public class AnimationParser {
         
         int endTick = emote.has("endTick") ? emote.get("endTick").getAsInt() : 0;
         int stopTick = emote.has("stopTick") ? emote.get("stopTick").getAsInt() : endTick;
+        int beginTick = emote.has("beginTick") ? emote.get("beginTick").getAsInt() : 0;
         float length = stopTick * 0.05f;
+        float startTime = beginTick * 0.05f;
         boolean degrees = emote.has("degrees") && emote.get("degrees").getAsBoolean();
 
         Map<String, Map<Integer, EmoteBoneFrame>> boneFrames = new HashMap<>();
@@ -266,8 +268,19 @@ public class AnimationParser {
                     float rotY = degrees ? lastYaw : (float)Math.toDegrees(lastYaw);
                     float rotZ = degrees ? lastRoll : (float)Math.toDegrees(lastRoll);
                     
-                    // Emotecraft JSON natively supports 1.16+ models which have the exact
-                    // same rotation axes as 1.12.2 ModelBiped. No manual inversion is needed.
+                    // In BetterCombat 1.20.1 (AbstractClientPlayerEntityMixin.java line 130):
+                    // copy.head.pitch.setEnabled(false);
+                    // Disable pitch for head ONLY in BetterCombat attack animations so vanilla head tracking works.
+                    // Emotes and rolls MUST keep their authored head pitch!
+                    boolean isAttackClip = animName.contains("slash") || animName.contains("stab")
+                            || animName.contains("slam") || animName.contains("punch")
+                            || animName.contains("attack") || animName.contains("spin")
+                            || animName.contains("dual_handed") || animName.contains("one_handed")
+                            || animName.contains("two_handed");
+                    if ("head".equals(boneName) && !isLoop && isAttackClip) {
+                        rotX = 0f;
+                    }
+                    
                     rotKeyFrames.add(new KeyFrame(tick * 0.05f, rotX, rotY, rotZ, frame.linear));
                 }
                 
@@ -296,7 +309,7 @@ public class AnimationParser {
             boneTracks.put(boneName, new BoneTrack(boneName, rotKeyFrames, posKeyFrames));
         }
 
-        result.put(animName, new AnimationClip(animName, length, isLoop, boneTracks));
+        result.put(animName, new AnimationClip(animName, length, isLoop, boneTracks, beginTick, endTick, stopTick, true));
         return result;
     }
 

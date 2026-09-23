@@ -54,27 +54,37 @@ public class MixinRenderPlayer {
     @Inject(method = "applyRotations", at = @At("RETURN"))
     protected void applyRotations(AbstractClientPlayer entityLiving, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
         AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(entityLiving);
-        if (ap == null) return;
+        if (ap == null || !ap.isActive()) return;
         
-        // Apply body-level world-space transform during roll AND its fade-out
-        if (!ap.isRollActive(partialTicks)) return;
+        // Apply body-level world-space transform for rolls and Emotecraft/BetterCombat action animations
+        boolean isRoll = ap.isRollActive(partialTicks);
+        boolean isEmoteAction = ap.hasActionWeight() && ap.getActionClip() != null && ap.getActionClip().isEmotecraft;
+        // BetterCombat attack clips also go through actionLayer but must NOT shift entity Y
+        boolean isBetterCombatAttack = ap.hasActionWeight() && ap.getActionClip() != null && ap.getActionClip().isBetterCombat;
+        if (!isRoll && !isEmoteAction) return;
 
-        // Roll is cleanly isolated on rollLayer (priority 1000).
-        // Query the roll layer directly for pure somersault rotation and position,
-        // completely decoupled from base and weapon layers!
-        efw.animation.layered.math.Vec3f pos = ap.getRollLayerTransform("body", efw.animation.layered.TransformType.POSITION, partialTicks);
-        efw.animation.layered.math.Vec3f rot = ap.getRollLayerTransform("body", efw.animation.layered.TransformType.ROTATION, partialTicks);
+        efw.animation.layered.math.Vec3f pos = isRoll 
+                ? ap.getRollLayerTransform("body", efw.animation.layered.TransformType.POSITION, partialTicks)
+                : ap.get3DTransform("body", efw.animation.layered.TransformType.POSITION, partialTicks, efw.animation.layered.math.Vec3f.ZERO);
+        efw.animation.layered.math.Vec3f rot = isRoll
+                ? ap.getRollLayerTransform("body", efw.animation.layered.TransformType.ROTATION, partialTicks)
+                : ap.get3DTransform("body", efw.animation.layered.TransformType.ROTATION, partialTicks, efw.animation.layered.math.Vec3f.ZERO);
+
+        // BetterCombat attack animations have torso.y keyframes but those are meant for the
+        // bipedBody ModelRenderer (bone-space), NOT for world-space entity translation.
+        // Applying posY here would sink the player's feet into the ground during attacks.
+        // For BetterCombat clips we zero out the Y offset entirely.
+        float posY = isBetterCombatAttack ? 0.0f : pos.getY();
+        float posX = pos.getX();
+        float posZ = pos.getZ();
 
         // Only apply if there's meaningful transform (skip if nearly zero)
         boolean hasRot = Math.abs(rot.getX()) > 0.001f || Math.abs(rot.getY()) > 0.001f || Math.abs(rot.getZ()) > 0.001f;
-        boolean hasPos = Math.abs(pos.getX()) > 0.001f || Math.abs(pos.getY()) > 0.001f || Math.abs(pos.getZ()) > 0.001f;
+        boolean hasPos = Math.abs(posX) > 0.001f || Math.abs(posY) > 0.001f || Math.abs(posZ) > 0.001f;
         if (!hasRot && !hasPos) return;
         
         // Pivot at waist (0.7 blocks up from feet), matching 1.20.1 setupRotations.
-        // NOTE: 1.20.1 PlayerRendererMixin does NOT scale the body position by 0.0625f!
-        // It passes vec3d directly into translate() which expects blocks, so the JSON 
-        // values for torso position in Emotecraft format are authored as blocks.
-        GlStateManager.translate(pos.getX(), pos.getY() + 0.7f, pos.getZ());
+        GlStateManager.translate(posX, posY + 0.7f, posZ);
         
         float rotX = (float) Math.toDegrees(rot.getX());
         float rotY = (float) Math.toDegrees(rot.getY());

@@ -63,6 +63,11 @@ public class ModifierLayer<T extends IAnimation> extends AbstractModifier {
         this.linkModifiers();
     }
 
+    public void clearModifiers() {
+        this.modifiers.clear();
+        this.linkModifiers();
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public void setAnimation(IAnimation animation) {
@@ -138,5 +143,22 @@ public class ModifierLayer<T extends IAnimation> extends AbstractModifier {
     @Override
     public T getAnimation() {
         return this.animation;
+    }
+
+    public float getAlpha(float tickDelta) {
+        if (!isActive()) return 0.0f;
+        for (int i = this.modifiers.size() - 1; i >= 0; i--) {
+            AbstractModifier m = this.modifiers.get(i);
+            if (m instanceof AbstractFadeModifier) {
+                AbstractFadeModifier fm = (AbstractFadeModifier) m;
+                float p = fm.calculateProgress(tickDelta);
+                float a = fm.getAlpha("torso", TransformType.ROTATION, Math.max(0.0f, Math.min(1.0f, p)));
+                if (this.animation == null) {
+                    return 1.0f - a;
+                }
+                return a;
+            }
+        }
+        return (this.animation != null && this.animation.isActive()) ? 1.0f : 0.0f;
     }
 }

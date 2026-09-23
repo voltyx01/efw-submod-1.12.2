@@ -33,10 +33,17 @@ public class BetterCombatClient {
     public static int upswingTicks = 0;
     public static int attackCooldown = 0;
     public static int lastAttacked = 1000;
+    public static float lastSwingDuration = 0.0f;
+    public static boolean isPerformingAttack = false;
     public static int comboReset = 20;
     public static boolean isHarvesting = false;
     private static ItemStack upswingStack = ItemStack.EMPTY;
     private static ItemStack lastAttackedWithStack = ItemStack.EMPTY;
+    private static ItemStack lastHeldStack = ItemStack.EMPTY;
+
+    // Stored swing sound for deferred playback at performAttack (BC 1.20.1 plays it on strike, not windup)
+    private static String pendingSwingSoundId = "";
+    private static WeaponAttributes.Sound pendingSwingSoundConfig = null;
 
     public static boolean isUpswingActive() {
         return upswingTicks > 0;
@@ -139,6 +146,8 @@ public class BetterCombatClient {
         upswingTicks = Math.max(1, Math.round(cooldownTicks * upswingRate));
         int cooldownTicksInt = Math.max(1, Math.round(cooldownTicks));
         attackCooldown = cooldownTicksInt;
+        lastSwingDuration = cooldownTicks;
+        lastAttacked = 0;
 
         String anim = hand.attack().animation();
         AnimatedHand animatedHand = AnimatedHand.from(hand.isOffHand(), attributes.isTwoHanded());
@@ -146,17 +155,14 @@ public class BetterCombatClient {
         // Play animation
         AttackAnimationHelper.playAttackAnimation(player, anim, animatedHand, cooldownTicks, upswingRate);
 
-        // Play swing sound
-        String soundId = "";
+        // Store swing sound for deferred playback at the moment of actual strike (performAttack)
+        // BC 1.20.1 plays swing sound in performAttack, not at windup start
+        pendingSwingSoundId = "";
+        pendingSwingSoundConfig = null;
         WeaponAttributes.Sound soundConfig = hand.attack().swingSound();
         if (soundConfig != null && soundConfig.id() != null) {
-            soundId = soundConfig.id();
-            SoundEvent soundEvent = BetterCombatSounds.getSound(soundId);
-            if (soundEvent != null) {
-                float vol = (soundConfig.volume() * MwccfConfig.betterCombat.weaponSwingSoundVolume) / 100.0f;
-                float pitch = soundConfig.pitch();
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(soundEvent, pitch * (1.0f + (player.getRNG().nextFloat() - 0.5f) * soundConfig.randomness())));
-            }
+            pendingSwingSoundId = soundConfig.id();
+            pendingSwingSoundConfig = soundConfig;
         }
 
         // Send animation packet to server
@@ -166,7 +172,7 @@ public class BetterCombatClient {
                 anim,
                 cooldownTicks,
                 upswingRate,
-                soundId));
+                pendingSwingSoundId));
     }
 
     public static void onClientTick() {
@@ -180,9 +186,38 @@ public class BetterCombatClient {
             attackCooldown--;
         }
         lastAttacked++;
+
+        // Track weapon swap to apply equip cooldown for BetterCombat weapons
+        ItemStack currentHeld = player.getHeldItemMainhand();
+        if (currentHeld.getItem() != lastHeldStack.getItem()) {
+            lastHeldStack = currentHeld.copy();
+            WeaponAttributes attributes = WeaponRegistry.getAttributes(currentHeld);
+            if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
+                float cd = PlayerAttackHelper.getAttackCooldownLengthTicks(player, currentHeld);
+                lastSwingDuration = cd;
+                lastAttacked = 0;
+            }
+        }
+
         cancelSwingIfNeeded(player);
         attackFromUpswingIfNeeded(mc, player);
         resetComboIfNeeded(player);
+
+        // Advance two-phase transmission speed for the local player's BC attack
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null) {
+            localAp.tickBetterCombatTransmission();
+
+            // When the attack cooldown expires, fade out the BC attack animation.
+            // holdLastFrame=true keeps it alive at the final pose, so we must explicitly stop it.
+            // This matches BC 1.20.1 stopAttackAnimation(length) with a smooth 8-tick fade-out.
+            if (attackCooldown == 0 && localAp.isActionAttack()
+                    && localAp.getActionClip() != null && localAp.getActionClip().isBetterCombat
+                    && !localAp.isActionFadingOut()) {
+                localAp.stopAction(8);
+            }
+        }
+
 
         // Continuous attack (hold to attack)
         if (MwccfConfig.betterCombat.isHoldToAttackEnabled && mc.gameSettings.keyBindAttack.isKeyDown()) {
@@ -255,6 +290,24 @@ public class BetterCombatClient {
             targetIds[i] = targets.get(i).getEntityId();
         }
 
+        // Play swing sound NOW (at the moment of actual strike, not at windup start)
+        // This matches BC 1.20.1 where swing sound plays in performAttack, not startUpswing.
+        // NOTE: must use addScheduledTask() – calling playSound() directly from onClientTick()
+        // (called inside Minecraft.runTick) causes ConcurrentModificationException because
+        // SoundManager.updateAllSounds() is iterating the same HashBiMap in the same frame.
+        if (!pendingSwingSoundId.isEmpty() && pendingSwingSoundConfig != null) {
+            final SoundEvent soundEvent = BetterCombatSounds.getSound(pendingSwingSoundId);
+            if (soundEvent != null) {
+                final WeaponAttributes.Sound s = pendingSwingSoundConfig;
+                final float pitch = s.pitch() * (1.0f + (player.getRNG().nextFloat() - 0.5f) * s.randomness());
+                mc.addScheduledTask(() ->
+                    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(soundEvent, pitch)));
+            }
+            pendingSwingSoundId = "";
+            pendingSwingSoundConfig = null;
+        }
+
+
         // Send attack packet to server
         BetterCombatNetwork.NETWORK.sendToServer(new PacketAttackRequest(
                 combo,
@@ -263,13 +316,16 @@ public class BetterCombatClient {
                 targetIds));
 
         // Client prediction: attack each target
-        for (Entity target : targets) {
-            player.attackTargetEntityWithCurrentItem(target);
+        isPerformingAttack = true;
+        try {
+            for (Entity target : targets) {
+                player.attackTargetEntityWithCurrentItem(target);
+            }
+        } finally {
+            isPerformingAttack = false;
         }
 
-        player.resetCooldown();
         setComboCount(combo + 1);
-        lastAttacked = 0;
 
         if (!hand.isOffHand()) {
             lastAttackedWithStack = hand.itemStack().copy();
@@ -297,5 +353,13 @@ public class BetterCombatClient {
                 }
             }
         }
+    }
+
+    public static float getCooledAttackStrength(EntityPlayer player, float adjustTicks) {
+        if (lastSwingDuration <= 0.0f) {
+            return 1.0f;
+        }
+        float progress = ((float) lastAttacked + adjustTicks) / lastSwingDuration;
+        return Math.max(0.0f, Math.min(1.0f, progress));
     }
 }

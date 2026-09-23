@@ -6,17 +6,21 @@ import efw.animation.layered.math.Vec3f;
 
 public class KeyframeAnimationPlayer implements IAnimation {
     private final AnimationClip clip;
-    private float currentTime = 0f;
-    private float prevTime = 0f;
+    private float currentTime;
+    private float prevTime;
     private boolean isRunning = true;
     private float speedMult = 1.0f;
     private boolean isLoopingStarted = false;
+    /** When true, the animation stays at the last frame after finishing instead of becoming inactive. */
+    private boolean holdLastFrame = false;
 
     // Temporary storage for tickDelta
     private float tickDelta = 0f;
 
     public KeyframeAnimationPlayer(AnimationClip clip) {
         this.clip = clip;
+        this.currentTime = 0f;
+        this.prevTime = 0f;
     }
 
     public AnimationClip getClip() {
@@ -29,6 +33,11 @@ public class KeyframeAnimationPlayer implements IAnimation {
 
     public float getSpeed() {
         return this.speedMult;
+    }
+
+    /** Enable hold-last-frame: animation stays visible at its final pose until externally stopped. */
+    public void setHoldLastFrame(boolean hold) {
+        this.holdLastFrame = hold;
     }
 
     public float getCurrentTime() {
@@ -67,6 +76,10 @@ public class KeyframeAnimationPlayer implements IAnimation {
             if (currentTime >= clip.length) {
                 currentTime = clip.length;
                 isRunning = false;
+                // holdLastFrame: prevTime also locked so interpolation stays at clip.length
+                if (holdLastFrame) {
+                    prevTime = clip.length;
+                }
             }
         }
     }
@@ -78,7 +91,9 @@ public class KeyframeAnimationPlayer implements IAnimation {
 
     @Override
     public boolean isActive() {
-        return this.isRunning;
+        // If holdLastFrame is set, remain active even after isRunning goes false
+        // (the animation is held at the last frame until the layer explicitly replaces/removes it).
+        return this.isRunning || this.holdLastFrame;
     }
 
     @Override
@@ -96,7 +111,7 @@ public class KeyframeAnimationPlayer implements IAnimation {
 
         if (type == TransformType.ROTATION) {
             java.util.List<efw.animation.KeyFrame> rotKeys = track.rotation;
-            if ((rotKeys == null || rotKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
+            if (!clip.isEmotecraft && (rotKeys == null || rotKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
                 BoneTrack alt = "torso".equals(modelName) ? clip.bones.get("body") : clip.bones.get("torso");
                 if (alt != null) rotKeys = alt.rotation;
             }
@@ -123,7 +138,7 @@ public class KeyframeAnimationPlayer implements IAnimation {
             }
         } else if (type == TransformType.POSITION) {
             java.util.List<efw.animation.KeyFrame> posKeys = track.position;
-            if ((posKeys == null || posKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
+            if (!clip.isEmotecraft && (posKeys == null || posKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
                 BoneTrack alt = "torso".equals(modelName) ? clip.bones.get("body") : clip.bones.get("torso");
                 if (alt != null) posKeys = alt.position;
             }
@@ -143,6 +158,10 @@ public class KeyframeAnimationPlayer implements IAnimation {
                     posY = basePos[1] + dpy * mult;
                     posZ = basePos[2] + dpz * mult;
                 }
+                boolean isItem = "rightItem".equals(modelName) || "leftItem".equals(modelName);
+                if (isItem) {
+                    return new Vec3f(posX, -posY, posZ);
+                }
                 // Position is additive to vanilla base position. Invert Y to match Minecraft's coordinate system.
                 return new Vec3f(value0.getX() + posX, value0.getY() - posY, value0.getZ() + posZ);
             }
@@ -154,15 +173,20 @@ public class KeyframeAnimationPlayer implements IAnimation {
         BoneTrack track = clip.bones.get(boneName);
         if (track != null) return track;
 
+        if (clip.isEmotecraft) {
+            // In Emotecraft / Better Combat / Combat Roll:
+            // "body" is root entity transform in RenderPlayer, "torso" is the chest ModelRenderer.
+            // Do NOT alias body <-> torso!
+            return null;
+        }
+
         if ("body".equals(boneName)) {
             track = clip.bones.get("torso");
             if (track != null) return track;
         }
         if ("torso".equals(boneName)) {
-            if (!"roll".equals(clip.name)) {
-                track = clip.bones.get("body");
-                if (track != null) return track;
-            }
+            track = clip.bones.get("body");
+            if (track != null) return track;
         }
         if ("rightArm".equals(boneName)) {
             track = clip.bones.get("right_arm");

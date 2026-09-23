@@ -22,6 +22,13 @@ public class BoneTrack {
         KeyFrame first = frames.get(0);
         KeyFrame last = frames.get(size - 1);
 
+        if (time <= first.time) {
+            return new float[] { first.x, first.y, first.z };
+        }
+        if (time >= last.time) {
+            return new float[] { last.x, last.y, last.z };
+        }
+
         for (int i = 0; i < size - 1; i++) {
             KeyFrame a = frames.get(i);
             KeyFrame b = frames.get(i + 1);

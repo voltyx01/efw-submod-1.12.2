@@ -40,7 +40,9 @@ public class PoseHelper {
 
         // Determine if pose should be shown
         String targetPose = null;
-        if (!player.isRiding() && !player.isHandActive()) {
+        boolean isAttacking = (ap.isActionAttack() && ap.getActionLayer().isActive()) || player.isSwingInProgress;
+        boolean isBusy = player.isRiding() || player.isHandActive() || player.isPlayerSleeping() || player.isInWater() || player.isInLava() || player.isElytraFlying();
+        if (!isAttacking && !isBusy) {
             WeaponAttributes attributes = WeaponRegistry.getAttributes(player.getHeldItemMainhand());
             if (attributes != null && attributes.pose() != null) {
                 targetPose = attributes.pose();

@@ -318,8 +318,8 @@ public class AnimationTickHandler {
         float prevPostRollHead = prevPostRollHeadYawOffsetMap.getOrDefault(player, 0f);
         float currPostRollHead = postRollHeadYawOffsetMap.getOrDefault(player, 0f);
         float interpPostRollHead = prevPostRollHead + (currPostRollHead - prevPostRollHead) * partialTicks;
-
-        boolean needsOverride = effectiveHoldWeight > 0.0f || isRolling || Math.abs(interpPostRoll) > 0.05f || Math.abs(interpPostRollHead) > 0.05f;
+        boolean isAttacking = ap != null && ap.hasActionWeight() && ap.isActionAttack();
+        boolean needsOverride = effectiveHoldWeight > 0.0f || isRolling || isAttacking || Math.abs(interpPostRoll) > 0.05f || Math.abs(interpPostRollHead) > 0.05f;
 
         if (needsOverride) {
             storedRenderYawOffsetMap.put(player, player.renderYawOffset);
@@ -334,6 +334,10 @@ public class AnimationTickHandler {
                 player.prevRenderYawOffset = newBodyYaw;
                 player.rotationYawHead = headYaw;
                 player.prevRotationYawHead = headYaw;
+            } else if (isAttacking) {
+                // Better Combat: during attack, player's body faces the crosshair immediately
+                player.renderYawOffset = player.rotationYawHead;
+                player.prevRenderYawOffset = player.prevRotationYawHead;
             } else {
                 // Post-roll / weapon hold: preserve Minecraft's frame-to-frame delta to prevent twitching in other animations (like arms)
                 // We compute how much we want to shift the body and head, then apply that shift to BOTH prev and current.
@@ -819,10 +823,17 @@ public class AnimationTickHandler {
             ticksSinceLastSwing++;
             if (ticksSinceLastSwing > 3) {
                 String currentAction = ap.getCurrentActionName();
-                if (currentAction != null && !currentAction.equals("roll") 
-                        && !currentAction.startsWith("pistol_") && !currentAction.startsWith("rifle_")
-                        && !currentAction.contains("aim") && !currentAction.contains("reload")) {
-                    ap.stopAction();
+                if (currentAction != null && (
+                        currentAction.startsWith("sword_attack") ||
+                        currentAction.startsWith("fist_attack") ||
+                        currentAction.startsWith("spear_attack") ||
+                        currentAction.equals("heavy_slam") ||
+                        currentAction.equals("axe") || currentAction.equals("axe_sneak") ||
+                        currentAction.equals("pickaxe") || currentAction.equals("shovel") || currentAction.equals("hoe")
+                )) {
+                    if (!net.bettercombat.client.BetterCombatClient.isUpswingActive() && net.bettercombat.client.BetterCombatClient.attackCooldown <= 0) {
+                        ap.stopAction();
+                    }
                 }
             }
         }

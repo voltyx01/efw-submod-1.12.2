@@ -55,25 +55,21 @@ public abstract class AbstractFadeModifier extends AbstractModifier {
                 : value0;
 
         if (type == TransformType.ROTATION) {
-            float[] euler1 = new float[] {
-                (float) Math.toDegrees(source.getX()),
-                (float) Math.toDegrees(source.getY()),
-                (float) Math.toDegrees(source.getZ())
-            };
-            float[] euler2 = new float[] {
-                (float) Math.toDegrees(animatedVec.getX()),
-                (float) Math.toDegrees(animatedVec.getY()),
-                (float) Math.toDegrees(animatedVec.getZ())
-            };
-            float[] resultDeg = efw.animation.QuatMath.slerpEulerAngles(euler1, euler2, a);
-            return new Vec3f(
-                (float) Math.toRadians(resultDeg[0]),
-                (float) Math.toRadians(resultDeg[1]),
-                (float) Math.toRadians(resultDeg[2])
-            );
+            float x = interpolateAngle(source.getX(), animatedVec.getX(), a);
+            float y = interpolateAngle(source.getY(), animatedVec.getY(), a);
+            float z = interpolateAngle(source.getZ(), animatedVec.getZ(), a);
+            return new Vec3f(x, y, z);
         }
 
         return animatedVec.scale(a).add(source.scale(1.0f - a));
+    }
+
+    private static float interpolateAngle(float start, float end, float alpha) {
+        float PI2 = (float) (2 * Math.PI);
+        float diff = (end - start) % PI2;
+        if (diff < -Math.PI) diff += PI2;
+        if (diff > Math.PI) diff -= PI2;
+        return start + diff * alpha;
     }
 
     public float calculateProgress(float tickDelta) {
