@@ -338,6 +338,8 @@ public class AnimationTickHandler {
                 // Better Combat: during attack, player's body faces the crosshair immediately
                 player.renderYawOffset = player.rotationYawHead;
                 player.prevRenderYawOffset = player.prevRotationYawHead;
+                storedRenderYawOffsetMap.put(player, player.rotationYawHead);
+                storedPrevRenderYawOffsetMap.put(player, player.prevRotationYawHead);
             } else {
                 // Post-roll / weapon hold: preserve Minecraft's frame-to-frame delta to prevent twitching in other animations (like arms)
                 // We compute how much we want to shift the body and head, then apply that shift to BOTH prev and current.
@@ -375,8 +377,16 @@ public class AnimationTickHandler {
         EntityPlayer player = event.getEntityPlayer();
 
         if (didOverrideYawMap.getOrDefault(player, false)) {
-            player.renderYawOffset = storedRenderYawOffsetMap.getOrDefault(player, player.renderYawOffset);
-            player.prevRenderYawOffset = storedPrevRenderYawOffsetMap.getOrDefault(player, player.prevRenderYawOffset);
+            efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(player);
+            boolean isAttacking = ap != null && ap.hasActionWeight() && ap.isActionAttack();
+            if (isAttacking) {
+                // Keep the body facing the strike direction; do not revert to pre-attack yaw!
+                player.renderYawOffset = player.rotationYawHead;
+                player.prevRenderYawOffset = player.prevRotationYawHead;
+            } else {
+                player.renderYawOffset = storedRenderYawOffsetMap.getOrDefault(player, player.renderYawOffset);
+                player.prevRenderYawOffset = storedPrevRenderYawOffsetMap.getOrDefault(player, player.prevRenderYawOffset);
+            }
             player.rotationYawHead = storedRotationYawHeadMap.getOrDefault(player, player.rotationYawHead);
             player.prevRotationYawHead = storedPrevRotationYawHeadMap.getOrDefault(player, player.prevRotationYawHead);
             didOverrideYawMap.put(player, false);
@@ -708,7 +718,18 @@ public class AnimationTickHandler {
 
         // --- УДАР РУКОЙ (кулак, мечи и т.д.) ---
         // Защита: не запускаем анимацию атаки при ПКМ (использование предметов, аптечки, установка блоков)
-        if (player.isSwingInProgress && !isUsingItemOrRightClick && player.swingingHand == net.minecraft.util.EnumHand.MAIN_HAND) {
+        boolean isBetterCombatWeapon = false;
+        if (efw.biomeinfo.MwccfConfig.betterCombat != null && efw.biomeinfo.MwccfConfig.betterCombat.enabled) {
+            net.minecraft.item.ItemStack heldMain = player.getHeldItemMainhand();
+            boolean isMiningBlock = isCurrentlyHitting || recentlyHitBlockTicks > 0;
+            if (!isMiningBlock && (net.bettercombat.logic.WeaponRegistry.getAttributes(heldMain) != null
+                    || net.bettercombat.client.BetterCombatClient.isUpswingActive()
+                    || net.bettercombat.client.BetterCombatClient.swingTimer > 0)) {
+                isBetterCombatWeapon = true;
+            }
+        }
+
+        if (!isBetterCombatWeapon && player.isSwingInProgress && !isUsingItemOrRightClick && player.swingingHand == net.minecraft.util.EnumHand.MAIN_HAND) {
             ticksSinceLastSwing = 0;
             // Запускаем анимацию только в момент НАЧАЛА удара
             if (player.swingProgressInt == 1) {
@@ -819,7 +840,7 @@ public class AnimationTickHandler {
                     }
                 }
             }
-        } else {
+        } else if (!isBetterCombatWeapon) {
             ticksSinceLastSwing++;
             if (ticksSinceLastSwing > 3) {
                 String currentAction = ap.getCurrentActionName();

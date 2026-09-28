@@ -85,15 +85,27 @@ public class ModifierLayer<T extends IAnimation> extends AbstractModifier {
     }
 
     public void replaceAnimationWithFade(AbstractFadeModifier fadeModifier, T newAnimation, boolean fadeFromNothing) {
-        if (fadeFromNothing || (this.getAnimation() != null && this.getAnimation().isActive())) {
-            fadeModifier.setBeginAnimation(this.getAnimation());
+        IAnimation sourceAnim = this.animation;
+        if (sourceAnim == null && !this.modifiers.isEmpty()) {
+            sourceAnim = this.modifiers.get(0);
+        }
+
+        if (fadeFromNothing || sourceAnim != null) {
+            fadeModifier.setBeginAnimation(sourceAnim);
+            this.clearModifiers();
             this.addModifierLast(fadeModifier);
+        } else {
+            this.clearModifiers();
         }
         this.setAnimation(newAnimation);
     }
 
     public int size() {
         return this.modifiers.size();
+    }
+
+    public List<AbstractModifier> getModifiers() {
+        return this.modifiers;
     }
 
     protected void linkModifiers() {

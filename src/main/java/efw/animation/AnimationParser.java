@@ -143,7 +143,7 @@ public class AnimationParser {
                     KeyFrame last = frames.get(frames.size() - 1);
                     if (last.time < length) {
                         KeyFrame first = frames.get(0);
-                        frames.add(new KeyFrame(length, first.x, first.y, first.z, last.linear));
+                        frames.add(new KeyFrame(length, first.x, first.y, first.z, last.linear, last.easing));
                     }
                 }
             }
@@ -173,6 +173,7 @@ public class AnimationParser {
         Float pitch, yaw, roll;
         Float x, y, z;
         boolean linear = true;
+        String easing = "LINEAR";
     }
 
     private static Map<String, AnimationClip> parseEmotecraft(JsonObject root, String prefix) {
@@ -194,9 +195,17 @@ public class AnimationParser {
         int endTick = emote.has("endTick") ? emote.get("endTick").getAsInt() : 0;
         int stopTick = emote.has("stopTick") ? emote.get("stopTick").getAsInt() : endTick;
         int beginTick = emote.has("beginTick") ? emote.get("beginTick").getAsInt() : 0;
-        float length = stopTick * 0.05f;
-        float startTime = beginTick * 0.05f;
         boolean degrees = emote.has("degrees") && emote.get("degrees").getAsBoolean();
+
+        boolean isAttackClip = animName.contains("slash") || animName.contains("stab")
+                || animName.contains("slam") || animName.contains("punch")
+                || animName.contains("attack") || animName.contains("spin")
+                || animName.contains("swipe") || animName.contains("uppercut")
+                || animName.contains("dual_handed") || animName.contains("one_handed")
+                || animName.contains("two_handed");
+
+        int effectiveEndTick = (isAttackClip && endTick > 0) ? endTick : stopTick;
+        float length = (effectiveEndTick > 0 ? effectiveEndTick : stopTick) * 0.05f;
 
         Map<String, Map<Integer, EmoteBoneFrame>> boneFrames = new HashMap<>();
         
@@ -205,10 +214,8 @@ public class AnimationParser {
             for (JsonElement moveEl : moves) {
                 JsonObject move = moveEl.getAsJsonObject();
                 int tick = move.has("tick") ? move.get("tick").getAsInt() : 0;
-                boolean linear = true;
-                if (move.has("easing")) {
-                    linear = move.get("easing").getAsString().equalsIgnoreCase("LINEAR");
-                }
+                String easing = move.has("easing") ? move.get("easing").getAsString() : "LINEAR";
+                boolean linear = easing.equalsIgnoreCase("LINEAR");
                 
                 for (Map.Entry<String, JsonElement> entry : move.entrySet()) {
                     String key = entry.getKey();
@@ -218,6 +225,7 @@ public class AnimationParser {
                     Map<Integer, EmoteBoneFrame> frames = boneFrames.computeIfAbsent(key, k -> new HashMap<>());
                     EmoteBoneFrame frame = frames.computeIfAbsent(tick, k -> new EmoteBoneFrame());
                     frame.linear = linear;
+                    frame.easing = easing;
                     
                     if (boneObj.has("pitch")) frame.pitch = boneObj.get("pitch").getAsFloat();
                     if (boneObj.has("yaw")) frame.yaw = boneObj.get("yaw").getAsFloat();
@@ -233,7 +241,7 @@ public class AnimationParser {
         }
         
         // We do NOT inject a manual stopTick frame here.
-        // Instead, the clip's length is set to stopTick * 0.05f.
+        // Instead, the clip's length is set to stopTick * 0.05f (or active duration for attacks).
         // The KeyframeAnimationPlayer will clamp to endTick values,
         // and the AbstractFadeModifier will smoothly blend from those clamped 
         // values back to the vanilla pose (camera rotation, etc.) during fade-out.
@@ -241,6 +249,9 @@ public class AnimationParser {
         Map<String, BoneTrack> boneTracks = new HashMap<>();
         for (Map.Entry<String, Map<Integer, EmoteBoneFrame>> boneEntry : boneFrames.entrySet()) {
             String rawBoneName = boneEntry.getKey();
+            // In 1.20.1 playerAnim (AnimationJson.java line 136):
+            // if (version < 3 && name.equals("torso")) name = "body";
+            // Map "torso" to "body" so root torso rotations/offsets are applied to the whole entity
             String boneName = "torso".equals(rawBoneName) ? "body" : rawBoneName;
             
             Map<Integer, EmoteBoneFrame> frames = boneEntry.getValue();
@@ -258,6 +269,11 @@ public class AnimationParser {
                 EmoteBoneFrame frame = frames.get(tick);
                 boolean hasRot = false;
                 boolean hasPos = false;
+
+                float keyTime = tick * 0.05f;
+                if (isAttackClip && keyTime > length) {
+                    keyTime = length;
+                }
                 
                 if (frame.pitch != null) { lastPitch = frame.pitch; hasRot = true; }
                 if (frame.yaw != null) { lastYaw = frame.yaw; hasRot = true; }
@@ -272,24 +288,20 @@ public class AnimationParser {
                     // copy.head.pitch.setEnabled(false);
                     // Disable pitch for head ONLY in BetterCombat attack animations so vanilla head tracking works.
                     // Emotes and rolls MUST keep their authored head pitch!
-                    boolean isAttackClip = animName.contains("slash") || animName.contains("stab")
-                            || animName.contains("slam") || animName.contains("punch")
-                            || animName.contains("attack") || animName.contains("spin")
-                            || animName.contains("dual_handed") || animName.contains("one_handed")
-                            || animName.contains("two_handed");
                     if ("head".equals(boneName) && !isLoop && isAttackClip) {
                         rotX = 0f;
                     }
                     
-                    rotKeyFrames.add(new KeyFrame(tick * 0.05f, rotX, rotY, rotZ, frame.linear));
+                    rotKeyFrames.add(new KeyFrame(keyTime, rotX, rotY, rotZ, frame.linear, frame.easing));
                 }
                 
-                if (frame.x != null) { lastX = frame.x - getVanillaBaseX(boneName); hasPos = true; }
-                if (frame.y != null) { lastY = -(frame.y - getVanillaBaseY(boneName)); hasPos = true; }
-                if (frame.z != null) { lastZ = frame.z - getVanillaBaseZ(boneName); hasPos = true; }
+                boolean isItem = "rightItem".equals(boneName) || "leftItem".equals(boneName);
+                if (frame.x != null) { lastX = isItem ? frame.x : (frame.x - getVanillaBaseX(boneName)); hasPos = true; }
+                if (frame.y != null) { lastY = isItem ? frame.y : -(frame.y - getVanillaBaseY(boneName)); hasPos = true; }
+                if (frame.z != null) { lastZ = isItem ? frame.z : (frame.z - getVanillaBaseZ(boneName)); hasPos = true; }
                 
                 if (hasPos) {
-                    posKeyFrames.add(new KeyFrame(tick * 0.05f, lastX, lastY, lastZ, frame.linear));
+                    posKeyFrames.add(new KeyFrame(keyTime, lastX, lastY, lastZ, frame.linear, frame.easing));
                 }
             }
             
@@ -297,16 +309,20 @@ public class AnimationParser {
                 if (!rotKeyFrames.isEmpty() && rotKeyFrames.get(rotKeyFrames.size() - 1).time < length) {
                     KeyFrame first = rotKeyFrames.get(0);
                     KeyFrame last = rotKeyFrames.get(rotKeyFrames.size() - 1);
-                    rotKeyFrames.add(new KeyFrame(length, first.x, first.y, first.z, last.linear));
+                    rotKeyFrames.add(new KeyFrame(length, first.x, first.y, first.z, last.linear, last.easing));
                 }
                 if (!posKeyFrames.isEmpty() && posKeyFrames.get(posKeyFrames.size() - 1).time < length) {
                     KeyFrame first = posKeyFrames.get(0);
                     KeyFrame last = posKeyFrames.get(posKeyFrames.size() - 1);
-                    posKeyFrames.add(new KeyFrame(length, first.x, first.y, first.z, last.linear));
+                    posKeyFrames.add(new KeyFrame(length, first.x, first.y, first.z, last.linear, last.easing));
                 }
             }
             
-            boneTracks.put(boneName, new BoneTrack(boneName, rotKeyFrames, posKeyFrames));
+            BoneTrack track = new BoneTrack(boneName, rotKeyFrames, posKeyFrames);
+            boneTracks.put(boneName, track);
+            if ("body".equals(boneName)) {
+                boneTracks.put("torso", track);
+            }
         }
 
         result.put(animName, new AnimationClip(animName, length, isLoop, boneTracks, beginTick, endTick, stopTick, true));

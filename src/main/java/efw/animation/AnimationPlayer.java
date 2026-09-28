@@ -38,6 +38,16 @@ public class AnimationPlayer {
     public float rollFade = 0.0f;
     public boolean isHoldingWeapon = false;
     public AnimationClip lastWeaponClip = null;
+    private KeyframeAnimationPlayer lastAttackPlayer = null;
+    private net.bettercombat.logic.AnimatedHand animatedHand = net.bettercombat.logic.AnimatedHand.MAIN_HAND;
+
+    public net.bettercombat.logic.AnimatedHand getAnimatedHand() {
+        return animatedHand != null ? animatedHand : net.bettercombat.logic.AnimatedHand.MAIN_HAND;
+    }
+
+    public void setAnimatedHand(net.bettercombat.logic.AnimatedHand animatedHand) {
+        this.animatedHand = animatedHand;
+    }
 
     // Two-phase BetterCombat transmission speed (ported from BC 1.20.1 TransmissionSpeedModifier)
     private float bcUpswingSpeed = 1.0f;
@@ -131,21 +141,30 @@ public class AnimationPlayer {
         if (clip.isEmotecraft && clip.beginTick > 0) {
             blendTicks = clip.beginTick;
         }
-        boolean isPreviousAttack = this.actionLayer.isActive() && isAttackClip(this.actionClip);
+        boolean isPreviousAttack = (this.actionLayer.isActive() && isAttackClip(this.actionClip))
+                || (this.lastAttackPlayer != null && (isAttackClip(this.actionClip) || isAttackClip(this.previousActionClip)));
         boolean isCurrentAttack = isAttackClip(clip);
         boolean isAttackToAttack = isPreviousAttack && isCurrentAttack;
+
+        KeyframeAnimationPlayer prevAttack = (this.actionLayer.getAnimation() instanceof KeyframeAnimationPlayer)
+                ? (KeyframeAnimationPlayer) this.actionLayer.getAnimation()
+                : this.lastAttackPlayer;
 
         if (this.actionSnapped || blendTicks <= 0) {
             this.actionSnapped = false;
             this.actionLayer.clearModifiers();
             this.actionLayer.setAnimation(playerAnim);
-        } else if (isAttackToAttack) {
+        } else if (isAttackToAttack && prevAttack != null) {
             this.actionSnapped = false;
+            AbstractFadeModifier fade = AbstractFadeModifier.standardFadeIn(4, Ease::inOutSine);
+            fade.setBeginAnimation(prevAttack);
             this.actionLayer.clearModifiers();
-            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease::outCubic), playerAnim, true);
+            this.actionLayer.addModifierLast(fade);
+            this.actionLayer.setAnimation(playerAnim);
         } else {
             this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendTicks, Ease::inOutSine), playerAnim, true);
         }
+        this.lastAttackPlayer = playerAnim;
     }
 
     /**
@@ -162,9 +181,14 @@ public class AnimationPlayer {
         }
 
         // Attack-to-attack: was an attack active on actionLayer (holding frame or fading out)?
-        boolean isPreviousAttack = this.actionLayer.isActive() && isAttackClip(this.actionClip);
+        boolean isPreviousAttack = (this.actionLayer.isActive() && isAttackClip(this.actionClip))
+                || (this.lastAttackPlayer != null && (isAttackClip(this.actionClip) || isAttackClip(this.previousActionClip)));
         boolean isCurrentAttack = isAttackClip(clip);
         boolean isAttackToAttack = isPreviousAttack && isCurrentAttack;
+
+        KeyframeAnimationPlayer prevAttack = (this.actionLayer.getAnimation() instanceof KeyframeAnimationPlayer)
+                ? (KeyframeAnimationPlayer) this.actionLayer.getAnimation()
+                : this.lastAttackPlayer;
 
         if (this.actionClip != null && this.actionClip != clip) {
             this.previousActionClip = this.actionClip;
@@ -181,24 +205,28 @@ public class AnimationPlayer {
         this.bcElapsed = 0.0f;
         this.bcTransmissionActive = true;
 
-        KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
+        KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip, 0.0f);
         playerAnim.setSpeed(upswingSpeed);
         // Hold the last frame when animation finishes so the weapon stays at impact pose
         // until stopAction() explicitly fades it out (matches BC 1.20.1 behaviour)
         playerAnim.setHoldLastFrame(true);
 
-        if (blendIn <= 0 || this.actionSnapped) {
+        int blend = isAttackToAttack ? Math.min(2, Math.max(1, (int) upswingEndTick - 1)) : blendIn;
+        if (blend <= 0 || this.actionSnapped) {
             this.actionSnapped = false;
             this.actionLayer.clearModifiers();
             this.actionLayer.setAnimation(playerAnim);
-        } else if (isAttackToAttack) {
+        } else if (isAttackToAttack && prevAttack != null && this.actionLayer.getAnimation() == null && this.actionLayer.size() == 0) {
             this.actionSnapped = false;
+            AbstractFadeModifier fade = AbstractFadeModifier.standardFadeIn(blend, Ease::inOutSine);
+            fade.setBeginAnimation(prevAttack);
             this.actionLayer.clearModifiers();
-            // Fast 2-tick blend between attacks: quickly moves into windup pose without instant teleport
-            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease::outCubic), playerAnim, true);
+            this.actionLayer.addModifierLast(fade);
+            this.actionLayer.setAnimation(playerAnim);
         } else {
-            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blendIn, Ease::inOutSine), playerAnim, true);
+            this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blend, Ease::inOutSine), playerAnim, true);
         }
+        this.lastAttackPlayer = playerAnim;
     }
 
     /**
@@ -208,20 +236,18 @@ public class AnimationPlayer {
     public void tickBetterCombatTransmission() {
         if (!bcTransmissionActive) return;
         bcElapsed += 1.0f;
+        if (bcElapsed >= bcAttackEndTick) {
+            bcTransmissionActive = false;
+            // Remote player fallback: fade out when attack duration finishes
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+            if (this.player != null && mc != null && this.player != mc.player && !actionFadingOut && isActionAttack()) {
+                stopAction(6);
+            }
+        }
         // Switch from upswing to downwind speed when we pass the upswing phase
         float targetSpeed = bcElapsed > bcUpswingEndTick ? bcDownwindSpeed : bcUpswingSpeed;
         if (Math.abs(targetSpeed - actionSpeed) > 0.001f) {
-            actionSpeed = targetSpeed;
-            // Apply to the actual KeyframeAnimationPlayer inside the layer
-            IAnimation anim = actionLayer.getAnimation();
-            if (anim instanceof KeyframeAnimationPlayer) {
-                ((KeyframeAnimationPlayer) anim).setSpeed(targetSpeed);
-            } else if (anim instanceof AbstractFadeModifier) {
-                IAnimation inner = ((AbstractFadeModifier) anim).getAnimation();
-                if (inner instanceof KeyframeAnimationPlayer) {
-                    ((KeyframeAnimationPlayer) inner).setSpeed(targetSpeed);
-                }
-            }
+            setActionSpeed(targetSpeed);
         }
     }
 
@@ -241,6 +267,10 @@ public class AnimationPlayer {
 
     public AnimationClip getActionClip() {
         return actionClip;
+    }
+
+    public AnimationClip getPreviousActionClip() {
+        return previousActionClip;
     }
 
     public void stopAction(int blendTicks) {
@@ -270,6 +300,7 @@ public class AnimationPlayer {
 
     public void snapAction() {
         this.actionClip = null;
+        this.lastAttackPlayer = null;
         this.actionLayer.clearModifiers();
         this.actionLayer.setAnimation(null);
         this.actionFadingOut = false;
@@ -290,6 +321,7 @@ public class AnimationPlayer {
         this.rollFadingOut = false;
         KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
         playerAnim.setSpeed(speed);
+        playerAnim.setHoldLastFrame(true);
         this.rollLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease::inOutSine), playerAnim, true);
     }
 
@@ -402,23 +434,39 @@ public class AnimationPlayer {
 
     public void tick(float speedMult) {
         this.lastSpeedMult = speedMult;
+        tickBetterCombatTransmission();
 
         updateAnimationSpeed(this.baseLayer.getAnimation(), speedMult);
 
         KeyframeAnimationPlayer rp = getRollPlayer();
-        if (rp != null && rp.isActive() && !this.rollFadingOut) {
+        if (rp != null && !this.rollFadingOut) {
             // roll.json: somersault rotation completes at tick 10 (out of 13), progress ~0.77.
             // Start the 8-tick smooth rise fadeout from the crouched roll landing.
-            if (rp.getProgress() >= 0.77f) {
+            if (rp.getProgress() >= 0.77f || !rp.isActive()) {
                 stopRoll(8);
             }
         }
 
         this.stack.tick();
 
+        if (this.player != null && this.player == net.minecraft.client.Minecraft.getMinecraft().player && isActionAttack() && this.actionClip != null) {
+            KeyframeAnimationPlayer kfp = getActiveActionPlayer();
+            int tick = kfp != null ? (int) Math.floor(kfp.getCurrentTime()) : -1;
+            for (String bone : java.util.Arrays.asList("body", "rightArm", "leftArm", "rightItem", "leftItem")) {
+                efw.animation.layered.math.Vec3f rotation = this.stack.get3DTransform(bone, efw.animation.layered.TransformType.ROTATION, 0.0F, efw.animation.layered.math.Vec3f.ZERO);
+                efw.animation.layered.math.Vec3f position = this.stack.get3DTransform(bone, efw.animation.layered.TransformType.POSITION, 0.0F, efw.animation.layered.math.Vec3f.ZERO);
+                System.out.printf(java.util.Locale.ROOT,
+                        "[BCFP12][POSE] clip=%s tick=%d hand=%s lengthTicks=%.3f upswing=%.4f pitch=%.3f yaw=%.3f bodyYaw=%.3f bone=%s rotRad=(%.5f,%.5f,%.5f) posModel=(%.5f,%.5f,%.5f)%n",
+                        this.actionClip.name, tick, this.animatedHand, this.bcAttackEndTick, this.bcUpswingEndTick / Math.max(1.0f, this.bcAttackEndTick),
+                        this.player.rotationPitch, this.player.rotationYaw, this.player.renderYawOffset, bone,
+                        rotation.getX(), rotation.getY(), rotation.getZ(),
+                        position.getX(), position.getY(), position.getZ());
+            }
+        }
+
         // Auto fade-out when action animation finishes naturally (not via stopAction)
         if (!this.actionFadingOut && this.actionClip != null) {
-            KeyframeAnimationPlayer kfp = findActionPlayer(this.actionLayer.getAnimation());
+            KeyframeAnimationPlayer kfp = getActiveActionPlayer();
             if (kfp != null && !kfp.isActive()) {
                 stopAction();
             }
@@ -427,6 +475,7 @@ public class AnimationPlayer {
         if (this.actionFadingOut && !this.actionLayer.isActive()) {
             this.actionClip = null;
             this.actionFadingOut = false;
+            this.lastAttackPlayer = null;
         }
         if (this.rollFadingOut && !this.rollLayer.isActive()) {
             this.rollClip = null;
@@ -538,8 +587,43 @@ public class AnimationPlayer {
         this.stack.setupAnim(tickDelta);
     }
 
+    public java.util.Optional<efw.animation.layered.modifier.AdjustmentModifier.PartModifier> applyAttackAdjustment(String partName, float tickDelta) {
+        if (this.player == null || !isActionAttack() || !hasActionWeight()) {
+            return java.util.Optional.empty();
+        }
+        float rotationX = 0;
+        float rotationY = 0;
+        float rotationZ = 0;
+        float offsetX = 0;
+        float offsetY = 0;
+        float offsetZ = 0;
+
+        float pitch = this.player.prevRotationPitch + (this.player.rotationPitch - this.player.prevRotationPitch) * tickDelta;
+        pitch = (float) Math.toRadians(pitch);
+
+        if (efw.animation.firstperson.FirstPersonMode.isFirstPersonPass()) {
+            return java.util.Optional.empty();
+        } else {
+            if ("body".equals(partName)) {
+                rotationX -= pitch * 0.75F;
+            } else if ("rightArm".equals(partName) || "leftArm".equals(partName)) {
+                rotationX += pitch * 0.25F;
+            } else if ("rightLeg".equals(partName) || "leftLeg".equals(partName)) {
+                rotationX -= pitch * 0.75F;
+            } else {
+                return java.util.Optional.empty();
+            }
+        }
+
+        return java.util.Optional.of(new efw.animation.layered.modifier.AdjustmentModifier.PartModifier(
+                new Vec3f(rotationX, rotationY, rotationZ),
+                new Vec3f(offsetX, offsetY, offsetZ))
+        );
+    }
+
     public Vec3f get3DTransform(String modelName, TransformType type, float tickDelta, Vec3f value0) {
         this.lastTickDelta = tickDelta;
+        Vec3f result;
         if (this.isRollPlaying() && this.isHoldingWeapon && ("rightArm".equals(modelName) || "leftArm".equals(modelName))) {
             // When holding a weapon during roll, actionLayer (rifle_run_upper / pistol_run_upper)
             // holds the weapon folded across chest. Do not let roll.json tumble keyframes overwrite arms!
@@ -550,9 +634,22 @@ public class AnimationPlayer {
             if (this.actionLayer.isActive()) {
                 current = this.actionLayer.get3DTransform(modelName, type, tickDelta, current);
             }
-            return current;
+            result = current;
+        } else {
+            result = this.stack.get3DTransform(modelName, type, tickDelta, value0);
         }
-        return this.stack.get3DTransform(modelName, type, tickDelta, value0);
+
+        java.util.Optional<efw.animation.layered.modifier.AdjustmentModifier.PartModifier> adj = applyAttackAdjustment(modelName, tickDelta);
+        if (adj.isPresent()) {
+            efw.animation.layered.modifier.AdjustmentModifier.PartModifier pm = adj.get();
+            float fade = getActionFadeAlpha(tickDelta);
+            if (type == TransformType.ROTATION) {
+                result = result.add(pm.rotation().scale(fade));
+            } else if (type == TransformType.POSITION) {
+                result = result.add(pm.offset().scale(fade));
+            }
+        }
+        return result;
     }
 
     public Vec3f getBaseLayerTransform(String boneName, TransformType type, float partialTick) {
@@ -590,7 +687,7 @@ public class AnimationPlayer {
     }
 
     public boolean hasActionWeight() {
-        return isActionPlaying();
+        return this.actionLayer.isActive();
     }
 
     public float getActionWeight() {
@@ -606,6 +703,10 @@ public class AnimationPlayer {
 
     public float getActionFadeWeight(float tickDelta) {
         return isActionPlaying() ? 1.0f : 0.0f;
+    }
+
+    public float getActionFadeAlpha(float partialTicks) {
+        return this.actionLayer.getAlpha(partialTicks);
     }
 
     public float getArmPitchTrackingWeight(float tickDelta, boolean isHoldingWeapon) {
@@ -634,11 +735,26 @@ public class AnimationPlayer {
     }
 
     public float getActionProgress() {
-        KeyframeAnimationPlayer ap = findActionPlayer(actionLayer.getAnimation());
+        KeyframeAnimationPlayer ap = getActiveActionPlayer();
         if (ap != null) {
             return ap.getProgress();
         }
         return 0.0f;
+    }
+
+    public KeyframeAnimationPlayer getActiveActionPlayer() {
+        KeyframeAnimationPlayer found = findActionPlayerFromLayer(this.actionLayer);
+        if (found != null) return found;
+        return this.lastAttackPlayer;
+    }
+
+    private KeyframeAnimationPlayer findActionPlayerFromLayer(ModifierLayer<?> layer) {
+        if (layer == null) return null;
+        for (efw.animation.layered.modifier.AbstractModifier mod : layer.getModifiers()) {
+            KeyframeAnimationPlayer p = findActionPlayer(mod);
+            if (p != null) return p;
+        }
+        return findActionPlayer(layer.getAnimation());
     }
 
     private KeyframeAnimationPlayer findActionPlayer(IAnimation anim) {

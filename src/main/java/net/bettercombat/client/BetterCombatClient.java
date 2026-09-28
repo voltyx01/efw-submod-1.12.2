@@ -20,16 +20,23 @@ import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import java.util.List;
 
 public class BetterCombatClient {
+    public static int swingTimer = 0;
+    public static int swingTimerCap = 0;
+    public static int swingTimestampSound = 0;
+    public static int swingTimestampDamage = 0;
     public static int upswingTicks = 0;
     public static int attackCooldown = 0;
     public static int lastAttacked = 1000;
@@ -41,9 +48,16 @@ public class BetterCombatClient {
     private static ItemStack lastAttackedWithStack = ItemStack.EMPTY;
     private static ItemStack lastHeldStack = ItemStack.EMPTY;
 
-    // Stored swing sound for deferred playback at performAttack (BC 1.20.1 plays it on strike, not windup)
+    public static String currentAnimation = "";
+    public static boolean currentIsOffHand = false;
+    public static boolean currentIsDualHanded = false;
+
+    // Stored swing sound for deferred playback
     private static String pendingSwingSoundId = "";
     private static WeaponAttributes.Sound pendingSwingSoundConfig = null;
+
+    // Queued attack input buffer for seamless combo chaining without dropped clicks
+    private static int attackBufferTicks = 0;
 
     public static boolean isUpswingActive() {
         return upswingTicks > 0;
@@ -59,6 +73,22 @@ public class BetterCombatClient {
         PlayerAttackProperties.setComboCount(player, count);
     }
 
+    public static boolean canStartAttack(EntityPlayerSP player) {
+        if (player == null || player.isRiding() || player.isHandActive()) {
+            return false;
+        }
+        if (attackCooldown > 0 || upswingTicks > 0) {
+            return false;
+        }
+        AttackHand hand = PlayerAttackHelper.getCurrentAttack(player, getComboCount());
+        if (hand == null) {
+            return false;
+        }
+        float upswingRate = (float) hand.upswingRate();
+        float cooledStrength = player.getCooledAttackStrength(0.0f);
+        return cooledStrength >= (1.0f - upswingRate - 0.01f);
+    }
+
     public static boolean onAttackInput() {
         if (!MwccfConfig.betterCombat.enabled) {
             return false;
@@ -70,8 +100,10 @@ public class BetterCombatClient {
             return false;
         }
 
-        if (upswingTicks > 0 || attackCooldown > 0) {
-            return true;
+        ItemStack stack = player.getHeldItemMainhand();
+        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
+        if (attributes == null || attributes.attacks() == null || attributes.attacks().length == 0) {
+            return false;
         }
 
         // If holding a mineable block and targeting it
@@ -81,11 +113,16 @@ public class BetterCombatClient {
         }
         isHarvesting = false;
 
-        ItemStack stack = player.getHeldItemMainhand();
-        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
-        if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
+        if (canStartAttack(player)) {
             startUpswing(attributes);
-            return true; // handled by Better Combat!
+            attackBufferTicks = 0;
+            return true;
+        }
+
+        // Input buffering: queue attack during recovery so combos flow seamlessly without dropped clicks
+        if (upswingTicks == 0 && attackCooldown > 0 && attackCooldown <= 6) {
+            attackBufferTicks = 6;
+            return true;
         }
         return false;
     }
@@ -127,36 +164,46 @@ public class BetterCombatClient {
             return;
         }
 
+        if (attackCooldown > 0 || upswingTicks > 0) {
+            return;
+        }
+
         AttackHand hand = PlayerAttackHelper.getCurrentAttack(player, getComboCount());
         if (hand == null) {
             return;
         }
 
         float upswingRate = (float) hand.upswingRate();
-        if (upswingTicks > 0 || attackCooldown > 0 || player.isHandActive() || player.getCooledAttackStrength(0.0F) < (1.0F - upswingRate)) {
+        if (player.getCooledAttackStrength(0.0f) < (1.0f - upswingRate - 0.01f)) {
             return;
         }
 
         player.resetActiveHand();
-        lastAttacked = 0;
         upswingStack = player.getHeldItemMainhand().copy();
 
         float cooldownTicks = PlayerAttackHelper.getAttackCooldownLengthTicks(player, hand.itemStack());
-        comboReset = Math.max(10, Math.round(cooldownTicks * (float) MwccfConfig.betterCombat.comboResetRate));
-        upswingTicks = Math.max(1, Math.round(cooldownTicks * upswingRate));
         int cooldownTicksInt = Math.max(1, Math.round(cooldownTicks));
         attackCooldown = cooldownTicksInt;
         lastSwingDuration = cooldownTicks;
         lastAttacked = 0;
+        comboReset = Math.max(10, Math.round(cooldownTicks * (float) MwccfConfig.betterCombat.comboResetRate));
 
         String anim = hand.attack().animation();
         AnimatedHand animatedHand = AnimatedHand.from(hand.isOffHand(), attributes.isTwoHanded());
 
-        // Play animation
-        AttackAnimationHelper.playAttackAnimation(player, anim, animatedHand, cooldownTicks, upswingRate);
+        currentAnimation = anim != null ? anim : "";
+        currentIsOffHand = hand.isOffHand();
+        currentIsDualHanded = (animatedHand == AnimatedHand.DUAL_HANDED);
 
-        // Store swing sound for deferred playback at the moment of actual strike (performAttack)
-        // BC 1.20.1 plays swing sound in performAttack, not at windup start
+        int strikeTicks = Math.max(1, Math.round(cooldownTicks * upswingRate));
+        upswingTicks = strikeTicks;
+
+        // Visual swing duration: faithfully match original Better Combat (MathHelper.clamp(i, 3, 14) - 2)
+        int visualTicks = Math.max(4, MathHelper.clamp(cooldownTicksInt, 4, 14) - 2);
+        swingTimerCap = visualTicks;
+        swingTimer = visualTicks;
+
+        // Store swing sound
         pendingSwingSoundId = "";
         pendingSwingSoundConfig = null;
         WeaponAttributes.Sound soundConfig = hand.attack().swingSound();
@@ -165,13 +212,16 @@ public class BetterCombatClient {
             pendingSwingSoundConfig = soundConfig;
         }
 
+        // Play third-person animation synchronized to visual swing timer and strike ticks
+        AttackAnimationHelper.playAttackAnimation(player, anim, animatedHand, cooldownTicks, upswingRate);
+
         // Send animation packet to server
         BetterCombatNetwork.NETWORK.sendToServer(new PacketAttackAnimation(
                 player.getEntityId(),
                 animatedHand.ordinal(),
                 anim,
-                cooldownTicks,
-                upswingRate,
+            cooldownTicks,
+            upswingRate,
                 pendingSwingSoundId));
     }
 
@@ -187,6 +237,24 @@ public class BetterCombatClient {
         }
         lastAttacked++;
 
+        if (swingTimer > 0) {
+            swingTimer--;
+            if (swingTimer == 0) {
+                currentAnimation = "";
+                currentIsOffHand = false;
+                currentIsDualHanded = false;
+            }
+        }
+
+        if (upswingTicks > 0) {
+            upswingTicks--;
+            if (upswingTicks == 0) {
+                playSwingSound(mc, player);
+                performAttack(mc, player);
+                upswingStack = ItemStack.EMPTY;
+            }
+        }
+
         // Track weapon swap to apply equip cooldown for BetterCombat weapons
         ItemStack currentHeld = player.getHeldItemMainhand();
         if (currentHeld.getItem() != lastHeldStack.getItem()) {
@@ -196,35 +264,55 @@ public class BetterCombatClient {
                 float cd = PlayerAttackHelper.getAttackCooldownLengthTicks(player, currentHeld);
                 lastSwingDuration = cd;
                 lastAttacked = 0;
+                attackCooldown = Math.max(1, Math.round(cd));
             }
         }
 
         cancelSwingIfNeeded(player);
-        attackFromUpswingIfNeeded(mc, player);
         resetComboIfNeeded(player);
 
-        // Advance two-phase transmission speed for the local player's BC attack
-        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
-        if (localAp != null) {
-            localAp.tickBetterCombatTransmission();
-
-            // When the attack cooldown expires, fade out the BC attack animation.
-            // holdLastFrame=true keeps it alive at the final pose, so we must explicitly stop it.
-            // This matches BC 1.20.1 stopAttackAnimation(length) with a smooth 8-tick fade-out.
-            if (attackCooldown == 0 && localAp.isActionAttack()
-                    && localAp.getActionClip() != null && localAp.getActionClip().isBetterCombat
-                    && !localAp.isActionFadingOut()) {
-                localAp.stopAction(8);
+        // Process buffered attack input (click queued during recovery)
+        if (attackBufferTicks > 0) {
+            attackBufferTicks--;
+            if (canStartAttack(player)) {
+                ItemStack held = player.getHeldItemMainhand();
+                WeaponAttributes attributes = WeaponRegistry.getAttributes(held);
+                if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
+                    if (!isTargetingMineableBlock(mc, player)) {
+                        startUpswing(attributes);
+                        attackBufferTicks = 0;
+                    }
+                }
             }
         }
 
+        // Manage attack animation completion for the local player:
+        // Hold combat stance during combo window; only fade out when combo expires or attack is stopped
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null) {
+            boolean hasQueuedAttack = (attackBufferTicks > 0);
+            boolean isHoldingAttack = MwccfConfig.betterCombat.isHoldToAttackEnabled
+                    && mc.gameSettings.keyBindAttack.isKeyDown()
+                    && !isHarvesting;
+            boolean inComboWindow = (lastAttacked < comboReset);
+
+            if (!hasQueuedAttack && !isHoldingAttack && !inComboWindow
+                    && localAp.isActionAttack()
+                    && localAp.getActionClip() != null && localAp.getActionClip().isBetterCombat
+                    && !localAp.isActionFadingOut()) {
+                localAp.stopAction(6);
+            }
+        }
 
         // Continuous attack (hold to attack)
         if (MwccfConfig.betterCombat.isHoldToAttackEnabled && mc.gameSettings.keyBindAttack.isKeyDown()) {
-            if (!isHarvesting && upswingTicks == 0 && attackCooldown == 0 && player.getCooledAttackStrength(0.0F) >= 0.9F) {
-                WeaponAttributes attributes = WeaponRegistry.getAttributes(player.getHeldItemMainhand());
+            if (!isHarvesting && canStartAttack(player)) {
+                ItemStack held = player.getHeldItemMainhand();
+                WeaponAttributes attributes = WeaponRegistry.getAttributes(held);
                 if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
-                    startUpswing(attributes);
+                    if (!isTargetingMineableBlock(mc, player)) {
+                        startUpswing(attributes);
+                    }
                 }
             }
         } else {
@@ -241,22 +329,22 @@ public class BetterCombatClient {
     }
 
     private static void cancelSwingIfNeeded(EntityPlayerSP player) {
-        if ((upswingTicks > 0 || attackCooldown > 0) && !upswingStack.isEmpty()) {
+        if ((swingTimer > 0 || attackCooldown > 0) && !upswingStack.isEmpty()) {
             ItemStack current = player.getHeldItemMainhand();
             if (current.getItem() != upswingStack.getItem()) {
-                upswingTicks = 0;
+                swingTimer = 0;
+                swingTimerCap = 0;
                 attackCooldown = 0;
+                upswingTicks = 0;
+                attackBufferTicks = 0;
                 upswingStack = ItemStack.EMPTY;
-            }
-        }
-    }
-
-    private static void attackFromUpswingIfNeeded(Minecraft mc, EntityPlayerSP player) {
-        if (upswingTicks > 0) {
-            upswingTicks--;
-            if (upswingTicks == 0) {
-                performAttack(mc, player);
-                upswingStack = ItemStack.EMPTY;
+                currentAnimation = "";
+                currentIsOffHand = false;
+                currentIsDualHanded = false;
+                efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+                if (localAp != null) {
+                    localAp.stopAction(4);
+                }
             }
         }
     }
@@ -271,6 +359,31 @@ public class BetterCombatClient {
             if (current.isEmpty() || (!lastAttackedWithStack.isEmpty() && lastAttackedWithStack.getItem() != current.getItem())) {
                 setComboCount(0);
             }
+        }
+    }
+
+    private static void playSwingSound(Minecraft mc, EntityPlayerSP player) {
+        SoundEvent soundEvent = null;
+        float pitch = 1.0f;
+        if (pendingSwingSoundConfig != null && pendingSwingSoundConfig.id() != null) {
+            soundEvent = BetterCombatSounds.getSound(pendingSwingSoundConfig.id());
+            pitch = pendingSwingSoundConfig.pitch() * (1.0f + (player.getRNG().nextFloat() - 0.5f) * pendingSwingSoundConfig.randomness());
+        } else if (!pendingSwingSoundId.isEmpty()) {
+            soundEvent = BetterCombatSounds.getSound(pendingSwingSoundId);
+        }
+        if (soundEvent == null) {
+            ItemStack stack = player.getHeldItemMainhand();
+            if (stack.getItem() instanceof ItemAxe) {
+                soundEvent = BetterCombatSounds.getSound("axe_slash");
+            } else {
+                soundEvent = BetterCombatSounds.getSound("sword_slash");
+            }
+        }
+        if (soundEvent != null) {
+            final SoundEvent snd = soundEvent;
+            final float p = pitch;
+            mc.addScheduledTask(() ->
+                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(snd, p)));
         }
     }
 
@@ -290,24 +403,6 @@ public class BetterCombatClient {
             targetIds[i] = targets.get(i).getEntityId();
         }
 
-        // Play swing sound NOW (at the moment of actual strike, not at windup start)
-        // This matches BC 1.20.1 where swing sound plays in performAttack, not startUpswing.
-        // NOTE: must use addScheduledTask() – calling playSound() directly from onClientTick()
-        // (called inside Minecraft.runTick) causes ConcurrentModificationException because
-        // SoundManager.updateAllSounds() is iterating the same HashBiMap in the same frame.
-        if (!pendingSwingSoundId.isEmpty() && pendingSwingSoundConfig != null) {
-            final SoundEvent soundEvent = BetterCombatSounds.getSound(pendingSwingSoundId);
-            if (soundEvent != null) {
-                final WeaponAttributes.Sound s = pendingSwingSoundConfig;
-                final float pitch = s.pitch() * (1.0f + (player.getRNG().nextFloat() - 0.5f) * s.randomness());
-                mc.addScheduledTask(() ->
-                    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(soundEvent, pitch)));
-            }
-            pendingSwingSoundId = "";
-            pendingSwingSoundConfig = null;
-        }
-
-
         // Send attack packet to server
         BetterCombatNetwork.NETWORK.sendToServer(new PacketAttackRequest(
                 combo,
@@ -326,6 +421,7 @@ public class BetterCombatClient {
         }
 
         setComboCount(combo + 1);
+        player.resetCooldown();
 
         if (!hand.isOffHand()) {
             lastAttackedWithStack = hand.itemStack().copy();
@@ -356,10 +452,14 @@ public class BetterCombatClient {
     }
 
     public static float getCooledAttackStrength(EntityPlayer player, float adjustTicks) {
+        if (attackCooldown <= 0) {
+            return 1.0f;
+        }
         if (lastSwingDuration <= 0.0f) {
             return 1.0f;
         }
-        float progress = ((float) lastAttacked + adjustTicks) / lastSwingDuration;
-        return Math.max(0.0f, Math.min(1.0f, progress));
+        float remaining = Math.max(0.0f, (float) attackCooldown - adjustTicks);
+        float progress = 1.0f - (remaining / lastSwingDuration);
+        return MathHelper.clamp(progress, 0.0f, 1.0f);
     }
 }

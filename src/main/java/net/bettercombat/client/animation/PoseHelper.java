@@ -38,11 +38,10 @@ public class PoseHelper {
             state.layerAdded = true;
         }
 
-        // Determine if pose should be shown
+        // Determine if pose should be shown (pose layer is underneath action layer, so it stays active during attacks)
         String targetPose = null;
-        boolean isAttacking = (ap.isActionAttack() && ap.getActionLayer().isActive()) || player.isSwingInProgress;
         boolean isBusy = player.isRiding() || player.isHandActive() || player.isPlayerSleeping() || player.isInWater() || player.isInLava() || player.isElytraFlying();
-        if (!isAttacking && !isBusy) {
+        if (!isBusy) {
             WeaponAttributes attributes = WeaponRegistry.getAttributes(player.getHeldItemMainhand());
             if (attributes != null && attributes.pose() != null) {
                 targetPose = attributes.pose();

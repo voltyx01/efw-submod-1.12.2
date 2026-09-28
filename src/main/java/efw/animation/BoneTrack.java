@@ -36,6 +36,15 @@ public class BoneTrack {
             if (time >= a.time && time <= b.time) {
                 float t = (time - a.time) / (b.time - a.time);
 
+                float eased = a.easing == null ? Float.NaN : applyEasing(a.easing, t);
+                if (!Float.isNaN(eased)) {
+                    return new float[] {
+                            a.x + (b.x - a.x) * eased,
+                            a.y + (b.y - a.y) * eased,
+                            a.z + (b.z - a.z) * eased
+                    };
+                }
+
                 if (b.linear) {
                     return new float[] {
                             a.x + (b.x - a.x) * t,
@@ -114,5 +123,33 @@ public class BoneTrack {
             }
         }
         return new float[] { last.x, last.y, last.z };
+    }
+
+    private static float applyEasing(String easing, float t) {
+        String name = easing.toUpperCase(java.util.Locale.ROOT);
+        if (name.startsWith("EASE")) {
+            name = name.substring(4);
+        }
+
+        switch (name) {
+            case "LINEAR":
+                return t;
+            case "INQUAD":
+                return t * t;
+            case "OUTQUAD":
+                return t * (2.0F - t);
+            case "INOUTQUAD":
+                return t < 0.5F
+                        ? 2.0F * t * t
+                        : 1.0F - ((-2.0F * t + 2.0F) * (-2.0F * t + 2.0F)) * 0.5F;
+            case "INSINE":
+                return 1.0F - (float) Math.cos(t * Math.PI * 0.5F);
+            case "OUTSINE":
+                return (float) Math.sin(t * Math.PI * 0.5F);
+            case "INOUTSINE":
+                return 0.5F * (1.0F - (float) Math.cos(Math.PI * t));
+            default:
+                return Float.NaN;
+        }
     }
 }

@@ -69,7 +69,10 @@ public abstract class AbstractFadeModifier extends AbstractModifier {
         float diff = (end - start) % PI2;
         if (diff < -Math.PI) diff += PI2;
         if (diff > Math.PI) diff -= PI2;
-        return start + diff * alpha;
+        float res = (start + diff * alpha) % PI2;
+        if (res < -Math.PI) res += PI2;
+        if (res > Math.PI) res -= PI2;
+        return res;
     }
 
     public float calculateProgress(float tickDelta) {

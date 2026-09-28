@@ -18,9 +18,13 @@ public class KeyframeAnimationPlayer implements IAnimation {
     private float tickDelta = 0f;
 
     public KeyframeAnimationPlayer(AnimationClip clip) {
+        this(clip, 0f);
+    }
+
+    public KeyframeAnimationPlayer(AnimationClip clip, float startTime) {
         this.clip = clip;
-        this.currentTime = 0f;
-        this.prevTime = 0f;
+        this.currentTime = startTime;
+        this.prevTime = startTime;
     }
 
     public AnimationClip getClip() {
@@ -106,13 +110,14 @@ public class KeyframeAnimationPlayer implements IAnimation {
         float t = getInterpolatedTime(prevTime, currentTime, tickDelta, clip.length, clip.loop);
 
         boolean isFireClip = clip.name != null && clip.name.contains("fire");
+        boolean isRoll = clip.name != null && clip.name.contains("roll");
         boolean isTorso = "torso".equals(modelName) || "body".equals(modelName);
         boolean isHead = "head".equals(modelName);
 
         if (type == TransformType.ROTATION) {
             java.util.List<efw.animation.KeyFrame> rotKeys = track.rotation;
-            if (!clip.isEmotecraft && (rotKeys == null || rotKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
-                BoneTrack alt = "torso".equals(modelName) ? clip.bones.get("body") : clip.bones.get("torso");
+            if ((rotKeys == null || rotKeys.isEmpty()) && (isRoll || clip.isBetterCombat) && "body".equals(modelName)) {
+                BoneTrack alt = clip.bones.get("torso");
                 if (alt != null) rotKeys = alt.rotation;
             }
             if (rotKeys != null && !rotKeys.isEmpty()) {
@@ -134,12 +139,17 @@ public class KeyframeAnimationPlayer implements IAnimation {
                 float rotX = (float) Math.toRadians(x);
                 float rotY = (float) Math.toRadians(y);
                 float rotZ = (float) Math.toRadians(z);
+                if (clip.name == null || !clip.name.contains("roll")) {
+                    rotX = normalizeAngleRad(rotX);
+                    rotY = normalizeAngleRad(rotY);
+                    rotZ = normalizeAngleRad(rotZ);
+                }
                 return new Vec3f(rotX, rotY, rotZ);
             }
         } else if (type == TransformType.POSITION) {
             java.util.List<efw.animation.KeyFrame> posKeys = track.position;
-            if (!clip.isEmotecraft && (posKeys == null || posKeys.isEmpty()) && ("torso".equals(modelName) || "body".equals(modelName))) {
-                BoneTrack alt = "torso".equals(modelName) ? clip.bones.get("body") : clip.bones.get("torso");
+            if ((posKeys == null || posKeys.isEmpty()) && (isRoll || clip.isBetterCombat) && "body".equals(modelName)) {
+                BoneTrack alt = clip.bones.get("torso");
                 if (alt != null) posKeys = alt.position;
             }
             if (posKeys != null && !posKeys.isEmpty()) {
@@ -160,7 +170,7 @@ public class KeyframeAnimationPlayer implements IAnimation {
                 }
                 boolean isItem = "rightItem".equals(modelName) || "leftItem".equals(modelName);
                 if (isItem) {
-                    return new Vec3f(posX, -posY, posZ);
+                    return new Vec3f(posX, posY, posZ);
                 }
                 // Position is additive to vanilla base position. Invert Y to match Minecraft's coordinate system.
                 return new Vec3f(value0.getX() + posX, value0.getY() - posY, value0.getZ() + posZ);
@@ -170,21 +180,21 @@ public class KeyframeAnimationPlayer implements IAnimation {
     }
 
     private BoneTrack getTrack(String boneName) {
-        BoneTrack track = clip.bones.get(boneName);
-        if (track != null) return track;
-
-        if (clip.isEmotecraft) {
-            // In Emotecraft / Better Combat / Combat Roll:
-            // "body" is root entity transform in RenderPlayer, "torso" is the chest ModelRenderer.
-            // Do NOT alias body <-> torso!
+        boolean isRoll = clip.name != null && clip.name.contains("roll");
+        boolean isBCAttack = clip.isBetterCombat;
+        if ((isRoll || isBCAttack) && "torso".equals(boneName)) {
+            // For roll and BetterCombat attacks, root torso rotation is applied to whole entity in RenderPlayer,
+            // so don't double-apply to bipedBody in ModelBiped!
             return null;
         }
+
+        BoneTrack track = clip.bones.get(boneName);
+        if (track != null) return track;
 
         if ("body".equals(boneName)) {
             track = clip.bones.get("torso");
             if (track != null) return track;
-        }
-        if ("torso".equals(boneName)) {
+        } else if ("torso".equals(boneName)) {
             track = clip.bones.get("body");
             if (track != null) return track;
         }
@@ -216,5 +226,13 @@ public class KeyframeAnimationPlayer implements IAnimation {
             t = Math.max(0, Math.min(t, length));
         }
         return t;
+    }
+
+    private static float normalizeAngleRad(float angle) {
+        float PI2 = (float) (2 * Math.PI);
+        angle = angle % PI2;
+        if (angle < -(float) Math.PI) angle += PI2;
+        if (angle > (float) Math.PI) angle -= PI2;
+        return angle;
     }
 }

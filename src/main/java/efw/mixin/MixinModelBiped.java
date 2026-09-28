@@ -452,15 +452,22 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
         }
 
-        // Skip custom animations in first-person view, unless we're rendering the player inside a GUI (inventory)
-        if (player == mc.player && mc.gameSettings.thirdPersonView == 0 && !efw.util.RenderContext.isRenderingPlayerInGui)
+        // First-person attack poses are applied during the local player's model-render pass.
+        // Also allow when BC attack is active so renderHand (camera-space) gets animated arm angles.
+        boolean isBCFPActive = efw.animation.firstperson.FirstPersonMode.isFirstPersonAttackActive(player);
+        if (player == mc.player && mc.gameSettings.thirdPersonView == 0
+            && !efw.util.RenderContext.isRenderingPlayerInGui
+            && !efw.animation.firstperson.FirstPersonMode.isFirstPersonPass()
+            && !isBCFPActive)
             return;
 
         float pt = mc.isGamePaused() ? 1.0f : mc.getRenderPartialTicks();
 
         TorchAnimationHandler.AnimState state = TorchAnimationHandler.getState(player);
-        if (state == null)
-            return;
+        if (state == null) {
+            if (!efw.animation.firstperson.FirstPersonMode.isFirstPersonPass() && !isBCFPActive) return;
+            state = new TorchAnimationHandler.AnimState();
+        }
 
         // --- РџР Р˜РњР•РќР•РќР•РНИЕ РђРќР˜РњРђР¦Р˜Р™ Рљ РђР РњРђРўРЈР Р• Р˜Р“Р РћРљРђ MWCCF ---
         efw.animation.AnimationPlayer ap = efw.util.RenderContext.isRenderingPlayerInSevenScreen
@@ -613,7 +620,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         // NOT apply the vanilla sneak Y-offset on top of them (causes head/arm tilt bugs).
         // (isCrawlingAnim was already computed above)
 
-        if ((ap.isPlaying() || ap.getWeight() > 0f) && !isConsumingItem) {
+        if ((ap.isPlaying() || ap.getWeight() > 0f || ap.hasActionWeight()) && !isConsumingItem) {
             String animName = ap.getCurrentAnimationName();
             String prevAnimName = ap.getPrevAnimationName();
             String actionName = ap.getCurrentActionName();
@@ -665,7 +672,10 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
             applyBone(this.bipedRightLeg, AnimationApplicator.getOverlayForBone(this.bipedRightLeg, model), ap, "rightLeg", pt);
             applyBone(this.bipedLeftLeg, AnimationApplicator.getOverlayForBone(this.bipedLeftLeg, model), ap, "leftLeg", pt);
-            applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
+            if (!isBCAttack) {
+                applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
+            }
+
 
 
 
@@ -778,7 +788,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
 
             // Pitch Arms when holding a weapon (from backup system: smoothly scaled and blended after roll)
-            if (armPitchWeight > 0.001f) {
+            if (armPitchWeight > 0.001f && !isBCAttack) {
                 float lookWeight = ap.getRollLookWeight(pt);
                 float effectiveArmPitch = vanillaHeadPitch * armPitchWeight * lookWeight;
                 if (!skipRightArm) this.bipedRightArm.rotateAngleX += effectiveArmPitch;
@@ -806,14 +816,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 float targetY;
                 float targetZ;
 
-                boolean isAttackClip = ap.hasActionWeight() && ap.isActionAttack();
-                if (isAttackClip) {
-                    // Attack animations (Better Combat): pitch is disabled in the animation, so camera pitch applies directly.
-                    // Head yaw and roll come directly from the animation keyframes without adding vanilla netHeadYaw!
-                    targetX = headX;
-                    targetY = baseHeadY;
-                    targetZ = baseHeadZ;
-                } else if (isCrawlingAnim) {
+                if (isCrawlingAnim) {
                     // Like TaCZ (anim 1.20.1): when crawling, the head does NOT pitch up/down into the ground.
                     // The only tracking reaction to aiming is a subtle roll/tilt to the left and right.
                     targetX = baseHeadX;
@@ -821,7 +824,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                     float tilt = Math.max(-0.25f, Math.min(0.25f, headY));
                     targetZ = baseHeadZ + tilt * lookWeight;
                 } else {
-                    // Add vanilla tracking back
+                    // Add vanilla tracking back (continuous and smooth for all animations including attacks)
                     targetX = baseHeadX + headX * lookWeight;
                     targetY = baseHeadY + headY * lookWeight;
                     targetZ = baseHeadZ + headZ * lookWeight;

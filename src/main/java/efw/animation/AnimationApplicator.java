@@ -3,6 +3,8 @@ package efw.animation;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.model.ModelPlayer;
+import net.minecraft.client.Minecraft;
+import efw.animation.firstperson.FirstPersonMode;
 import efw.animation.layered.TransformType;
 import efw.animation.layered.math.Vec3f;
 import java.util.HashMap;
@@ -47,6 +49,8 @@ public class AnimationApplicator {
             overlay.rotationPointY = bone.rotationPointY;
             overlay.rotationPointZ = bone.rotationPointZ;
         }
+
+
     }
 
     public static void applyBone(ModelRenderer bone, ModelRenderer overlay, float[] rot, float[] pos) {

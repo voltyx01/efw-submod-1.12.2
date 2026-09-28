@@ -13,6 +13,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Render.class)
 public abstract class MixinRender {
 
+    @Inject(method = "renderShadow", at = @At("HEAD"), cancellable = true)
+    private void mwccf$cancelFirstPersonShadow(Entity entityIn, double x, double y, double z, float shadowAlpha, float partialTicks, CallbackInfo ci) {
+        if (efw.animation.firstperson.FirstPersonMode.isFirstPersonPass()) {
+            ci.cancel();
+        }
+    }
+
     @ModifyVariable(method = "renderShadow", at = @At("HEAD"), argsOnly = true, ordinal = 0)
     private float mwccf$adjustShadowAlpha(float shadowAlpha, Entity entityIn) {
         if (entityIn instanceof EntityPlayer) {

@@ -1,11 +1,19 @@
 package net.bettercombat.client.animation;
 
+import com.paneedah.weaponlib.Weapon;
 import efw.animation.AnimationClip;
 import efw.animation.AnimationPlayer;
 import efw.animation.AnimationRegistry;
 import net.bettercombat.api.AttackHand;
 import net.bettercombat.logic.AnimatedHand;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumHand;
+import net.minecraft.client.Minecraft;
+
+import net.minecraft.util.math.MathHelper;
+
+import java.util.Locale;
 
 public class AttackAnimationHelper {
 
@@ -15,7 +23,31 @@ public class AttackAnimationHelper {
             AnimatedHand animatedHand,
             float cooldownTicks,
             float upswingRate) {
+        playAttackAnimationInternal(player, animationName, animatedHand, cooldownTicks, upswingRate);
+    }
+
+    public static void playAttackAnimation(
+            EntityPlayer player,
+            String animationName,
+            AnimatedHand animatedHand,
+            int swingTimerCap,
+            int strikeTicks) {
+        float length = Math.max(1.0F, (float) swingTimerCap);
+        float upswingRate = MathHelper.clamp(strikeTicks / length, 0.05F, 0.95F);
+        playAttackAnimationInternal(player, animationName, animatedHand, length, upswingRate);
+    }
+
+    private static void playAttackAnimationInternal(
+            EntityPlayer player,
+            String animationName,
+            AnimatedHand animatedHand,
+            float lengthTicks,
+            float upswingRate) {
         if (player == null || animationName == null || animationName.isEmpty()) {
+            return;
+        }
+
+        if (!isVanillaWeaponAttack(player, animatedHand)) {
             return;
         }
 
@@ -45,25 +77,39 @@ public class AttackAnimationHelper {
             player.prevRenderYawOffset = player.prevRotationYawHead;
         }
 
-        // Exact speed formula from Better Combat 1.20.1 (AbstractClientPlayerEntityMixin):
-        // speed = clip.endTick / cooldownTicks
-        // upswingSpeed = speed / upswing_multiplier (0.5F) = speed * 2.0F
-        // downwindSpeed = speed * (1.0F - upswingRate)
-        float baseSpeed = 1.0f;
-        if (clip.endTick > 0 && cooldownTicks > 0) {
-            baseSpeed = ((float) clip.endTick) / cooldownTicks;
-        } else if (clip.length > 0 && cooldownTicks > 0) {
-            baseSpeed = (clip.length * 20.0f) / cooldownTicks;
+        float duration = Math.max(1.0F, lengthTicks);
+        float upswing = MathHelper.clamp(upswingRate, 0.05F, 0.95F);
+        float speed = (clip.endTick > 0 ? clip.endTick : clip.length * 20.0F) / duration;
+        float upswingMultiplier = Math.max(0.05F, (float) efw.biomeinfo.MwccfConfig.betterCombat.upswingMultiplier);
+        float upswingSpeed = speed / upswingMultiplier;
+        float blendFactor = MathHelper.clamp((upswingMultiplier - 0.5F) / 0.5F, 0.0F, 1.0F);
+        float downwindStart = 1.0F - upswing;
+        float downwindEnd = upswing / (1.0F - upswing);
+        float downwindRatio = downwindStart + (downwindEnd - downwindStart) * blendFactor;
+        float downwindSpeed = speed * downwindRatio;
+        int blendIn = Math.max(0, clip.beginTick);
+
+        ap.setAnimatedHand(animatedHand);
+        ap.setActionBetterCombat(clip, upswingSpeed, downwindSpeed, duration * upswing, duration, blendIn);
+        if (Minecraft.getMinecraft().player == player
+            && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
+            System.out.printf(Locale.ROOT,
+                "[BCFP12][START] clip=%s hand=%s combo=%d lengthTicks=%.3f upswing=%.4f beginTick=%d endTick=%d upSpeed=%.4f downSpeed=%.4f cameraPitch=%.3f cameraYaw=%.3f%n",
+                clip.name, animatedHand, net.bettercombat.client.BetterCombatClient.getComboCount(),
+                duration, upswing, clip.beginTick, clip.endTick, upswingSpeed, downwindSpeed,
+                player.rotationPitch, player.rotationYaw);
         }
+    }
 
-        // upswing_multiplier is 0.5f in BetterCombat default config
-        float upswingMultiplier = 0.5f;
-        float upswingSpeed = baseSpeed / upswingMultiplier;
-        float downwindSpeed = baseSpeed * (1.0f - upswingRate);
+    public static boolean isVanillaWeaponAttack(EntityPlayer player, AnimatedHand animatedHand) {
+        if (player == null) return false;
 
-        // Blend-in: 3 ticks (150ms) for smooth entry from idle/walk into attack without delay
-        int blendIn = 3;
+        EnumHand hand = animatedHand == AnimatedHand.OFF_HAND ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
+        ItemStack stack = player.getHeldItem(hand);
+        if (stack.isEmpty() || stack.getItem() instanceof Weapon) return false;
 
-        ap.setActionBetterCombat(clip, upswingSpeed, downwindSpeed, cooldownTicks * upswingRate, cooldownTicks, blendIn);
+        net.minecraft.util.ResourceLocation itemId = stack.getItem().getRegistryName();
+        return itemId != null && !itemId.toString().startsWith("mwc:")
+                && net.bettercombat.logic.WeaponRegistry.getAttributes(stack) != null;
     }
 }

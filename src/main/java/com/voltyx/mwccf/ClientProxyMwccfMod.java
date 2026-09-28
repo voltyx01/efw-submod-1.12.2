@@ -63,6 +63,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.client.ClientZoneRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.gui.GuiWeaponSlotOverlay());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.immersiveui.client.ImmersiveUIClientEvents());
+		MinecraftForge.EVENT_BUS.register(new net.bettercombat.client.FirstPersonAttackRenderer());
 
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new CommandDumpChests());
 

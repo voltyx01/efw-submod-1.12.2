@@ -551,6 +551,15 @@ public class MwccfConfig {
 
         @Config.Comment("Enable attack range and two-handed status in item tooltips")
         public boolean isTooltipAttackRangeEnabled = true;
+
+        @Config.Comment("Render attack animations in first-person view")
+        public boolean isFirstPersonAttackAnimationsEnabled = true;
+
+        @Config.Comment("Show player arms in first-person attack animations")
+        public boolean isShowingArmsInFirstPerson = false;
+
+        @Config.Comment("Show off-hand/other-hand in first person during single-handed attacks")
+        public boolean isShowingOtherHandFirstPerson = false;
     }
 }
 

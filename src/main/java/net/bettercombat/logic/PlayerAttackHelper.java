@@ -1,11 +1,15 @@
 package net.bettercombat.logic;
 
+import com.google.common.collect.Multimap;
 import efw.biomeinfo.MwccfConfig;
 import net.bettercombat.api.AttackHand;
 import net.bettercombat.api.ComboState;
 import net.bettercombat.api.WeaponAttributes;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemShield;
 import net.minecraft.item.ItemStack;
 
@@ -53,10 +57,11 @@ public class PlayerAttackHelper {
 
     public static float getAttackCooldownLengthTicks(EntityPlayer player, ItemStack stack) {
         if (player == null) return 12.5f;
-        double speed = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED).getAttributeValue();
+        if (stack == null) stack = ItemStack.EMPTY;
 
-        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
-        if (speed >= 3.99) {
+        double speed = getItemAttackSpeed(player, stack);
+        if (speed <= 0.0) {
+            WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
             if (attributes != null && attributes.category() != null) {
                 speed = getCategoryDefaultSpeed(attributes.category());
             } else if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
@@ -76,6 +81,40 @@ public class PlayerAttackHelper {
         return Math.max(baseCooldown, (float) MwccfConfig.betterCombat.attackIntervalCap);
     }
 
+    public static double getItemAttackSpeed(EntityPlayer player, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return 4.0;
+        }
+        try {
+            Multimap<String, AttributeModifier> modifiers = stack.getAttributeModifiers(EntityEquipmentSlot.MAINHAND);
+            if (modifiers != null && modifiers.containsKey(SharedMonsterAttributes.ATTACK_SPEED.getName())) {
+                double speed = 4.0;
+                for (AttributeModifier mod : modifiers.get(SharedMonsterAttributes.ATTACK_SPEED.getName())) {
+                    if (mod.getOperation() == 0) {
+                        speed += mod.getAmount();
+                    }
+                }
+                double baseMultiplier = 0.0;
+                for (AttributeModifier mod : modifiers.get(SharedMonsterAttributes.ATTACK_SPEED.getName())) {
+                    if (mod.getOperation() == 1) {
+                        baseMultiplier += mod.getAmount();
+                    }
+                }
+                speed += speed * baseMultiplier;
+                for (AttributeModifier mod : modifiers.get(SharedMonsterAttributes.ATTACK_SPEED.getName())) {
+                    if (mod.getOperation() == 2) {
+                        speed *= (1.0 + mod.getAmount());
+                    }
+                }
+                if (speed > 0.0) {
+                    return speed;
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return -1.0;
+    }
+
     public static double getCategoryDefaultSpeed(String category) {
         if (category == null) return 1.6;
         switch (category.toLowerCase()) {
@@ -87,8 +126,9 @@ public class PlayerAttackHelper {
             case "rapier":
             case "cutlass":
                 return 1.8;
-            case "sword":
             case "katana":
+                return 2.0;
+            case "sword":
             case "twin_blade":
                 return 1.6;
             case "spear":
@@ -100,10 +140,14 @@ public class PlayerAttackHelper {
                 return 1.1;
             case "claymore":
             case "heavy_axe":
+            case "double_axe":
             case "axe":
             case "battleaxe":
+            case "battlestaff":
+            case "staff":
                 return 1.0;
             case "hammer":
+            case "mace":
             case "anchor":
                 return 0.8;
             default:

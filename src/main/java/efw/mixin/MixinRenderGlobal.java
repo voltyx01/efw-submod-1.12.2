@@ -2,14 +2,18 @@ package efw.mixin;
 
 import com.voltyx.mwccf.sunmoon.RealisticSunMoon;
 import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Mixin on RenderGlobal that applies B3M's latitude tilt to the celestial sphere
@@ -20,6 +24,26 @@ public abstract class MixinRenderGlobal {
 
     @Shadow
     private WorldClient world;
+
+    @Shadow
+    private net.minecraft.client.renderer.entity.RenderManager renderManager;
+
+    @Inject(
+        method = "renderEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/renderer/culling/ICamera;F)V",
+        at = @At("RETURN")
+    )
+    private void efw$renderFirstPersonPlayerAttack(net.minecraft.entity.Entity renderViewEntity, net.minecraft.client.renderer.culling.ICamera camera, float partialTicks, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+        if (mc.gameSettings.thirdPersonView == 0 && efw.animation.firstperson.FirstPersonMode.isFirstPersonAttackActive(mc.player)) {
+            boolean prevPass = efw.animation.firstperson.FirstPersonMode.isFirstPersonPass();
+            efw.animation.firstperson.FirstPersonMode.setFirstPersonPass(true);
+            try {
+                this.renderManager.renderEntityStatic(mc.player, partialTicks, false);
+            } finally {
+                efw.animation.firstperson.FirstPersonMode.setFirstPersonPass(prevPass);
+            }
+        }
+    }
 
     /**
      * Intercepts GlStateManager.rotate in RenderGlobal.renderSky:
