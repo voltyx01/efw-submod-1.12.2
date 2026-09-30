@@ -458,7 +458,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         if (player == mc.player && mc.gameSettings.thirdPersonView == 0
             && !efw.util.RenderContext.isRenderingPlayerInGui
             && !efw.animation.firstperson.FirstPersonMode.isFirstPersonPass()
-            && !isBCFPActive)
+            && !isBCFPActive
+            && !com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering())
             return;
 
         float pt = mc.isGamePaused() ? 1.0f : mc.getRenderPartialTicks();
@@ -805,7 +806,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 this.bipedHead.rotateAngleZ = 0;
                 applyBone(this.bipedHead, AnimationApplicator.getOverlayForBone(this.bipedHead, model), ap, "head", pt);
                 
-                float lookWeight = ap.getRollLookWeight(pt);
+                float lookWeight = efw.util.RenderContext.isRenderingPlayerInGui ? 1.0f : ap.getRollLookWeight(pt);
                 float swimWeight = ap != null ? ap.getSwimHeadWeight(pt) : 0.0f;
 
                 float baseHeadX = this.bipedHead.rotateAngleX;
@@ -854,6 +855,14 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 this.bipedHeadwear.rotationPointY = this.bipedHead.rotationPointY;
                 this.bipedHeadwear.rotationPointZ = this.bipedHead.rotationPointZ;
             }
+        }
+    }
+
+    @Inject(method = "setRotationAngles", at = @At("TAIL"))
+    private void efw$applyBodycamArmPose(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
+                                         float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
+        if (entityIn instanceof EntityPlayer) {
+            com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.lastCarrierTorsoRotateY = this.bipedBody.rotateAngleY;
         }
     }
 }

@@ -1,0 +1,18 @@
+{
+  "variants": {
+    "facing=north,toasting=false": { "model": "refurbished_furniture:dark_toaster" },
+    "facing=south,toasting=false": { "model": "refurbished_furniture:dark_toaster", "y": 180 },
+    "facing=west,toasting=false":  { "model": "refurbished_furniture:dark_toaster", "y": 270 },
+    "facing=east,toasting=false":  { "model": "refurbished_furniture:dark_toaster", "y": 90 },
+    "facing=north,toasting=true":  { "model": "refurbished_furniture:dark_toaster_cooking" },
+    "facing=south,toasting=true":  { "model": "refurbished_furniture:dark_toaster_cooking", "y": 180 },
+    "facing=west,toasting=true":   { "model": "refurbished_furniture:dark_toaster_cooking", "y": 270 },
+    "facing=east,toasting=true":   { "model": "refurbished_furniture:dark_toaster_cooking", "y": 90 },
+    "facing=north": { "model": "refurbished_furniture:dark_toaster" },
+    "facing=south": { "model": "refurbished_furniture:dark_toaster", "y": 180 },
+    "facing=west":  { "model": "refurbished_furniture:dark_toaster", "y": 270 },
+    "facing=east":  { "model": "refurbished_furniture:dark_toaster", "y": 90 },
+    "normal":       { "model": "refurbished_furniture:dark_toaster" },
+    "inventory":    { "model": "refurbished_furniture:dark_toaster" }
+  }
+}

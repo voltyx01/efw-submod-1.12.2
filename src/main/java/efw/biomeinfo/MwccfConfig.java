@@ -468,6 +468,16 @@ public class MwccfConfig {
         public String mode = "EQUIPPED";
     }
 
+    @Config.Name("bodycam")
+    @Config.Comment("Bodycam Cosmetic Settings")
+    public static final BodycamSettings bodycam = new BodycamSettings();
+
+    public static class BodycamSettings {
+        @Config.Name("mode")
+        @Config.Comment("Visibility mode: EQUIPPED (requires item equipped in Baubles/Chest), ALWAYS (always visible on player), OFF (disabled)")
+        public String mode = "EQUIPPED";
+    }
+
     @Config.Name("better_combat")
     @Config.Comment("Better Combat Settings")
     public static final BetterCombatSettings betterCombat = new BetterCombatSettings();
@@ -479,6 +489,10 @@ public class MwccfConfig {
         @Config.Comment("Upswing (windup) duration multiplier relative to attack cooldown. Default 0.5")
         @Config.RangeDouble(min = 0.0, max = 2.0)
         public double upswingMultiplier = 0.5;
+
+        @Config.Comment("Number of ticks to blend between consecutive attack animations (combo hits) in third person. Default 4")
+        @Config.RangeInt(min = 1, max = 10)
+        public int comboAnimationBlendTicks = 4;
 
         @Config.Comment("Bypass damage receive throttling of LivingEntity from player attacks (allow fast attacks)")
         public boolean allowFastAttacks = true;
@@ -553,7 +567,7 @@ public class MwccfConfig {
         public boolean isTooltipAttackRangeEnabled = true;
 
         @Config.Comment("Render attack animations in first-person view")
-        public boolean isFirstPersonAttackAnimationsEnabled = true;
+        public boolean isFirstPersonAttackAnimationsEnabled = false;
 
         @Config.Comment("Show player arms in first-person attack animations")
         public boolean isShowingArmsInFirstPerson = false;

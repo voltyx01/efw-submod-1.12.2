@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/workbench_off",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/workbench",
+    "particle": "refurbished_furniture:blocks/workbench"
+  }
+}

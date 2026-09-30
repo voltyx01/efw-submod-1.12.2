@@ -39,14 +39,13 @@ public class DashKeyHandler {
             cap.setCooldown(cap.getCooldown() - 1);
         }
 
-        // Block all vanilla swinging, breaking, and placing animations while rolling
+        // Block all vanilla swinging, breaking, and attack animations while rolling
         if (efw.AnimationTickHandler.isPlayerRolling(player)) {
             player.isSwingInProgress = false;
             player.swingProgressInt = 0;
             player.swingProgress = 0.0f;
             player.prevSwingProgress = 0.0f;
             KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
-            KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
             if (mc.playerController != null) {
                 mc.playerController.resetBlockRemoving();
             }

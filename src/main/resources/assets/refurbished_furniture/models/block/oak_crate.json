@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/crate_closed",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/oak_crate",
+    "particle": "refurbished_furniture:blocks/oak_crate"
+  }
+}

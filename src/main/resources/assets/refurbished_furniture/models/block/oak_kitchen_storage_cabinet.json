@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/kitchen_storage_cabinet_closed_hinge_left",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/oak_kitchen_storage_cabinet",
+    "particle": "refurbished_furniture:blocks/oak_kitchen_storage_cabinet"
+  }
+}

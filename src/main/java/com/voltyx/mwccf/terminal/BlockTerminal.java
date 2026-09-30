@@ -168,6 +168,17 @@ public class BlockTerminal extends BlockFurnitureHorizontal {
                 return true;
             }
 
+            if (playerIn.isSneaking()) {
+                terminal.close();
+                if (worldIn.isRemote) {
+                    if (com.voltyx.mwccf.terminal.client.TerminalCameraController.isActive()) {
+                        com.voltyx.mwccf.terminal.client.TerminalCameraController.close();
+                    }
+                    com.voltyx.mwccf.terminal.client.TerminalSession.getInstance().reset();
+                }
+                return true;
+            }
+
             if (worldIn.isRemote) {
                 if (com.voltyx.mwccf.terminal.client.TerminalCameraController.isActive()) {
                     com.voltyx.mwccf.terminal.client.TerminalCameraController.close();
@@ -175,7 +186,7 @@ public class BlockTerminal extends BlockFurnitureHorizontal {
                     com.voltyx.mwccf.terminal.client.TerminalCameraController.open(pos, state.getValue(FACING), terminal);
                 }
             }
-            terminal.toggleOpen(playerIn);
+            terminal.setOpen(true);
             return true;
         }
         return false;

@@ -1,4 +1,4 @@
-{
+﻿{
   "variants": {
     "normal": { "model": "refurbished_furniture:frying_pan" },
     "facing=north": { "model": "refurbished_furniture:frying_pan" },

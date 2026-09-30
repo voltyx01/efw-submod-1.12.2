@@ -1,10 +1,10 @@
-{
+﻿{
   "variants": {
-    "normal": { "model": "refurbished_furniture:grill" },
-    "facing=north": { "model": "refurbished_furniture:grill" },
-    "facing=south": { "model": "refurbished_furniture:grill", "y": 180 },
-    "facing=west": { "model": "refurbished_furniture:grill", "y": 270 },
-    "facing=east": { "model": "refurbished_furniture:grill", "y": 90 },
-    "inventory": { "model": "refurbished_furniture:grill" }
+    "normal": { "model": "refurbished_furniture:grill_dark" },
+    "facing=north": { "model": "refurbished_furniture:grill_dark" },
+    "facing=south": { "model": "refurbished_furniture:grill_dark", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:grill_dark", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:grill_dark", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:grill_dark" }
   }
 }

@@ -1,10 +1,21 @@
-{
+﻿{
   "variants": {
-    "normal": { "model": "refurbished_furniture:spruce_lattice_fence_gate" },
-    "facing=north": { "model": "refurbished_furniture:spruce_lattice_fence_gate" },
-    "facing=south": { "model": "refurbished_furniture:spruce_lattice_fence_gate", "y": 180 },
-    "facing=west": { "model": "refurbished_furniture:spruce_lattice_fence_gate", "y": 270 },
-    "facing=east": { "model": "refurbished_furniture:spruce_lattice_fence_gate", "y": 90 },
-    "inventory": { "model": "refurbished_furniture:spruce_lattice_fence_gate" }
+    "facing=south,in_wall=false,open=false": { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true },
+    "facing=west,in_wall=false,open=false":  { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true, "y": 90 },
+    "facing=north,in_wall=false,open=false": { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true, "y": 180 },
+    "facing=east,in_wall=false,open=false":  { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true, "y": 270 },
+    "facing=south,in_wall=false,open=true":  { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true },
+    "facing=west,in_wall=false,open=true":   { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true, "y": 90 },
+    "facing=north,in_wall=false,open=true":  { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true, "y": 180 },
+    "facing=east,in_wall=false,open=true":   { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true, "y": 270 },
+    "facing=south,in_wall=true,open=false":  { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true },
+    "facing=west,in_wall=true,open=false":   { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true, "y": 90 },
+    "facing=north,in_wall=true,open=false":  { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true, "y": 180 },
+    "facing=east,in_wall=true,open=false":   { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed", "uvlock": true, "y": 270 },
+    "facing=south,in_wall=true,open=true":   { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true },
+    "facing=west,in_wall=true,open=true":    { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true, "y": 90 },
+    "facing=north,in_wall=true,open=true":   { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true, "y": 180 },
+    "facing=east,in_wall=true,open=true":    { "model": "refurbished_furniture:spruce_lattice_fence_gate_open", "uvlock": true, "y": 270 },
+    "inventory": { "model": "refurbished_furniture:spruce_lattice_fence_gate_closed" }
   }
 }

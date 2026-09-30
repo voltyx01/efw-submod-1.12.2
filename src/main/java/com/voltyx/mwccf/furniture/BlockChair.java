@@ -7,9 +7,9 @@ import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
@@ -57,7 +57,18 @@ public class BlockChair extends BlockFurnitureHorizontal {
 
     @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        if (playerIn.isSneaking()) {
+            boolean isTucked = state.getValue(TUCKED);
+            worldIn.setBlockState(pos, state.withProperty(TUCKED, !isTucked), 3);
+            worldIn.playSound(null, pos, FurnitureSounds.BLOCK_CHAIR_SLIDE, SoundCategory.BLOCKS, 0.75F, isTucked ? 1.0F : 0.9F);
+            return true;
+        }
+
         if (!worldIn.isRemote) {
+            if (state.getValue(TUCKED)) {
+                worldIn.setBlockState(pos, state.withProperty(TUCKED, false), 3);
+                worldIn.playSound(null, pos, FurnitureSounds.BLOCK_CHAIR_SLIDE, SoundCategory.BLOCKS, 0.75F, 1.0F);
+            }
             EntitySeat.sitOnBlock(worldIn, pos, playerIn, 0.4D);
         }
         return true;

@@ -73,4 +73,11 @@ public class MixinWorld {
             net.minecraft.client.renderer.GlStateManager.translate(x, y, z);
         }
     }
+
+    @Inject(method = "getFOVModifier", at = @At("HEAD"), cancellable = true)
+    private void efw$bodycamLockFOV(float partialTicks, boolean useFOVSetting, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Float> cir) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            cir.setReturnValue(85.0F);
+        }
+    }
 }

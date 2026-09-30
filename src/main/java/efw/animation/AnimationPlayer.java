@@ -156,7 +156,8 @@ public class AnimationPlayer {
             this.actionLayer.setAnimation(playerAnim);
         } else if (isAttackToAttack && prevAttack != null) {
             this.actionSnapped = false;
-            AbstractFadeModifier fade = AbstractFadeModifier.standardFadeIn(4, Ease::inOutSine);
+            int maxComboBlend = Math.max(1, efw.biomeinfo.MwccfConfig.betterCombat.comboAnimationBlendTicks);
+            AbstractFadeModifier fade = AbstractFadeModifier.standardFadeIn(maxComboBlend, Ease::inOutSine);
             fade.setBeginAnimation(prevAttack);
             this.actionLayer.clearModifiers();
             this.actionLayer.addModifierLast(fade);
@@ -211,7 +212,8 @@ public class AnimationPlayer {
         // until stopAction() explicitly fades it out (matches BC 1.20.1 behaviour)
         playerAnim.setHoldLastFrame(true);
 
-        int blend = isAttackToAttack ? Math.min(2, Math.max(1, (int) upswingEndTick - 1)) : blendIn;
+        int maxComboBlend = Math.max(1, efw.biomeinfo.MwccfConfig.betterCombat.comboAnimationBlendTicks);
+        int blend = isAttackToAttack ? Math.min(maxComboBlend, Math.max(1, Math.round(upswingEndTick))) : Math.min(2, blendIn);
         if (blend <= 0 || this.actionSnapped) {
             this.actionSnapped = false;
             this.actionLayer.clearModifiers();
@@ -317,6 +319,9 @@ public class AnimationPlayer {
 
     public void playRoll(AnimationClip clip, float speed) {
         if (clip == null) return;
+        if (isActionAttack()) {
+            snapAction();
+        }
         this.rollClip = clip;
         this.rollFadingOut = false;
         KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
@@ -449,21 +454,6 @@ public class AnimationPlayer {
 
         this.stack.tick();
 
-        if (this.player != null && this.player == net.minecraft.client.Minecraft.getMinecraft().player && isActionAttack() && this.actionClip != null) {
-            KeyframeAnimationPlayer kfp = getActiveActionPlayer();
-            int tick = kfp != null ? (int) Math.floor(kfp.getCurrentTime()) : -1;
-            for (String bone : java.util.Arrays.asList("body", "rightArm", "leftArm", "rightItem", "leftItem")) {
-                efw.animation.layered.math.Vec3f rotation = this.stack.get3DTransform(bone, efw.animation.layered.TransformType.ROTATION, 0.0F, efw.animation.layered.math.Vec3f.ZERO);
-                efw.animation.layered.math.Vec3f position = this.stack.get3DTransform(bone, efw.animation.layered.TransformType.POSITION, 0.0F, efw.animation.layered.math.Vec3f.ZERO);
-                System.out.printf(java.util.Locale.ROOT,
-                        "[BCFP12][POSE] clip=%s tick=%d hand=%s lengthTicks=%.3f upswing=%.4f pitch=%.3f yaw=%.3f bodyYaw=%.3f bone=%s rotRad=(%.5f,%.5f,%.5f) posModel=(%.5f,%.5f,%.5f)%n",
-                        this.actionClip.name, tick, this.animatedHand, this.bcAttackEndTick, this.bcUpswingEndTick / Math.max(1.0f, this.bcAttackEndTick),
-                        this.player.rotationPitch, this.player.rotationYaw, this.player.renderYawOffset, bone,
-                        rotation.getX(), rotation.getY(), rotation.getZ(),
-                        position.getX(), position.getY(), position.getZ());
-            }
-        }
-
         // Auto fade-out when action animation finishes naturally (not via stopAction)
         if (!this.actionFadingOut && this.actionClip != null) {
             KeyframeAnimationPlayer kfp = getActiveActionPlayer();
@@ -588,7 +578,7 @@ public class AnimationPlayer {
     }
 
     public java.util.Optional<efw.animation.layered.modifier.AdjustmentModifier.PartModifier> applyAttackAdjustment(String partName, float tickDelta) {
-        if (this.player == null || !isActionAttack() || !hasActionWeight()) {
+        if (this.player == null || !isActionAttack() || !hasActionWeight() || isRollPlaying()) {
             return java.util.Optional.empty();
         }
         float rotationX = 0;
@@ -604,7 +594,7 @@ public class AnimationPlayer {
         if (efw.animation.firstperson.FirstPersonMode.isFirstPersonPass()) {
             return java.util.Optional.empty();
         } else {
-            if ("body".equals(partName)) {
+            if ("body".equals(partName) || "torso".equals(partName)) {
                 rotationX -= pitch * 0.75F;
             } else if ("rightArm".equals(partName) || "leftArm".equals(partName)) {
                 rotationX += pitch * 0.25F;

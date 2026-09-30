@@ -11,7 +11,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import com.voltyx.mwccf.furniture.tileentity.TileEntityCabinet;
 
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.state.BlockStateContainer;
+
 public class BlockKitchenCabinetry extends BlockFurnitureHorizontal {
+
+    public static final PropertyBool OPEN = PropertyBool.create("open");
 
     public BlockKitchenCabinetry(String name) {
         super(Material.WOOD);
@@ -19,6 +25,28 @@ public class BlockKitchenCabinetry extends BlockFurnitureHorizontal {
         this.setRegistryName("refurbished_furniture", name);
         this.setHardness(2.0F);
         this.setSoundType(SoundType.WOOD);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(OPEN, false));
+    }
+
+    @Override
+    protected BlockStateContainer createBlockState() {
+        return new BlockStateContainer(this, new IProperty[] { FACING, OPEN });
+    }
+
+    @Override
+    public IBlockState getStateFromMeta(int meta) {
+        EnumFacing facing = EnumFacing.byHorizontalIndex(meta & 3);
+        boolean open = (meta & 4) != 0;
+        return this.getDefaultState().withProperty(FACING, facing).withProperty(OPEN, open);
+    }
+
+    @Override
+    public int getMetaFromState(IBlockState state) {
+        int meta = state.getValue(FACING).getHorizontalIndex();
+        if (state.getValue(OPEN)) {
+            meta |= 4;
+        }
+        return meta;
     }
 
     @Override
@@ -28,7 +56,7 @@ public class BlockKitchenCabinetry extends BlockFurnitureHorizontal {
 
     @Override
     public TileEntity createTileEntity(World world, IBlockState state) {
-        return new TileEntityCabinet();
+        return new TileEntityCabinet(18);
     }
 
     @Override

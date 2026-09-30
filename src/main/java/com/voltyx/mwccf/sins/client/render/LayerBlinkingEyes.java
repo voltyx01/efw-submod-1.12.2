@@ -54,6 +54,11 @@ public class LayerBlinkingEyes implements LayerRenderer<AbstractClientPlayer> {
     @Override
     public void doRenderLayer(AbstractClientPlayer player, float limbSwing, float limbSwingAmount, float partialTicks,
             float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()
+                && player == com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier()) {
+            return;
+        }
+
         GenderPlayer genderPlayer = WildfireGender.getPlayerById(player.getUniqueID());
         if (genderPlayer == null || !genderPlayer.isBlinkEnabled()) {
             return;

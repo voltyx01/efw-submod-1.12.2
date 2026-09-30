@@ -84,6 +84,9 @@ public class GenderLayer implements LayerRenderer<AbstractClientPlayer> {
     @Override
     public void doRenderLayer(@Nonnull AbstractClientPlayer ent, float limbAngle, float limbDistance,
             float partialTicks, float animationProgress, float headYaw, float headPitch, float scale) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()
+                && ent == com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier())
+            return;
         if (ent.isInvisibleToPlayer(Minecraft.getMinecraft().player))
             return;
 

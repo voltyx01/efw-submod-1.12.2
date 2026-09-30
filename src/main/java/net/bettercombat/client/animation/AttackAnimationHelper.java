@@ -87,18 +87,10 @@ public class AttackAnimationHelper {
         float downwindEnd = upswing / (1.0F - upswing);
         float downwindRatio = downwindStart + (downwindEnd - downwindStart) * blendFactor;
         float downwindSpeed = speed * downwindRatio;
-        int blendIn = Math.max(0, clip.beginTick);
+        int blendIn = 2;
 
         ap.setAnimatedHand(animatedHand);
         ap.setActionBetterCombat(clip, upswingSpeed, downwindSpeed, duration * upswing, duration, blendIn);
-        if (Minecraft.getMinecraft().player == player
-            && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
-            System.out.printf(Locale.ROOT,
-                "[BCFP12][START] clip=%s hand=%s combo=%d lengthTicks=%.3f upswing=%.4f beginTick=%d endTick=%d upSpeed=%.4f downSpeed=%.4f cameraPitch=%.3f cameraYaw=%.3f%n",
-                clip.name, animatedHand, net.bettercombat.client.BetterCombatClient.getComboCount(),
-                duration, upswing, clip.beginTick, clip.endTick, upswingSpeed, downwindSpeed,
-                player.rotationPitch, player.rotationYaw);
-        }
     }
 
     public static boolean isVanillaWeaponAttack(EntityPlayer player, AnimatedHand animatedHand) {

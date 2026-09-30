@@ -1,7 +1,6 @@
 {
 	"credit": "Model by MrCrayfish (https://twitter.com/MrCrayfish) using Blockbench. All Rights Reserved.",
-	"loader": "framework:open_model",
-	"components": [
+		"elements": [
 		{
 			"from": [0.5, 0, 0.5],
 			"to": [14.5, 1, 7.5],
@@ -17,7 +16,7 @@
 		{
 			"from": [1.25, 0, 8.25],
 			"to": [15.25, 1, 15.25],
-			"rotation": {"angle": -2.5, "axis": "y", "origin": [8.25, 0.5, 11.75]},
+			"rotation": {"angle": 0.0, "axis": "y", "origin": [8.25, 0.5, 11.75]},
 			"faces": {
 				"north": {"uv": [14.5, 0, 15, 14], "rotation": 270, "texture": "#texture"},
 				"east": {"uv": [0, 14, 3.5, 15], "texture": "#texture"},
@@ -29,3 +28,4 @@
 		}
 	]
 }
+

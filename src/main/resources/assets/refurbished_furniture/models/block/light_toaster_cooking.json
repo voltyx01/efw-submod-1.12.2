@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/toaster_cooking",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/light_toaster",
+    "particle": "refurbished_furniture:blocks/light_toaster"
+  }
+}

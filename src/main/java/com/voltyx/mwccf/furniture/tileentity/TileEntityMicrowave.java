@@ -2,20 +2,25 @@ package com.voltyx.mwccf.furniture.tileentity;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntityLockableLoot;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.SoundCategory;
 
 public class TileEntityMicrowave extends TileEntityLockableLoot implements ITickable {
 
-    private NonNullList<ItemStack> inventory = NonNullList.withSize(2, ItemStack.EMPTY); // Slot 0: Input, Slot 1: Output
+    private NonNullList<ItemStack> inventory = NonNullList.withSize(2, ItemStack.EMPTY);
     public int cookTime = 0;
-    public int totalCookTime = 100; // Fast cooking
+    public int totalCookTime = 100;
+    private int prevCookTime = 0;
 
     @Override
     public int getSizeInventory() {
@@ -48,7 +53,7 @@ public class TileEntityMicrowave extends TileEntityLockableLoot implements ITick
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
         super.writeToNBT(compound);
-        compound.setInteger("CookTime", (short) this.cookTime);
+        compound.setInteger("CookTime", this.cookTime);
         if (!this.checkLootAndWrite(compound)) {
             ItemStackHelper.saveAllItems(compound, this.inventory);
         }
@@ -78,15 +83,23 @@ public class TileEntityMicrowave extends TileEntityLockableLoot implements ITick
     @Override
     public void update() {
         if (!this.world.isRemote) {
+            boolean wasCooking = this.cookTime > 0;
             if (this.canSmelt()) {
                 ++this.cookTime;
                 if (this.cookTime >= this.totalCookTime) {
                     this.cookTime = 0;
                     this.smeltItem();
                     this.markDirty();
+                    this.world.playSound(null, this.pos, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.BLOCKS, 1.0F, 1.2F);
                 }
             } else {
                 this.cookTime = 0;
+            }
+
+            boolean isCooking = this.cookTime > 0;
+            if (wasCooking != isCooking || (isCooking && Math.abs(this.cookTime - this.prevCookTime) >= 20)) {
+                this.prevCookTime = this.cookTime;
+                this.world.notifyBlockUpdate(this.pos, this.world.getBlockState(this.pos), this.world.getBlockState(this.pos), 3);
             }
         }
     }
@@ -119,5 +132,36 @@ public class TileEntityMicrowave extends TileEntityLockableLoot implements ITick
 
             input.shrink(1);
         }
+    }
+
+    @Override
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        return new SPacketUpdateTileEntity(this.pos, 1, this.getUpdateTag());
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+        this.readFromNBT(pkt.getNbtCompound());
+    }
+
+    @Override
+    public NBTTagCompound getUpdateTag() {
+        return this.writeToNBT(new NBTTagCompound());
+    }
+
+    @Override
+    public boolean isUsableByPlayer(EntityPlayer player) {
+        if (this.world == null || this.isInvalid()) return false;
+        return player.getDistanceSq((double) this.pos.getX() + 0.5D, (double) this.pos.getY() + 0.5D, (double) this.pos.getZ() + 0.5D) <= 64.0D;
+    }
+
+    @Override
+    public boolean shouldRefresh(net.minecraft.world.World world, net.minecraft.util.math.BlockPos pos, net.minecraft.block.state.IBlockState oldState, net.minecraft.block.state.IBlockState newState) {
+        return oldState.getBlock() != newState.getBlock();
+    }
+
+    @Override
+    public void handleUpdateTag(NBTTagCompound tag) {
+        this.readFromNBT(tag);
     }
 }

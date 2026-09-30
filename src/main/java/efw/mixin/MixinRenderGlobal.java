@@ -1,10 +1,14 @@
 package efw.mixin;
 
 import com.voltyx.mwccf.sunmoon.RealisticSunMoon;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.Vec3d;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -41,6 +45,14 @@ public abstract class MixinRenderGlobal {
                 this.renderManager.renderEntityStatic(mc.player, partialTicks, false);
             } finally {
                 efw.animation.firstperson.FirstPersonMode.setFirstPersonPass(prevPass);
+            }
+        }
+
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering() && !com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.carrierRenderedInPass) {
+            net.minecraft.entity.Entity carrier = com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier();
+            if (carrier != null) {
+                com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.carrierRenderedInPass = true;
+                this.renderManager.renderEntityStatic(carrier, partialTicks, false);
             }
         }
     }
@@ -107,5 +119,75 @@ public abstract class MixinRenderGlobal {
     )
     private float b3m$moonSize(float original) {
         return RealisticSunMoon.moonSize;
+    }
+
+    /**
+     * Redirects player.getPositionEyes in RenderGlobal.renderSky so that when bodycam is rendering,
+     * the dummy camera's eye position is used instead of the player standing at the terminal.
+     */
+    @Redirect(
+        method = "renderSky(FI)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/entity/EntityPlayerSP;getPositionEyes(F)Lnet/minecraft/util/math/Vec3d;"
+        )
+    )
+    private net.minecraft.util.math.Vec3d efw$renderSkyEyePos(net.minecraft.client.entity.EntityPlayerSP player, float partialTicks) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
+            if (rve != null) {
+                return rve.getPositionEyes(partialTicks);
+            }
+        }
+        return player.getPositionEyes(partialTicks);
+    }
+
+    /**
+     * Redirects the World.getSkyColor call inside RenderGlobal.renderSky so that
+     * during bodycam FBO rendering the sky dome uses mc.player's sky colour instead
+     * of BodycamCameraEntity's. World.getSkyColor returns Vec3d.ZERO for non-Player
+     * entities, causing the sky dome (and thus the horizon) to render black.
+     */
+    @Redirect(
+        method = "renderSky(FI)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/multiplayer/WorldClient;getSkyColor(Lnet/minecraft/entity/Entity;F)Lnet/minecraft/util/math/Vec3d;"
+        )
+    )
+    private Vec3d efw$bodycamSkyColor(WorldClient world, Entity entity, float partialTicks) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            Minecraft mc = Minecraft.getMinecraft();
+            EntityPlayerSP player = mc.player;
+            if (player != null) {
+                return world.getSkyColor(player, partialTicks);
+            }
+        }
+        return world.getSkyColor(entity, partialTicks);
+    }
+
+    /**
+     * Prevents vanilla RenderGlobal from drawing the underground black void box over the horizon
+     * by clamping the horizon to at most the camera eye height.
+     * This keeps d3 >= 0.0D so:
+     * 1. The black void box is never drawn.
+     * 2. The horizon dome/plane glSkyList2 sits naturally at the horizon without flying up
+     *    over the player's head or being banished into the abyss.
+     */
+    @Redirect(
+
+        method = "renderSky(FI)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/multiplayer/WorldClient;getHorizon()D"
+        )
+    )
+    private double efw$adjustHorizon(WorldClient world) {
+        net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
+        if (rve != null) {
+            double eyeY = rve.posY + (double) rve.getEyeHeight();
+            return Math.min(world.getHorizon(), eyeY);
+        }
+        return world.getHorizon();
     }
 }

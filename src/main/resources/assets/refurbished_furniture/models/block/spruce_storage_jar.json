@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/storage_jar",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/spruce_storage_jar",
+    "particle": "refurbished_furniture:blocks/spruce_storage_jar"
+  }
+}

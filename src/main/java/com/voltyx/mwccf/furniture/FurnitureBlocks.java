@@ -89,7 +89,7 @@ public class FurnitureBlocks {
 
         for (String type : woodTypes) {
             registerBlock(new BlockLatticeFence(type + "_lattice_fence"));
-            registerBlock(new BlockLatticeFence(type + "_lattice_fence_gate"));
+            registerBlock(new BlockLatticeFenceGate(type + "_lattice_fence_gate"));
         }
 
         // Lighting & Fans
@@ -108,7 +108,47 @@ public class FurnitureBlocks {
         // Lighting & Lamps
         for (String color : colors) {
             registerBlock(new BlockLamp(color + "_lamp"));
+            registerBlock(new BlockStool(color + "_stool"));
+            registerBlock(new BlockTrampoline(color + "_trampoline"));
+            registerBlock(new BlockCooler(color + "_cooler"));
         }
+
+        // Crates, Cutting Boards, Basins, Wall Cabinets, Jars
+        for (String type : woodTypes) {
+            registerBlock(new BlockCrate(type + "_crate"));
+            registerBlock(new BlockCuttingBoard(type + "_cutting_board"));
+            registerBlock(new BlockBasin(type + "_basin"));
+            registerBlock(new BlockKitchenStorageCabinet(type + "_kitchen_storage_cabinet"));
+            registerBlock(new BlockStorageJar(type + "_storage_jar"));
+        }
+
+        // Appliances & Modern Utilities
+        registerBlock(new BlockToaster("light_toaster"));
+        registerBlock(new BlockToaster("dark_toaster"));
+
+        registerBlock(new BlockCeilingLight("light_ceiling_light"));
+        registerBlock(new BlockCeilingLight("dark_ceiling_light"));
+
+        registerBlock(new BlockLightswitch("light_lightswitch"));
+        registerBlock(new BlockLightswitch("dark_lightswitch"));
+
+        registerBlock(new BlockElectricityGenerator("light_electricity_generator"));
+        registerBlock(new BlockElectricityGenerator("dark_electricity_generator"));
+
+        registerBlock(new BlockDoorbell("doorbell"));
+        registerBlock(new BlockPostBox("post_box"));
+        registerBlock(new BlockRecycleBin("recycle_bin"));
+        registerBlock(new BlockWorkbench("workbench"));
+        registerBlock(new BlockFryingPan("frying_pan"));
+        registerBlock(new BlockDoorMat("door_mat"));
+
+        registerBlock(new BlockSteppingStone("stepping_stones_style_1"));
+        registerBlock(new BlockSteppingStone("stepping_stones_style_2"));
+        registerBlock(new BlockSteppingStone("stepping_stones_style_3"));
+        registerBlock(new BlockSteppingStone("stepping_stones_style_4"));
+
+        registerBlock(new BlockRangeHood("range_hood_off"));
+        registerBlock(new BlockRangeHood("range_hood_on"));
 
         TERMINAL = registerBlock(new com.voltyx.mwccf.terminal.BlockTerminal("terminal"));
         ANTENNA = registerBlock(new com.voltyx.mwccf.antenna.BlockAntenna("antenna"));
@@ -120,8 +160,12 @@ public class FurnitureBlocks {
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityCabinet.class, new ResourceLocation("mwccf", "cabinet"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityComputer.class, new ResourceLocation("mwccf", "computer"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityWashingMachine.class, new ResourceLocation("mwccf", "washing_machine"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityCeilingFan.class, new ResourceLocation("mwccf", "ceiling_fan"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityTelevision.class, new ResourceLocation("mwccf", "television"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.terminal.TileEntityTerminal.class, new ResourceLocation("mwccf", "terminal"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new ResourceLocation("mwccf", "antenna"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityStorageJar.class, new ResourceLocation("mwccf", "storage_jar"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator.class, new ResourceLocation("mwccf", "electricity_generator"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.radio.TileEntityOldRadio.class, new ResourceLocation("mwccf", "old_radio"));
 
         PLACED_ITEM = registerBlock(new BlockPlacedItem("placed_item"));

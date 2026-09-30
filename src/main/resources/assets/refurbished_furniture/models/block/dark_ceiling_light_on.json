@@ -1,0 +1,7 @@
+{
+  "parent": "refurbished_furniture:block/ceiling_light_on",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/dark_ceiling_light",
+    "particle": "refurbished_furniture:blocks/dark_ceiling_light"
+  }
+}

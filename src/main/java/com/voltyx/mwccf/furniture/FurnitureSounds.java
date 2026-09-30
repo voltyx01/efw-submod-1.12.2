@@ -27,6 +27,22 @@ public class FurnitureSounds {
     public static SoundEvent BLOCK_CABINET_CLOSE = register("block.cabinet.close");
     public static SoundEvent BLOCK_LIGHTSWITCH_FLICK = register("block.lightswitch.flick");
     public static SoundEvent BLOCK_DOORBELL_CHIME = register("block.doorbell.chime");
+    public static SoundEvent BLOCK_CEILING_FAN_SPIN = register("block.ceiling_fan.spin");
+    public static SoundEvent BLOCK_TRAMPOLINE_BOUNCE = register("block.trampoline.bounce");
+    public static SoundEvent BLOCK_TRAMPOLINE_SUPER_BOUNCE = register("block.trampoline.super_bounce");
+    public static SoundEvent BLOCK_STORAGE_JAR_INSERT = register("block.storage_jar.insert_item");
+    public static SoundEvent BLOCK_RECYCLE_BIN_ENGINE = register("block.recycle_bin.engine");
+    public static SoundEvent BLOCK_ELECTRICITY_GENERATOR_ENGINE = register("block.electricity_generator.engine");
+    public static SoundEvent BLOCK_TOASTER_DOWN = register("block.toaster.down");
+    public static SoundEvent BLOCK_TOASTER_POP = register("block.toaster.pop");
+    public static SoundEvent BLOCK_TOASTER_INSERT = register("block.toaster.insert");
+    public static SoundEvent BLOCK_CUTTING_BOARD_PLACE = register("block.cutting_board.place_ingredient");
+    public static SoundEvent BLOCK_FRYING_PAN_PLACE_INGREDIENT = register("block.frying_pan.place_ingredient");
+    public static SoundEvent BLOCK_FRYING_PAN_SIZZLE = register("block.frying_pan.sizzling");
+    public static SoundEvent BLOCK_WORKBENCH_CRAFT = register("block.workbench.craft");
+    public static SoundEvent BLOCK_KITCHEN_DRAWER_OPEN = register("block.kitchen_drawer.open");
+    public static SoundEvent BLOCK_KITCHEN_DRAWER_CLOSE = register("block.kitchen_drawer.close");
+    public static SoundEvent BLOCK_KITCHEN_SINK_FILL = register("block.kitchen_sink.fill");
 
     private static SoundEvent register(String name) {
         ResourceLocation loc = new ResourceLocation("refurbished_furniture", name);

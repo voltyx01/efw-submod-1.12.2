@@ -59,6 +59,11 @@ public class GeoArmorModel extends ModelBiped {
         boneMap.put("bipedRightLeg", this.bipedRightLeg);
         boneMap.put("bipedLeftLeg", this.bipedLeftLeg);
 
+        boneMap.put("Body", this.bipedBody);
+        boneMap.put("body", this.bipedBody);
+        boneMap.put("Head", this.bipedHead);
+        boneMap.put("head", this.bipedHead);
+
         slimBoneMap.put("bipedHead", this.bipedHead);
         slimBoneMap.put("bipedBody", this.bipedBody);
         slimBoneMap.put("bipedRightArm", this.bipedRightArmSlim);
@@ -66,12 +71,22 @@ public class GeoArmorModel extends ModelBiped {
         slimBoneMap.put("bipedRightLeg", this.bipedRightLeg);
         slimBoneMap.put("bipedLeftLeg", this.bipedLeftLeg);
 
+        slimBoneMap.put("Body", this.bipedBody);
+        slimBoneMap.put("body", this.bipedBody);
+        slimBoneMap.put("Head", this.bipedHead);
+        slimBoneMap.put("head", this.bipedHead);
+
         bedrockPivotMap.put("bipedHead", new float[]{0, 24, 0});
         bedrockPivotMap.put("bipedBody", new float[]{0, 24, 0});
         bedrockPivotMap.put("bipedRightArm", new float[]{-5, 22, 0});
         bedrockPivotMap.put("bipedLeftArm", new float[]{5, 22, 0});
         bedrockPivotMap.put("bipedRightLeg", new float[]{-2, 12, 0});
         bedrockPivotMap.put("bipedLeftLeg", new float[]{2, 12, 0});
+
+        bedrockPivotMap.put("Body", new float[]{0, 24, 0});
+        bedrockPivotMap.put("body", new float[]{0, 24, 0});
+        bedrockPivotMap.put("Head", new float[]{0, 24, 0});
+        bedrockPivotMap.put("head", new float[]{0, 24, 0});
 
         try {
             java.io.InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(geoFile).getInputStream();
@@ -111,6 +126,10 @@ public class GeoArmorModel extends ModelBiped {
                     vanillaJavaPivots.put("bipedLeftArm", new float[]{5, 2, 0});
                     vanillaJavaPivots.put("bipedRightLeg", new float[]{-1.9f, 12, 0});
                     vanillaJavaPivots.put("bipedLeftLeg", new float[]{1.9f, 12, 0});
+                    vanillaJavaPivots.put("Body", new float[]{0, 0, 0});
+                    vanillaJavaPivots.put("body", new float[]{0, 0, 0});
+                    vanillaJavaPivots.put("Head", new float[]{0, 0, 0});
+                    vanillaJavaPivots.put("head", new float[]{0, 0, 0});
 
                     for (JsonElement boneElem : bones) {
                         JsonObject boneObj = boneElem.getAsJsonObject();

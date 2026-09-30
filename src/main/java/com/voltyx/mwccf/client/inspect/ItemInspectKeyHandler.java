@@ -110,6 +110,13 @@ public class ItemInspectKeyHandler {
                     return;
                 }
 
+                // [X] Toggle Bodycam Power
+                if (key == Keyboard.KEY_X && stack.getItem() instanceof com.voltyx.mwccf.geo.ItemBodycam) {
+                    com.voltyx.mwccf.MwccfMod.PACKET_HANDLER.sendToServer(new com.voltyx.mwccf.network.PacketToggleBodycam(slotId));
+                    event.setCanceled(true);
+                    return;
+                }
+
                 // [X] Configure Walkie-Talkie
                 if (key == Keyboard.KEY_X && stack.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie) {
                     mc.displayGuiScreen(new com.voltyx.mwccf.walkietalkie.WalkieTalkieGui(stack, mc.currentScreen));

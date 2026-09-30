@@ -84,9 +84,19 @@ public class TerminalCameraController {
         mc.gameSettings.thirdPersonView = 0; // Force first person
 
         lastFrameTime = System.nanoTime();
-        TerminalSession.getInstance().reset();
-        TerminalSession.getInstance().setModuleInstalled(terminal.hasInternetModule());
-        TerminalSession.getInstance().setModuleUsers(terminal.getModuleUsers());
+
+        TerminalSession session = TerminalSession.getInstance();
+        boolean resumingBodycam = (session.getStage() == TerminalSession.Stage.BODYCAM_VIEW
+                && session.getTerminalPos() != null
+                && session.getTerminalPos().equals(pos));
+
+        if (!resumingBodycam) {
+            session.reset();
+            session.setTerminalPos(pos);
+            session.setModuleInstalled(terminal.hasInternetModule());
+            session.setBodycamDriverInstalled(terminal.hasBodycamDriver());
+            session.setModuleUsers(terminal.getModuleUsers());
+        }
     }
 
     public static void close() {
@@ -101,15 +111,27 @@ public class TerminalCameraController {
             mc.gameSettings.thirdPersonView = prevThirdPerson;
         }
 
-        if (terminalPos != null) {
-            MwccfMod.PACKET_HANDLER.sendToServer(new PacketCloseTerminal(terminalPos));
-        }
+        TerminalSession session = TerminalSession.getInstance();
+        boolean isStreamingBodycam = (session.getStage() == TerminalSession.Stage.BODYCAM_VIEW);
 
-        if (currentTerminal != null) {
-            currentTerminal.close();
+        if (!isStreamingBodycam) {
+            if (terminalPos != null) {
+                MwccfMod.PACKET_HANDLER.sendToServer(new PacketCloseTerminal(terminalPos));
+            }
+
+            if (currentTerminal != null) {
+                currentTerminal.close();
+                currentTerminal = null;
+            }
+            terminalPos = null;
+        } else {
+            // Keep the terminal casing deployed open so the camera feed stays active on the wall monitor
+            if (currentTerminal != null) {
+                currentTerminal.setOpen(true);
+            }
+            terminalPos = null;
             currentTerminal = null;
         }
-        terminalPos = null;
     }
 
     @SubscribeEvent
@@ -274,7 +296,7 @@ public class TerminalCameraController {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onCameraSetup(EntityViewRenderEvent.CameraSetup event) {
-        if (transitionProgress <= 0.001f) return;
+        if (transitionProgress <= 0.001f || com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) return;
 
         float t = easeOutCubic(transitionProgress);
 

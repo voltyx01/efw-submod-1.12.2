@@ -1,3 +1,6 @@
-{
-  "parent": "refurbished_furniture:block/spruce_lattice_fence"
+﻿{
+  "parent": "refurbished_furniture:item/lattice_fence",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/spruce_lattice_fence"
+  }
 }

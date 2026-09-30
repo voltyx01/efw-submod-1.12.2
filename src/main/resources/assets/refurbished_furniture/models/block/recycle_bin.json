@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/recycle_bin_closed",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/rubbish_bin",
+    "particle": "refurbished_furniture:blocks/rubbish_bin"
+  }
+}

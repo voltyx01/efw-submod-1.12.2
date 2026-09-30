@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/kitchen_drawer_open",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/dark_oak_kitchen_cabinetry",
+    "particle": "refurbished_furniture:blocks/dark_oak_kitchen_cabinetry"
+  }
+}

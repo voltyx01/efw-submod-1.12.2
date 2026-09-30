@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/mail_box",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/oak_mail_box",
+    "particle": "refurbished_furniture:blocks/oak_mail_box"
+  }
+}

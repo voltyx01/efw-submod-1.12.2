@@ -1,0 +1,6 @@
+﻿{
+  "variants": {
+    "normal": { "model": "refurbished_furniture:brown_trampoline" },
+    "inventory": { "model": "refurbished_furniture:brown_trampoline" }
+  }
+}

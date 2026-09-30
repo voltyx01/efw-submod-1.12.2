@@ -115,6 +115,10 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.walkietalkie.PacketToggleWalkieTalkie.Handler.class, com.voltyx.mwccf.walkietalkie.PacketToggleWalkieTalkie.class, 26, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketToggleNVG.Handler.class, com.voltyx.mwccf.network.PacketToggleNVG.class, 27, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketExoDash.Handler.class, com.voltyx.mwccf.network.PacketExoDash.class, 28, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketToggleBodycam.Handler.class, com.voltyx.mwccf.network.PacketToggleBodycam.class, 29, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketInstallBodycamDriver.Handler.class, com.voltyx.mwccf.terminal.network.PacketInstallBodycamDriver.class, 30, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketRequestBodycamList.Handler.class, com.voltyx.mwccf.terminal.network.PacketRequestBodycamList.class, 31, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketResponseBodycamList.Handler.class, com.voltyx.mwccf.terminal.network.PacketResponseBodycamList.class, 32, Side.CLIENT);
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.QuestZoneEventHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler());

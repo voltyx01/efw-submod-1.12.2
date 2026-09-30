@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mwccf:old_camera"
+    },
+    {
+      "item": "mwccf:elastic_band"
+    },
+    {
+      "item": "mwccf:internet_module"
+    }
+  ],
+  "result": {
+    "item": "mwccf:bodycam",
+    "count": 1
+  }
+}

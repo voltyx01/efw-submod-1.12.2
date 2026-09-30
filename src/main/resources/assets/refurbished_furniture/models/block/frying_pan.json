@@ -1,11 +1,10 @@
 {
 	"credit": "Model by MrCrayfish (https://twitter.com/MrCrayfish) using Blockbench. All Rights Reserved.",
-	"loader": "framework:open_model",
-	"textures": {
+		"textures": {
 		"texture": "refurbished_furniture:blocks/frying_pan",
 		"particle": "refurbished_furniture:blocks/light_particle"
 	},
-	"components": [
+	"elements": [
 		{
 			"from": [2.5, 1, 2.5],
 			"to": [13.5, 4, 13.5],
@@ -31,7 +30,7 @@
 		{
 			"from": [13.5, 3, 7],
 			"to": [14.5, 3, 9],
-			"rotation": {"angle": 10, "axis": "z", "origin": [13.5, 3, 8]},
+			"rotation": {"angle": 0.0, "axis": "z", "origin": [13.5, 3, 8]},
 			"faces": {
 				"up": {"uv": [11, 5, 10.5, 3], "texture": "#texture"},
 				"down": {"uv": [10.5, 3, 10, 5], "texture": "#texture"}
@@ -40,7 +39,7 @@
 		{
 			"from": [14.5, 2.5, 7],
 			"to": [21.5, 3.5, 9],
-			"rotation": {"angle": 10, "axis": "z", "origin": [13.5, 3, 8]},
+			"rotation": {"angle": 0.0, "axis": "z", "origin": [13.5, 3, 8]},
 			"faces": {
 				"north": {"uv": [11, 2, 14.5, 3], "texture": "#texture"},
 				"east": {"uv": [4.5, 11, 5.5, 12], "texture": "#texture"},
@@ -119,3 +118,4 @@
 		}
 	}
 }
+

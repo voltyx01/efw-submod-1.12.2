@@ -45,12 +45,22 @@ public class RenderLockOnHandler {
 
         GlStateManager.disableLighting();
         GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager.enableAlpha();
+        GlStateManager.alphaFunc(516, 0.1F);
         GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableTexture2D();
+
         mc.getTextureManager().bindTexture(lockTexture);
         Gui.drawModalRectWithCustomSizedTexture(-8, -8, 0, 0, 16, 16, 16, 16);
+
+        GlStateManager.depthMask(true);
         GlStateManager.enableDepth();
         GlStateManager.disableBlend();
-        GlStateManager.enableLighting();
+        GlStateManager.disableLighting();
+        GlStateManager.resetColor();
         GlStateManager.popMatrix();
     }
 

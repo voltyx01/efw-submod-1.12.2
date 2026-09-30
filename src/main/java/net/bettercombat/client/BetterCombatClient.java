@@ -77,6 +77,10 @@ public class BetterCombatClient {
         if (player == null || player.isRiding() || player.isHandActive()) {
             return false;
         }
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null && localAp.isRollPlaying()) {
+            return false;
+        }
         if (attackCooldown > 0 || upswingTicks > 0) {
             return false;
         }
@@ -97,6 +101,11 @@ public class BetterCombatClient {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP player = mc.player;
         if (player == null) {
+            return false;
+        }
+
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null && localAp.isRollPlaying()) {
             return false;
         }
 
@@ -164,6 +173,11 @@ public class BetterCombatClient {
             return;
         }
 
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null && localAp.isRollPlaying()) {
+            return;
+        }
+
         if (attackCooldown > 0 || upswingTicks > 0) {
             return;
         }
@@ -211,6 +225,10 @@ public class BetterCombatClient {
             pendingSwingSoundId = soundConfig.id();
             pendingSwingSoundConfig = soundConfig;
         }
+
+        // Swing player's arm for vanilla first-person item rendering
+        EnumHand swingHand = hand.isOffHand() ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
+        player.swingArm(swingHand);
 
         // Play third-person animation synchronized to visual swing timer and strike ticks
         AttackAnimationHelper.playAttackAnimation(player, anim, animatedHand, cooldownTicks, upswingRate);
@@ -287,20 +305,20 @@ public class BetterCombatClient {
         }
 
         // Manage attack animation completion for the local player:
-        // Hold combat stance during combo window; only fade out when combo expires or attack is stopped
+        // Fade out smoothly once the attack finishes and no further attack is queued or held
         efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
         if (localAp != null) {
             boolean hasQueuedAttack = (attackBufferTicks > 0);
             boolean isHoldingAttack = MwccfConfig.betterCombat.isHoldToAttackEnabled
                     && mc.gameSettings.keyBindAttack.isKeyDown()
                     && !isHarvesting;
-            boolean inComboWindow = (lastAttacked < comboReset);
+            boolean isAttackActive = (attackCooldown > 0 || upswingTicks > 0);
 
-            if (!hasQueuedAttack && !isHoldingAttack && !inComboWindow
+            if (!hasQueuedAttack && !isHoldingAttack && !isAttackActive
                     && localAp.isActionAttack()
                     && localAp.getActionClip() != null && localAp.getActionClip().isBetterCombat
                     && !localAp.isActionFadingOut()) {
-                localAp.stopAction(6);
+                localAp.stopAction(5);
             }
         }
 
@@ -329,22 +347,36 @@ public class BetterCombatClient {
     }
 
     private static void cancelSwingIfNeeded(EntityPlayerSP player) {
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null && localAp.isRollPlaying()) {
+            if (swingTimer > 0 || upswingTicks > 0 || isUpswingActive() || (localAp.isActionAttack() && localAp.hasActionWeight())) {
+                cancelCurrentSwing(player);
+            }
+            return;
+        }
+
         if ((swingTimer > 0 || attackCooldown > 0) && !upswingStack.isEmpty()) {
             ItemStack current = player.getHeldItemMainhand();
             if (current.getItem() != upswingStack.getItem()) {
-                swingTimer = 0;
-                swingTimerCap = 0;
-                attackCooldown = 0;
-                upswingTicks = 0;
-                attackBufferTicks = 0;
-                upswingStack = ItemStack.EMPTY;
-                currentAnimation = "";
-                currentIsOffHand = false;
-                currentIsDualHanded = false;
-                efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
-                if (localAp != null) {
-                    localAp.stopAction(4);
-                }
+                cancelCurrentSwing(player);
+            }
+        }
+    }
+
+    public static void cancelCurrentSwing(EntityPlayer player) {
+        swingTimer = 0;
+        swingTimerCap = 0;
+        attackCooldown = 0;
+        upswingTicks = 0;
+        attackBufferTicks = 0;
+        upswingStack = ItemStack.EMPTY;
+        currentAnimation = "";
+        currentIsOffHand = false;
+        currentIsDualHanded = false;
+        if (player != null) {
+            efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+            if (localAp != null && localAp.isActionAttack()) {
+                localAp.snapAction();
             }
         }
     }

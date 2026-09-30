@@ -63,7 +63,6 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.client.ClientZoneRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.gui.GuiWeaponSlotOverlay());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.immersiveui.client.ImmersiveUIClientEvents());
-		MinecraftForge.EVENT_BUS.register(new net.bettercombat.client.FirstPersonAttackRenderer());
 
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new CommandDumpChests());
 
@@ -185,9 +184,13 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.block.lamp.TileEntityFlickeringLamp.class, new com.voltyx.mwccf.block.lamp.TileEntityFlickeringLampRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new com.voltyx.mwccf.antenna.client.TileEntityAntennaRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.radio.TileEntityOldRadio.class, new com.voltyx.mwccf.radio.client.TileEntityOldRadioRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityCeilingFan.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityCeilingFanRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityTelevision.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityTelevisionRenderer());
 		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityPlacedItem.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityPlacedItemRenderer());
+		net.minecraftforge.fml.client.registry.ClientRegistry.bindTileEntitySpecialRenderer(com.voltyx.mwccf.furniture.tileentity.TileEntityStorageJar.class, new com.voltyx.mwccf.furniture.client.renderer.TileEntityStorageJarRenderer());
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.terminal.client.TerminalCameraController());
+		MinecraftForge.EVENT_BUS.register(com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getInstance());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.antenna.client.AntennaCameraController());
 
 		net.minecraft.item.Item antennaItem = net.minecraft.item.Item.getItemFromBlock(com.voltyx.mwccf.furniture.FurnitureBlocks.ANTENNA);
@@ -274,6 +277,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.BraceletLayer(entry.getValue(), entry.getKey()));
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.HeadlampLayer(entry.getValue(), entry.getKey()));
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.KawaiiEarsLayer(entry.getValue(), entry.getKey()));
+			entry.getValue().addLayer(new com.voltyx.mwccf.geo.BodycamLayer(entry.getValue(), entry.getKey()));
 		}
 		ItemLoadingScreenRenderer.warmupAll();
 		if (net.minecraftforge.fml.common.Loader.isModLoaded("optifine")) {

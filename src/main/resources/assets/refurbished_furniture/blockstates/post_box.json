@@ -1,4 +1,4 @@
-{
+﻿{
   "variants": {
     "normal": { "model": "refurbished_furniture:post_box" },
     "facing=north": { "model": "refurbished_furniture:post_box" },

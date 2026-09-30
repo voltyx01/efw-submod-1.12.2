@@ -46,6 +46,17 @@ public class MixinRenderPlayer {
 
     @Inject(method = "setModelVisibilities(Lnet/minecraft/client/entity/AbstractClientPlayer;)V", at = @At("RETURN"))
     private void efw$showOnlyFirstPersonAttackArms(AbstractClientPlayer player, CallbackInfo ci) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()
+                && player == com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier()) {
+            ModelPlayer model = ((RenderPlayer) (Object) this).getMainModel();
+            model.setVisible(false);
+            model.bipedRightArm.showModel = true;
+            model.bipedLeftArm.showModel = true;
+            model.bipedRightArmwear.showModel = player.isWearing(net.minecraft.entity.player.EnumPlayerModelParts.RIGHT_SLEEVE);
+            model.bipedLeftArmwear.showModel = player.isWearing(net.minecraft.entity.player.EnumPlayerModelParts.LEFT_SLEEVE);
+            return;
+        }
+
         if (!FirstPersonMode.isFirstPersonPass()) return;
 
         ModelPlayer model = ((RenderPlayer) (Object) this).getMainModel();
@@ -102,17 +113,18 @@ public class MixinRenderPlayer {
 
     @Inject(method = "applyRotations", at = @At("RETURN"))
     protected void applyRotations(AbstractClientPlayer entityLiving, float p_77043_2_, float rotationYaw, float partialTicks, CallbackInfo ci) {
+        if (efw.util.RenderContext.isRenderingPlayerInGui || efw.util.RenderContext.isRenderingPlayerInSevenScreen) return;
         AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(entityLiving);
         if (ap == null || !ap.isActive()) return;
 
         // Apply body-level world-space transform for rolls and Emotecraft/BetterCombat action animations
         boolean isRoll = ap.isRollActive(partialTicks);
-        boolean isEmoteAction = ap.hasActionWeight() && ap.getActionClip() != null && ap.getActionClip().isEmotecraft;
-        // BetterCombat attack clips also go through actionLayer
         boolean isBetterCombatAttack = ap.hasActionWeight() && ap.isActionAttack();
+        boolean isEmoteAction = ap.hasActionWeight() && ap.getActionClip() != null && ap.getActionClip().isEmotecraft && !isBetterCombatAttack;
+        boolean isFP = FirstPersonMode.isFirstPersonPass() && isBetterCombatAttack;
+
         if (!isRoll && !isEmoteAction && !isBetterCombatAttack) return;
 
-        boolean isFP = FirstPersonMode.isFirstPersonPass() && isBetterCombatAttack;
         if (isFP) {
             float eyeHeight = entityLiving.getEyeHeight();
             // 1. Cancel eye height offset and camera pitch in camera view space,
@@ -136,14 +148,19 @@ public class MixinRenderPlayer {
 
         Vec3f pos = isRoll
                 ? ap.getRollLayerTransform("body", TransformType.POSITION, partialTicks)
-                : (isEmoteAction ? ap.get3DTransform("body", TransformType.POSITION, partialTicks, Vec3f.ZERO) : Vec3f.ZERO);
+                : (isEmoteAction ? ap.getActionLayerTransform("body", TransformType.POSITION, partialTicks) : Vec3f.ZERO);
         Vec3f rot = isRoll
                 ? ap.getRollLayerTransform("body", TransformType.ROTATION, partialTicks)
                 : ap.get3DTransform("body", TransformType.ROTATION, partialTicks, Vec3f.ZERO);
 
-        float posY = pos.getY();
-        float posX = pos.getX();
-        float posZ = pos.getZ();
+        // BetterCombat attack clips store torso Y for local model-space animation,
+        // NOT for moving the entire player entity up and down in world space.
+        // Applying posY from the layer stack (which includes baseLayer walking/running/breathing bobbing)
+        // caused the entire player model to shift up and down ("breathe"/jump).
+        // For BetterCombat clips we zero out the world position translation completely!
+        float posY = isBetterCombatAttack ? 0.0f : pos.getY();
+        float posX = isBetterCombatAttack ? 0.0f : pos.getX();
+        float posZ = isBetterCombatAttack ? 0.0f : pos.getZ();
         float rotX = rot.getX();
         float rotY = rot.getY();
         float rotZ = rot.getZ();
@@ -154,9 +171,6 @@ public class MixinRenderPlayer {
         if (!hasRot && !hasPos) return;
 
         // Pivot at waist (0.7 blocks up from feet), matching 1.20.1 setupRotations.
-        // NOTE: position is only applied for rolls/emotes, not BC attacks.
-        // BC attack clips store torso Y for local model-space animation (applied in MixinModelBiped),
-        // NOT for moving the entire player entity up and down in world space.
         GlStateManager.translate(posX, posY + 0.7f, posZ);
 
         rotX = (float) Math.toDegrees(rotX);
@@ -165,9 +179,6 @@ public class MixinRenderPlayer {
 
         GlStateManager.rotate(rotZ, 0.0f, 0.0f, 1.0f);
         GlStateManager.rotate(rotYDeg, 0.0f, 1.0f, 0.0f);
-        // In the post prepareScale(-1,-1,1) space, positive X rotation tilts the body's head
-        // forward (into the camera), which is the correct direction for pitch tracking:
-        // rotX = +pitch_degrees when looking up → body tilts forward → weapon rises into view.
         GlStateManager.rotate(rotX, 1.0f, 0.0f, 0.0f);
 
         GlStateManager.translate(0.0f, -0.7f, 0.0f);

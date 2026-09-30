@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/cutting_board",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/acacia_cutting_board",
+    "particle": "refurbished_furniture:blocks/acacia_cutting_board"
+  }
+}

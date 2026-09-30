@@ -23,6 +23,13 @@ public abstract class MixinLayerArmorBase {
             ci.cancel();
             return;
         }
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()
+                && entityLivingBaseIn == com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier()) {
+            if (slotIn != EntityEquipmentSlot.CHEST) {
+                ci.cancel();
+                return;
+            }
+        }
         SlimArmorStateManager.CURRENT_ENTITY.set(entityLivingBaseIn);
     }
 

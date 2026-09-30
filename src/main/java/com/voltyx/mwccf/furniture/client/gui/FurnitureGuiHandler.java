@@ -14,6 +14,21 @@ public class FurnitureGuiHandler implements IGuiHandler {
     public static final int GUI_FRIDGE = 200;
     public static final int GUI_STOVE = 201;
     public static final int GUI_MICROWAVE = 202;
+    public static final int GUI_ELECTRICITY_GENERATOR = 203;
+
+    private TileEntity getOrMakeTile(World world, BlockPos pos) {
+        TileEntity te = world.getTileEntity(pos);
+        if (te == null) {
+            net.minecraft.block.state.IBlockState state = world.getBlockState(pos);
+            if (state.getBlock().hasTileEntity(state)) {
+                te = state.getBlock().createTileEntity(world, state);
+                if (te != null) {
+                    world.setTileEntity(pos, te);
+                }
+            }
+        }
+        return te;
+    }
 
     @Override
     public Object getServerGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
@@ -22,13 +37,15 @@ public class FurnitureGuiHandler implements IGuiHandler {
         } else if (ID == GUI_DIARY) {
             return new efw.world.inventory.DiaryContainer(player, world);
         }
-        TileEntity te = world.getTileEntity(new BlockPos(x, y, z));
+        TileEntity te = getOrMakeTile(world, new BlockPos(x, y, z));
         if (te instanceof TileEntityFridge) {
             return new ContainerFridge(player.inventory, (TileEntityFridge) te);
         } else if (te instanceof TileEntityStove) {
             return new ContainerStove(player.inventory, (TileEntityStove) te);
         } else if (te instanceof TileEntityMicrowave) {
             return new ContainerMicrowave(player.inventory, (TileEntityMicrowave) te);
+        } else if (te instanceof TileEntityElectricityGenerator) {
+            return new ContainerElectricityGenerator(player.inventory, (TileEntityElectricityGenerator) te);
         }
         return null;
     }
@@ -41,13 +58,15 @@ public class FurnitureGuiHandler implements IGuiHandler {
         } else if (ID == GUI_DIARY) {
             return new efw.client.gui.DiaryGui(new efw.world.inventory.DiaryContainer(player, world), player);
         }
-        TileEntity te = world.getTileEntity(new BlockPos(x, y, z));
+        TileEntity te = getOrMakeTile(world, new BlockPos(x, y, z));
         if (te instanceof TileEntityFridge) {
             return new GuiFridge(player.inventory, (TileEntityFridge) te);
         } else if (te instanceof TileEntityStove) {
             return new GuiStove(player.inventory, (TileEntityStove) te);
         } else if (te instanceof TileEntityMicrowave) {
             return new GuiMicrowave(player.inventory, (TileEntityMicrowave) te);
+        } else if (te instanceof TileEntityElectricityGenerator) {
+            return new GuiElectricityGenerator(player.inventory, (TileEntityElectricityGenerator) te);
         }
         return null;
     }

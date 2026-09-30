@@ -27,7 +27,7 @@ public final class BackpackLayer implements LayerRenderer<AbstractClientPlayer> 
 
     @Override
     public void doRenderLayer(AbstractClientPlayer player, float limbSwing, float limbSwingAmount, float delta, float age, float yaw, float pitch, float scale) {
-        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen || com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
             return;
         }
         ItemStack stack = BackpackBaubles.getBaubleBackpack(player);

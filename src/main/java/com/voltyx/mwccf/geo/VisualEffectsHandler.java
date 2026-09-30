@@ -46,6 +46,7 @@ public class VisualEffectsHandler {
     /** Тряска камеры (pitch/yaw/roll) — только на 120+ */
     @SubscribeEvent
     public void onCameraSetup(EntityViewRenderEvent.CameraSetup event) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) return;
         float bpm = HeartbeatManager.currentBPM;
 
         // Целевое значение тряски

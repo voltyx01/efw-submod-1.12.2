@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/electricity_generator_off",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/light_electricity_generator",
+    "particle": "refurbished_furniture:blocks/light_electricity_generator"
+  }
+}

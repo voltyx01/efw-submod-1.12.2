@@ -20,7 +20,7 @@ public class HeadlampLayer implements LayerRenderer<AbstractClientPlayer> {
     public void doRenderLayer(AbstractClientPlayer player,
                               float limbSwing, float limbSwingAmount, float delta,
                               float age, float yaw, float pitch, float scale) {
-        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen || com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
             return;
         }
 

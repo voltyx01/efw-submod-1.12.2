@@ -31,6 +31,8 @@ public class MCoreItems {
     public static final Item RADIO_BOARD = createItem("radio_board");
     public static final Item MICROPHONE_PART = createItem("microphone_part");
     public static final Item SCREWDRIVER = createItem("screwdriver");
+    public static final Item OLD_CAMERA = createItem("old_camera");
+    public static final Item ELASTIC_BAND = createItem("elastic_band");
     public static final Item WALKIE_TALKIE_CASE = createItem("walkie_talkie_case");
 
     // Steel Tools
@@ -151,6 +153,7 @@ public class MCoreItems {
     public static final Item BRACELET = createBauble("bracelet");
     public static final Item HEADLAMP = createHeadlamp("headlamp");
     public static final Item KAWAII_EARS = createKawaiiEars("kawaii_ears");
+    public static final Item BODYCAM = createBodycam("bodycam");
     public static final Item PORTABLE_MAP = createPortableMap("portable_map");
     public static final Item BATTERY = createBattery("battery");
     public static final ItemArmor.ArmorMaterial MAT_ARTICGUILLIE = net.minecraftforge.common.util.EnumHelper.addArmorMaterial("ArticGuillie", "mwccf:empty", 23, new int[]{3, 6, 8, 3}, 9, net.minecraft.init.SoundEvents.ITEM_ARMOR_EQUIP_IRON, 1.0F);
@@ -301,6 +304,12 @@ public class MCoreItems {
 
     private static Item createKawaiiEars(String name) {
         Item item = new com.voltyx.mwccf.geo.ItemKawaiiEars(name);
+        ITEMS.add(item);
+        return item;
+    }
+
+    private static Item createBodycam(String name) {
+        Item item = new com.voltyx.mwccf.geo.ItemBodycam(name);
         ITEMS.add(item);
         return item;
     }

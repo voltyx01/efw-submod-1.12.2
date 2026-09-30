@@ -1,0 +1,18 @@
+{
+  "variants": {
+    "facing=north,powered=false": { "model": "refurbished_furniture:dark_lightswitch" },
+    "facing=south,powered=false": { "model": "refurbished_furniture:dark_lightswitch", "y": 180 },
+    "facing=west,powered=false":  { "model": "refurbished_furniture:dark_lightswitch", "y": 270 },
+    "facing=east,powered=false":  { "model": "refurbished_furniture:dark_lightswitch", "y": 90 },
+    "facing=north,powered=true":  { "model": "refurbished_furniture:dark_lightswitch_on" },
+    "facing=south,powered=true":  { "model": "refurbished_furniture:dark_lightswitch_on", "y": 180 },
+    "facing=west,powered=true":   { "model": "refurbished_furniture:dark_lightswitch_on", "y": 270 },
+    "facing=east,powered=true":   { "model": "refurbished_furniture:dark_lightswitch_on", "y": 90 },
+    "facing=north": { "model": "refurbished_furniture:dark_lightswitch" },
+    "facing=south": { "model": "refurbished_furniture:dark_lightswitch", "y": 180 },
+    "facing=west":  { "model": "refurbished_furniture:dark_lightswitch", "y": 270 },
+    "facing=east":  { "model": "refurbished_furniture:dark_lightswitch", "y": 90 },
+    "normal":       { "model": "refurbished_furniture:dark_lightswitch" },
+    "inventory":    { "model": "refurbished_furniture:dark_lightswitch" }
+  }
+}

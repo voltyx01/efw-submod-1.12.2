@@ -40,13 +40,15 @@ public class SplashRenderer {
     // Called from MixinMinecraftSplash.setInitialDisplayMode
     // -------------------------------------------------------------------------
     public static void initDisplayMode(Minecraft mc) throws LWJGLException {
-        // Always write splash.properties with enabled=false so Forge's white screen never shows
+        // Always write splash.properties with enabled=false so Forge's white screen
+        // never shows
         if (mc != null && mc.gameDir != null) {
             File splashCfg = new File(mc.gameDir, "config/splash.properties");
             try {
                 splashCfg.getParentFile().mkdirs();
                 java.nio.file.Files.write(splashCfg.toPath(), "enabled=false\n".getBytes(StandardCharsets.UTF_8));
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
 
         cachedLogo = findMojangPng(mc);
@@ -99,7 +101,8 @@ public class SplashRenderer {
     // Renders on the MAIN thread — no GL context conflicts with other mods.
     // -------------------------------------------------------------------------
     public static void onProgressStep() {
-        if (!isSplashPhase) return;
+        if (!isSplashPhase)
+            return;
         long now = Minecraft.getSystemTime();
         // Render at most every 16 ms (~60 fps) — avoid hammering on slow steps
         if (now - lastRenderTime >= 16) {
@@ -112,11 +115,13 @@ public class SplashRenderer {
     // Main-thread render: clears screen, draws logo + spinner, flips buffer
     // -------------------------------------------------------------------------
     public static void renderFrameImmediate() {
-        if (!isSplashPhase) return;
+        if (!isSplashPhase)
+            return;
         try {
             int dispW = Display.getWidth();
             int dispH = Display.getHeight();
-            if (dispW <= 0 || dispH <= 0) return;
+            if (dispW <= 0 || dispH <= 0)
+                return;
 
             // Ensure we have the texture uploaded
             if (logoTexId == 0 && cachedLogo != null) {
@@ -150,10 +155,14 @@ public class SplashRenderer {
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, logoTexId);
                 GL11.glColor4f(1f, 1f, 1f, 1f);
                 GL11.glBegin(GL11.GL_QUADS);
-                GL11.glTexCoord2f(0f, 0f); GL11.glVertex2f(0f,     0f);
-                GL11.glTexCoord2f(0f, 1f); GL11.glVertex2f(0f,     dispH);
-                GL11.glTexCoord2f(1f, 1f); GL11.glVertex2f(dispW,  dispH);
-                GL11.glTexCoord2f(1f, 0f); GL11.glVertex2f(dispW,  0f);
+                GL11.glTexCoord2f(0f, 0f);
+                GL11.glVertex2f(0f, 0f);
+                GL11.glTexCoord2f(0f, 1f);
+                GL11.glVertex2f(0f, dispH);
+                GL11.glTexCoord2f(1f, 1f);
+                GL11.glVertex2f(dispW, dispH);
+                GL11.glTexCoord2f(1f, 0f);
+                GL11.glVertex2f(dispW, 0f);
                 GL11.glEnd();
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
             }
@@ -169,11 +178,13 @@ public class SplashRenderer {
             GL11.glPopAttrib();
 
             Display.update();
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
     }
 
     private static int createTexture(BufferedImage img) {
-        if (img == null) return 0;
+        if (img == null)
+            return 0;
         try {
             int w = img.getWidth();
             int h = img.getHeight();
@@ -185,8 +196,8 @@ public class SplashRenderer {
                 for (int x = 0; x < w; x++) {
                     int pixel = pixels[y * w + x];
                     buffer.put((byte) ((pixel >> 16) & 0xFF)); // R
-                    buffer.put((byte) ((pixel >> 8)  & 0xFF)); // G
-                    buffer.put((byte) (pixel         & 0xFF)); // B
+                    buffer.put((byte) ((pixel >> 8) & 0xFF)); // G
+                    buffer.put((byte) (pixel & 0xFF)); // B
                     buffer.put((byte) ((pixel >> 24) & 0xFF)); // A
                 }
             }
@@ -198,7 +209,8 @@ public class SplashRenderer {
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE,
+                    buffer);
             return id;
         } catch (Throwable e) {
             return 0;
@@ -206,9 +218,10 @@ public class SplashRenderer {
     }
 
     private static void drawLoadingWheel(int screenWidth, int screenHeight) {
-        int cx = screenWidth / 2;
-        int cy = screenHeight / 2;
         int size = Math.min(40, Math.max(20, Math.min(screenWidth, screenHeight) / 20));
+        int margin = 64;
+        int cx = screenWidth - margin;
+        int cy = screenHeight - margin;
         long time = Minecraft.getSystemTime();
 
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -230,30 +243,35 @@ public class SplashRenderer {
             int dotPos = (pos - i * 2 + perimeter * 100) % perimeter;
             int dx, dy;
             if (dotPos < size * 2) {
-                dx = -size + dotPos; dy = -size;
+                dx = -size + dotPos;
+                dy = -size;
             } else if (dotPos < size * 4) {
-                dx = size; dy = -size + (dotPos - size * 2);
+                dx = size;
+                dy = -size + (dotPos - size * 2);
             } else if (dotPos < size * 6) {
-                dx = size - (dotPos - size * 4); dy = size;
+                dx = size - (dotPos - size * 4);
+                dy = size;
             } else {
-                dx = -size; dy = size - (dotPos - size * 6);
+                dx = -size;
+                dy = size - (dotPos - size * 6);
             }
             int alpha = (int) (255.0f * (1.0f - i / (float) dotCount));
-            drawRect(cx + dx - dotSize, cy + dy - dotSize, cx + dx + dotSize, cy + dy + dotSize, (alpha << 24) | 0xFFFFFF);
+            drawRect(cx + dx - dotSize, cy + dy - dotSize, cx + dx + dotSize, cy + dy + dotSize,
+                    (alpha << 24) | 0xFFFFFF);
         }
     }
 
     private static void drawRect(int left, int top, int right, int bottom, int color) {
         float a = ((color >> 24) & 255) / 255.0F;
         float r = ((color >> 16) & 255) / 255.0F;
-        float g = ((color >> 8)  & 255) / 255.0F;
-        float b = (color         & 255) / 255.0F;
+        float g = ((color >> 8) & 255) / 255.0F;
+        float b = (color & 255) / 255.0F;
         GL11.glColor4f(r, g, b, a);
         GL11.glBegin(GL11.GL_QUADS);
-        GL11.glVertex2f(left,  bottom);
+        GL11.glVertex2f(left, bottom);
         GL11.glVertex2f(right, bottom);
         GL11.glVertex2f(right, top);
-        GL11.glVertex2f(left,  top);
+        GL11.glVertex2f(left, top);
         GL11.glEnd();
     }
 
@@ -276,14 +294,17 @@ public class SplashRenderer {
                                     String item = items[i].trim();
                                     if (item.startsWith("\"") && item.endsWith("\"") && item.length() >= 2)
                                         item = item.substring(1, item.length() - 1);
-                                    if (item.isEmpty()) continue;
+                                    if (item.isEmpty())
+                                        continue;
                                     BufferedImage img = readLogoFromPack(new File(mc.gameDir, "resourcepacks/" + item));
-                                    if (img != null) return img;
+                                    if (img != null)
+                                        return img;
                                 }
                             }
                         }
                     }
-                } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {
+                }
             }
 
             // 2. Any pack in resourcepacks/
@@ -293,7 +314,8 @@ public class SplashRenderer {
                 if (files != null) {
                     for (File f : files) {
                         BufferedImage img = readLogoFromPack(f);
-                        if (img != null) return img;
+                        if (img != null)
+                            return img;
                     }
                 }
             }
@@ -303,37 +325,46 @@ public class SplashRenderer {
             if (rf.exists()) {
                 try (InputStream is = new FileInputStream(rf)) {
                     BufferedImage img = ImageIO.read(is);
-                    if (img != null) return img;
-                } catch (Throwable ignored) {}
+                    if (img != null)
+                        return img;
+                } catch (Throwable ignored) {
+                }
             }
         }
 
         // 4. Classpath
-        try (InputStream is = SplashRenderer.class.getResourceAsStream("/assets/minecraft/textures/gui/title/mojang.png")) {
+        try (InputStream is = SplashRenderer.class
+                .getResourceAsStream("/assets/minecraft/textures/gui/title/mojang.png")) {
             if (is != null) {
                 BufferedImage img = ImageIO.read(is);
-                if (img != null) return img;
+                if (img != null)
+                    return img;
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
 
         // 5. Default resource pack fallback
         if (mc != null && mc.defaultResourcePack != null) {
             try (InputStream is = mc.defaultResourcePack.getInputStream(LOCATION_MOJANG_PNG)) {
-                if (is != null) return ImageIO.read(is);
-            } catch (Throwable ignored) {}
+                if (is != null)
+                    return ImageIO.read(is);
+            } catch (Throwable ignored) {
+            }
         }
 
         return null;
     }
 
     private static BufferedImage readLogoFromPack(File packFile) {
-        if (packFile == null || !packFile.exists()) return null;
+        if (packFile == null || !packFile.exists())
+            return null;
         if (packFile.isDirectory()) {
             File logoFile = new File(packFile, "assets/minecraft/textures/gui/title/mojang.png");
             if (logoFile.exists()) {
                 try (InputStream is = new FileInputStream(logoFile)) {
                     return ImageIO.read(is);
-                } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {
+                }
             }
         } else if (packFile.getName().endsWith(".zip") || packFile.getName().endsWith(".jar")) {
             try (ZipFile zip = new ZipFile(packFile)) {
@@ -343,7 +374,8 @@ public class SplashRenderer {
                         return ImageIO.read(is);
                     }
                 }
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
         return null;
     }
@@ -352,17 +384,23 @@ public class SplashRenderer {
     // Restore window to game resolution after splash
     // -------------------------------------------------------------------------
     public static void restoreDisplayMode(Minecraft mc) {
-        if (!isSplashPhase) return;
+        if (!isSplashPhase)
+            return;
         isSplashPhase = false;
         cachedLogo = null;
         if (logoTexId != 0) {
-            try { GL11.glDeleteTextures(logoTexId); } catch (Throwable ignored) {}
+            try {
+                GL11.glDeleteTextures(logoTexId);
+            } catch (Throwable ignored) {
+            }
             logoTexId = 0;
         }
         try {
             if (savedFullscreen) {
-                if (mc.gameSettings != null) mc.gameSettings.fullScreen = true;
-                if (!mc.isFullScreen()) mc.toggleFullscreen();
+                if (mc.gameSettings != null)
+                    mc.gameSettings.fullScreen = true;
+                if (!mc.isFullScreen())
+                    mc.toggleFullscreen();
             } else {
                 Display.setDisplayMode(new DisplayMode(savedWidth, savedHeight));
                 mc.displayWidth = savedWidth;

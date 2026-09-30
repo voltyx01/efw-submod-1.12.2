@@ -33,7 +33,11 @@ public class GuiTerminal extends GuiScreen {
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         if (keyCode == Keyboard.KEY_ESCAPE) {
-            if (TerminalSession.getInstance().getStage() == TerminalSession.Stage.CHAT_MENU) {
+            TerminalSession.Stage curStage = TerminalSession.getInstance().getStage();
+            if (curStage == TerminalSession.Stage.CHAT_MENU
+                    || curStage == TerminalSession.Stage.APP_CHAT
+                    || curStage == TerminalSession.Stage.BODYCAM_LIST
+                    || curStage == TerminalSession.Stage.BODYCAM_VIEW) {
                 TerminalSession.getInstance().handleKeyTyped(typedChar, keyCode);
                 return;
             }

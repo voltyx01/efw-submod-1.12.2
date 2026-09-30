@@ -15,6 +15,7 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
 
     private boolean isOpen = false;
     private boolean hasInternetModule = false;
+    private boolean hasBodycamDriver = false;
     private java.util.List<String> moduleUsers = new java.util.ArrayList<>();
     private float animTime = 0.0f;
     private float prevAnimTime = 0.0f;
@@ -27,6 +28,18 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
 
     public boolean hasInternetModule() {
         return hasInternetModule;
+    }
+
+    public boolean hasBodycamDriver() {
+        return hasBodycamDriver;
+    }
+
+    public void installBodycamDriver() {
+        this.hasBodycamDriver = true;
+        markDirty();
+        if (world != null && !world.isRemote) {
+            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        }
     }
 
     public java.util.List<String> getModuleUsers() {
@@ -109,6 +122,7 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
         super.writeToNBT(compound);
         compound.setBoolean("IsOpen", isOpen);
         compound.setBoolean("HasInternetModule", hasInternetModule);
+        compound.setBoolean("HasBodycamDriver", hasBodycamDriver);
         compound.setFloat("AnimTime", animTime);
         if (activePlayerUUID != null) {
             compound.setUniqueId("ActivePlayer", activePlayerUUID);
@@ -126,6 +140,7 @@ public class TileEntityTerminal extends TileEntity implements ITickable {
         super.readFromNBT(compound);
         this.isOpen = compound.getBoolean("IsOpen");
         this.hasInternetModule = compound.getBoolean("HasInternetModule");
+        this.hasBodycamDriver = compound.getBoolean("HasBodycamDriver");
         this.animTime = compound.getFloat("AnimTime");
         this.prevAnimTime = this.animTime;
         if (compound.hasUniqueId("ActivePlayer")) {

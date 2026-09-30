@@ -23,7 +23,9 @@ public class TerminalSession {
         BOOT_SEQUENCE,
         SHELL,
         CHAT_MENU,
-        APP_CHAT
+        APP_CHAT,
+        BODYCAM_LIST,
+        BODYCAM_VIEW
     }
 
     public enum ChatSubMenu {
@@ -101,6 +103,10 @@ public class TerminalSession {
                 "Displays current username, system UID/GID, and security clearance level."));
         COMMANDS.add(new TerminalCommand("clear", "clear", "Clear screen buffer",
                 "Clears all history lines from the terminal screen."));
+        COMMANDS.add(new TerminalCommand("bodycam", "bodycam", "Launch bodycam interface",
+                "Opens bodycam surveillance interface. Requires bodycam-driver installed."));
+        COMMANDS.add(new TerminalCommand("apt", "apt install <pkg>", "Package installation tool",
+                "Installs drivers and packages (e.g. 'apt install bodycam-driver')."));
         COMMANDS.add(new TerminalCommand("exit", "exit", "Log out and exit terminal",
                 "Closes the terminal session and steps away."));
     }
@@ -125,6 +131,12 @@ public class TerminalSession {
     private boolean cursorVisible = true;
     private boolean eth0Up = false;
     private boolean hasModule = false; // Has internet module been physically installed?
+    private boolean hasBodycamDriver = false;
+    private net.minecraft.util.math.BlockPos terminalPos = null;
+    private final List<com.voltyx.mwccf.terminal.bodycam.BodycamEntry> availableCameras = new ArrayList<>();
+    private int bodycamIndex = 0;
+    private float connectTimer = 0.0f;
+    private float bodycamPollTimer = 0.0f;
 
     // Chat menu state
     private int chatMenuIndex = 0;          // top-level selection
@@ -153,6 +165,12 @@ public class TerminalSession {
         cursorVisible = true;
         eth0Up = false;
         hasModule = false;
+        hasBodycamDriver = false;
+        terminalPos = null;
+        availableCameras.clear();
+        bodycamIndex = 0;
+        connectTimer = 0.0f;
+        bodycamPollTimer = 0.0f;
         chatMenuIndex = 0;
         subMenu = ChatSubMenu.MAIN;
         privateMenuIndex = 0;
@@ -160,6 +178,83 @@ public class TerminalSession {
         currentChatRoom = "Global Chat";
         chatMessages.clear();
         shellOutput.clear();
+    }
+
+    public void setTerminalPos(net.minecraft.util.math.BlockPos pos) {
+        this.terminalPos = pos;
+    }
+
+    public net.minecraft.util.math.BlockPos getTerminalPos() {
+        return terminalPos;
+    }
+
+    public void setBodycamDriverInstalled(boolean installed) {
+        this.hasBodycamDriver = installed;
+    }
+
+    public boolean hasBodycamDriver() {
+        return hasBodycamDriver;
+    }
+
+    public void setAvailableCameras(List<com.voltyx.mwccf.terminal.bodycam.BodycamEntry> list) {
+        if (list == null) list = java.util.Collections.emptyList();
+
+        if (stage == Stage.BODYCAM_VIEW) {
+            String currentCamId = null;
+            if (!availableCameras.isEmpty() && bodycamIndex >= 0 && bodycamIndex < availableCameras.size()) {
+                currentCamId = availableCameras.get(bodycamIndex).camId;
+            }
+
+            this.availableCameras.clear();
+            this.availableCameras.addAll(list);
+
+            if (currentCamId != null) {
+                int found = -1;
+                for (int i = 0; i < availableCameras.size(); i++) {
+                    if (currentCamId.equals(availableCameras.get(i).camId)) {
+                        found = i;
+                        break;
+                    }
+                }
+                if (found != -1) {
+                    this.bodycamIndex = found;
+                } else if (this.bodycamIndex >= availableCameras.size()) {
+                    this.bodycamIndex = Math.max(0, availableCameras.size() - 1);
+                }
+            } else if (this.bodycamIndex >= availableCameras.size()) {
+                this.bodycamIndex = Math.max(0, availableCameras.size() - 1);
+            }
+        } else {
+            this.availableCameras.clear();
+            this.availableCameras.addAll(list);
+            if (this.bodycamIndex >= availableCameras.size()) {
+                this.bodycamIndex = Math.max(0, availableCameras.size() - 1);
+            }
+            this.connectTimer = 0.0f;
+        }
+    }
+
+    public List<com.voltyx.mwccf.terminal.bodycam.BodycamEntry> getAvailableCameras() {
+        return availableCameras;
+    }
+
+    public int getBodycamIndex() {
+        return bodycamIndex;
+    }
+
+    public float getConnectTimer() {
+        return connectTimer;
+    }
+
+    public void resetConnectTimer() {
+        this.connectTimer = 0.0f;
+    }
+
+    public com.voltyx.mwccf.terminal.bodycam.BodycamEntry getCurrentViewingCamera() {
+        if (availableCameras.isEmpty() || bodycamIndex < 0 || bodycamIndex >= availableCameras.size()) {
+            return null;
+        }
+        return availableCameras.get(bodycamIndex);
     }
 
     private final List<String> moduleUsers = new ArrayList<>();
@@ -204,9 +299,21 @@ public class TerminalSession {
                 screenFade = 0.0f;
             }
         } else {
-            screenFade = Math.max(0.0f, screenFade - dt * 4.0f);
-            if (screenFade <= 0.0f) {
-                reset();
+            if (stage == Stage.BODYCAM_VIEW) {
+                screenFade = 1.0f;
+                // If terminal block was removed/broken, reset session
+                Minecraft mc = Minecraft.getMinecraft();
+                if (mc.world != null && terminalPos != null) {
+                    if (!(mc.world.getTileEntity(terminalPos) instanceof com.voltyx.mwccf.terminal.TileEntityTerminal)) {
+                        reset();
+                        return;
+                    }
+                }
+            } else {
+                screenFade = Math.max(0.0f, screenFade - dt * 4.0f);
+                if (screenFade <= 0.0f) {
+                    reset();
+                }
             }
         }
 
@@ -215,6 +322,22 @@ public class TerminalSession {
         if (cursorTimer >= 0.5f) {
             cursorTimer -= 0.5f;
             cursorVisible = !cursorVisible;
+        }
+
+        if (stage == Stage.BODYCAM_VIEW) {
+            connectTimer += dt;
+        }
+
+        // Periodically refresh bodycam status and battery percentage
+        if (stage == Stage.BODYCAM_VIEW || stage == Stage.BODYCAM_LIST) {
+            bodycamPollTimer += dt;
+            if (bodycamPollTimer >= 1.0f) {
+                bodycamPollTimer = 0.0f;
+                com.voltyx.mwccf.MwccfMod.PACKET_HANDLER.sendToServer(
+                        new com.voltyx.mwccf.terminal.network.PacketRequestBodycamList());
+            }
+        } else {
+            bodycamPollTimer = 0.0f;
         }
 
         // Login error countdown
@@ -314,6 +437,65 @@ public class TerminalSession {
                     inputBuffer.append(c);
                     playKeySound(1.7f);
                 }
+            }
+            return;
+        }
+
+        // ── Bodycam list navigation ───────────────────────────────────────────
+        if (stage == Stage.BODYCAM_LIST) {
+            if (keyCode == Keyboard.KEY_UP) {
+                if (!availableCameras.isEmpty()) {
+                    bodycamIndex = (bodycamIndex - 1 + availableCameras.size()) % availableCameras.size();
+                    playKeySound(1.4f);
+                }
+            } else if (keyCode == Keyboard.KEY_DOWN) {
+                if (!availableCameras.isEmpty()) {
+                    bodycamIndex = (bodycamIndex + 1) % availableCameras.size();
+                    playKeySound(1.4f);
+                }
+            } else if (keyCode == Keyboard.KEY_TAB) {
+                if (!availableCameras.isEmpty() && bodycamIndex >= 0 && bodycamIndex < availableCameras.size()) {
+                    com.voltyx.mwccf.terminal.bodycam.BodycamEntry entry = availableCameras.get(bodycamIndex);
+                    entry.isChecked = !entry.isChecked;
+                    playKeySound(1.6f);
+                }
+            } else if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                if (!availableCameras.isEmpty() && bodycamIndex >= 0 && bodycamIndex < availableCameras.size()) {
+                    playKeySound(1.2f);
+                    stage = Stage.BODYCAM_VIEW;
+                    connectTimer = 0.0f;
+                }
+            } else if (keyCode == Keyboard.KEY_ESCAPE || keyCode == Keyboard.KEY_BACK || c == 'q' || c == 'Q') {
+                stage = Stage.SHELL;
+                shellOutput.add(new ConsoleLine("Bodycam interface closed.", 0xFF888888));
+                trimHistory();
+                playKeySound(1.3f);
+            }
+            return;
+        }
+
+        // ── Bodycam viewing mode on terminal monitor ─────────────────────────
+        if (stage == Stage.BODYCAM_VIEW) {
+            Minecraft mc = Minecraft.getMinecraft();
+            int invKey = (mc.gameSettings != null) ? mc.gameSettings.keyBindInventory.getKeyCode() : Keyboard.KEY_E;
+            if (keyCode == Keyboard.KEY_LEFT || keyCode == Keyboard.KEY_A || c == 'a' || c == 'A') {
+                if (!availableCameras.isEmpty()) {
+                    bodycamIndex = (bodycamIndex - 1 + availableCameras.size()) % availableCameras.size();
+                    connectTimer = 0.0f;
+                    playKeySound(1.4f);
+                }
+            } else if (keyCode == Keyboard.KEY_RIGHT || keyCode == Keyboard.KEY_D || c == 'd' || c == 'D') {
+                if (!availableCameras.isEmpty()) {
+                    bodycamIndex = (bodycamIndex + 1) % availableCameras.size();
+                    connectTimer = 0.0f;
+                    playKeySound(1.4f);
+                }
+            } else if (keyCode == invKey || keyCode == Keyboard.KEY_E || c == 'e' || c == 'E') {
+                TerminalCameraController.close();
+                playKeySound(1.2f);
+            } else if (keyCode == Keyboard.KEY_ESCAPE || c == 'q' || c == 'Q' || keyCode == Keyboard.KEY_BACK) {
+                stage = Stage.BODYCAM_LIST;
+                playKeySound(1.3f);
             }
             return;
         }
@@ -523,6 +705,37 @@ public class TerminalSession {
         } else if ("clear".equals(mainCmd)) {
             shellOutput.clear();
             shellOutput.add(new ConsoleLine("Type 'help' to see available commands.", 0xFF55FFBB));
+        } else if ("apt".equals(mainCmd) || "apt-get".equals(mainCmd)) {
+            if (parts.length >= 3 && "install".equalsIgnoreCase(parts[1]) && "bodycam-driver".equalsIgnoreCase(parts[2])) {
+                if (!hasModule) {
+                    shellOutput.add(new ConsoleLine("E: Could not resolve 'archive.mwccf.net'", 0xFFFF4444));
+                    shellOutput.add(new ConsoleLine("Install an Internet Module to connect to repositories.", 0xFFFF9944));
+                } else if (!eth0Up) {
+                    shellOutput.add(new ConsoleLine("E: Network interface eth0 is DOWN. Run 'ifup eth0' first.", 0xFFFF4444));
+                } else {
+                    hasBodycamDriver = true;
+                    if (terminalPos != null) {
+                        com.voltyx.mwccf.MwccfMod.PACKET_HANDLER.sendToServer(
+                                new com.voltyx.mwccf.terminal.network.PacketInstallBodycamDriver(terminalPos));
+                    }
+                    shellOutput.add(new ConsoleLine("Reading package lists... Done", 0xFF55FFBB));
+                    shellOutput.add(new ConsoleLine("Downloading bodycam-driver (1.2.0)... [ 100% ]", 0xFF44FFAA));
+                    shellOutput.add(new ConsoleLine("Unpacking kernel module: mw_bodycam.ko...", 0xFF44FFAA));
+                    shellOutput.add(new ConsoleLine("OK", 0xFF00FF66, "Setting up video capture subsystem", 0xFF44FFAA));
+                    shellOutput.add(new ConsoleLine("Driver installed. Type 'bodycam' to launch.", 0xFF00FF66));
+                }
+            } else {
+                shellOutput.add(new ConsoleLine("Usage: apt install <package-name>", 0xFFFF9944));
+            }
+        } else if ("bodycam".equals(mainCmd)) {
+            if (!hasBodycamDriver) {
+                shellOutput.add(new ConsoleLine("bash: bodycam: command not found. Try 'apt install bodycam-driver'.", 0xFFFF6666));
+            } else {
+                com.voltyx.mwccf.MwccfMod.PACKET_HANDLER.sendToServer(
+                        new com.voltyx.mwccf.terminal.network.PacketRequestBodycamList());
+                stage = Stage.BODYCAM_LIST;
+                bodycamIndex = 0;
+            }
         } else if ("exit".equals(mainCmd) || "quit".equals(mainCmd) || "logout".equals(mainCmd)) {
             TerminalCameraController.close();
         } else {

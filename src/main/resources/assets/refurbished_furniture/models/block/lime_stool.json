@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/stool",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/lime_stool",
+    "particle": "refurbished_furniture:blocks/lime_stool"
+  }
+}

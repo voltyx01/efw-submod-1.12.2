@@ -27,6 +27,24 @@ public class BlockFurnitureHorizontal extends Block {
     }
 
     @Override
+    public boolean eventReceived(IBlockState state, World worldIn, BlockPos pos, int id, int param) {
+        super.eventReceived(state, worldIn, pos, id, param);
+        net.minecraft.tileentity.TileEntity tileentity = worldIn.getTileEntity(pos);
+        return tileentity == null ? false : tileentity.receiveClientEvent(id, param);
+    }
+
+    @Override
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
+        net.minecraft.tileentity.TileEntity te = worldIn.getTileEntity(pos);
+        if (te instanceof net.minecraft.inventory.IInventory && !(te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityStorageJar)) {
+            net.minecraft.inventory.InventoryHelper.dropInventoryItems(worldIn, pos, (net.minecraft.inventory.IInventory) te);
+            worldIn.updateComparatorOutputLevel(pos, this);
+        }
+        super.breakBlock(worldIn, pos, state);
+        worldIn.removeTileEntity(pos);
+    }
+
+    @Override
     protected BlockStateContainer createBlockState() {
         return new BlockStateContainer(this, new IProperty[] { FACING });
     }
@@ -44,7 +62,7 @@ public class BlockFurnitureHorizontal extends Block {
 
     @Override
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
-        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
+        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing());
     }
 
     @Override

@@ -1,0 +1,7 @@
+﻿{
+  "parent": "refurbished_furniture:block/ceiling_fan_base_off",
+  "textures": {
+    "texture": "refurbished_furniture:blocks/oak_dark_ceiling_fan",
+    "particle": "refurbished_furniture:blocks/oak_dark_ceiling_fan"
+  }
+}

@@ -1,10 +1,18 @@
-{
+﻿{
   "variants": {
-    "normal": { "model": "refurbished_furniture:birch_kitchen_cabinetry" },
+    "facing=north,open=false": { "model": "refurbished_furniture:birch_kitchen_cabinetry" },
+    "facing=south,open=false": { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 180 },
+    "facing=west,open=false":  { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 270 },
+    "facing=east,open=false":  { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 90 },
+    "facing=north,open=true":  { "model": "refurbished_furniture:birch_kitchen_cabinetry" },
+    "facing=south,open=true":  { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 180 },
+    "facing=west,open=true":   { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 270 },
+    "facing=east,open=true":   { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 90 },
     "facing=north": { "model": "refurbished_furniture:birch_kitchen_cabinetry" },
     "facing=south": { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 180 },
-    "facing=west": { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 270 },
-    "facing=east": { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 90 },
-    "inventory": { "model": "refurbished_furniture:birch_kitchen_cabinetry" }
+    "facing=west":  { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 270 },
+    "facing=east":  { "model": "refurbished_furniture:birch_kitchen_cabinetry", "y": 90 },
+    "inventory":    { "model": "refurbished_furniture:birch_kitchen_cabinetry" },
+    "normal":       { "model": "refurbished_furniture:birch_kitchen_cabinetry" }
   }
 }

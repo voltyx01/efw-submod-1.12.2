@@ -7,11 +7,14 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave;
 
 public class BlockMicrowave extends BlockFurnitureHorizontal {
+
+    protected static final AxisAlignedBB[] AABBS = FurnitureAABB.createRotated(new AxisAlignedBB(0.0625D, 0.0D, 0.1875D, 0.9375D, 0.5625D, 0.875D));
 
     public BlockMicrowave(String name) {
         super(Material.IRON);
@@ -19,6 +22,11 @@ public class BlockMicrowave extends BlockFurnitureHorizontal {
         this.setRegistryName("refurbished_furniture", name);
         this.setHardness(2.5F);
         this.setSoundType(SoundType.METAL);
+    }
+
+    @Override
+    public net.minecraft.util.math.AxisAlignedBB getBoundingBox(IBlockState state, net.minecraft.world.IBlockAccess source, BlockPos pos) {
+        return FurnitureAABB.get(AABBS, state.getValue(FACING));
     }
 
     @Override

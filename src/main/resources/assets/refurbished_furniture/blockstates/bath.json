@@ -1,10 +1,18 @@
 {
   "variants": {
-    "normal": { "model": "refurbished_furniture:bath_bottom" },
-    "facing=north": { "model": "refurbished_furniture:bath_bottom" },
-    "facing=south": { "model": "refurbished_furniture:bath_bottom", "y": 180 },
-    "facing=west": { "model": "refurbished_furniture:bath_bottom", "y": 270 },
-    "facing=east": { "model": "refurbished_furniture:bath_bottom", "y": 90 },
-    "inventory": { "model": "refurbished_furniture:bath_bottom" }
+    "normal": { "model": "refurbished_furniture:white_bath" },
+    "facing=north,filled=false": { "model": "refurbished_furniture:white_bath" },
+    "facing=south,filled=false": { "model": "refurbished_furniture:white_bath", "y": 180 },
+    "facing=west,filled=false": { "model": "refurbished_furniture:white_bath", "y": 270 },
+    "facing=east,filled=false": { "model": "refurbished_furniture:white_bath", "y": 90 },
+    "facing=north,filled=true": { "model": "refurbished_furniture:white_bath" },
+    "facing=south,filled=true": { "model": "refurbished_furniture:white_bath", "y": 180 },
+    "facing=west,filled=true": { "model": "refurbished_furniture:white_bath", "y": 270 },
+    "facing=east,filled=true": { "model": "refurbished_furniture:white_bath", "y": 90 },
+    "facing=north": { "model": "refurbished_furniture:white_bath" },
+    "facing=south": { "model": "refurbished_furniture:white_bath", "y": 180 },
+    "facing=west": { "model": "refurbished_furniture:white_bath", "y": 270 },
+    "facing=east": { "model": "refurbished_furniture:white_bath", "y": 90 },
+    "inventory": { "model": "refurbished_furniture:white_bath" }
   }
 }

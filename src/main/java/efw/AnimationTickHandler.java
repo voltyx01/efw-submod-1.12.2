@@ -67,6 +67,16 @@ public class AnimationTickHandler {
             if (ap.isRollPlaying() && !ap.isRollFadingOut()) {
                 return; // Already rolling, do not restart
             }
+            if (ap.isActionAttack()) {
+                ap.snapAction();
+            }
+            if (player.world != null && player.world.isRemote && player == net.minecraft.client.Minecraft.getMinecraft().player) {
+                if (net.bettercombat.client.BetterCombatClient.isUpswingActive()
+                        || net.bettercombat.client.BetterCombatClient.swingTimer > 0
+                        || ap.isActionAttack()) {
+                    net.bettercombat.client.BetterCombatClient.cancelCurrentSwing(player);
+                }
+            }
             dashTicksRemaining.put(player, 7);
             efw.animation.AnimationClip rollClip = efw.animation.AnimationRegistry.getClip("roll");
             if (rollClip != null) {
@@ -155,13 +165,13 @@ public class AnimationTickHandler {
             case "idle_standing":
                 return 1.0f; // Faster standing idle
             case "idle_sneak":
-                return 0.1f;
+                return 1.0f;
             case "walking_backwards":
                 return 3.0f; // Уменьшено, так как 10 было слишком быстро, а 1 слишком медленно
             case "walking_sneak":
-                return 1.0f; // ИСПРАВЛЕНО: было 0.1, из-за чего анимация длилась 40 секунд!
+                return 3.2f;
             case "walking_sneak_backwards":
-                return 1.0f; // ИСПРАВЛЕНО
+                return 3.2f;
             case "falling":
                 return 0.1f;
             case "swimming":
@@ -221,7 +231,7 @@ public class AnimationTickHandler {
 
     @SubscribeEvent
     public void onRenderPlayerPre(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
-        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen || efw.util.RenderContext.isRenderingPlayerInGui) {
             return;
         }
 
@@ -374,6 +384,10 @@ public class AnimationTickHandler {
 
     @SubscribeEvent
     public void onRenderPlayerPost(net.minecraftforge.client.event.RenderPlayerEvent.Post event) {
+        if (efw.util.RenderContext.isRenderingPlayerInSevenScreen || efw.util.RenderContext.isRenderingPlayerInGui) {
+            return;
+        }
+
         EntityPlayer player = event.getEntityPlayer();
 
         if (didOverrideYawMap.getOrDefault(player, false)) {

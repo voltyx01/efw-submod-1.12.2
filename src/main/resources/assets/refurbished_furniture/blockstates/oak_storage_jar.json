@@ -1,0 +1,25 @@
+{
+    "variants":  {
+                     "facing=north":  {
+                                          "model":  "refurbished_furniture:oak_storage_jar"
+                                      },
+                     "facing=east":  {
+                                         "model":  "refurbished_furniture:oak_storage_jar",
+                                         "y":  90
+                                     },
+                     "facing=south":  {
+                                          "model":  "refurbished_furniture:oak_storage_jar",
+                                          "y":  180
+                                      },
+                     "facing=west":  {
+                                         "model":  "refurbished_furniture:oak_storage_jar",
+                                         "y":  270
+                                     },
+                     "inventory":  {
+                                       "model":  "refurbished_furniture:oak_storage_jar"
+                                   },
+                     "normal":  {
+                                    "model":  "refurbished_furniture:oak_storage_jar"
+                                }
+                 }
+}

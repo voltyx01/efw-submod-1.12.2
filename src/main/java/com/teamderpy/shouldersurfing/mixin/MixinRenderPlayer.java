@@ -16,6 +16,12 @@ public class MixinRenderPlayer {
 
     @Inject(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V", at = @At("HEAD"), cancellable = true)
     private void preDoRender(AbstractClientPlayer entity, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            if (entity == com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier()) {
+                com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.carrierRenderedInPass = true;
+            }
+            return;
+        }
         if (entity == Minecraft.getMinecraft().player && ShoulderInstance.getInstance().doShoulderSurfing()) {
             boolean skip = CameraEntityRenderer.getInstance().preRenderCameraEntity(entity, partialTicks);
             if (skip) {
@@ -33,6 +39,9 @@ public class MixinRenderPlayer {
 
     @Inject(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V", at = @At("RETURN"))
     private void postDoRender(AbstractClientPlayer entity, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            return;
+        }
         if (entity == Minecraft.getMinecraft().player && ShoulderInstance.getInstance().doShoulderSurfing()) {
             CameraEntityRenderer.getInstance().postRenderCameraEntity(entity, partialTicks);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -40,5 +49,16 @@ public class MixinRenderPlayer {
             GlStateManager.depthMask(true);
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
         }
+    }
+
+    @org.spongepowered.asm.mixin.injection.Redirect(
+        method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/entity/AbstractClientPlayer;isUser()Z")
+    )
+    private boolean efw$bodycamAllowRenderUser(AbstractClientPlayer entity) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            return false;
+        }
+        return entity.isUser();
     }
 }
