@@ -19,4 +19,17 @@ public class ItemDoll extends Item {
         setRegistryName("mwccf", "doll");
         setCreativeTab(CreativeTabs.MISC);
     }
+    @Override
+    public net.minecraft.item.EnumRarity getRarity(net.minecraft.item.ItemStack stack) {
+        return net.minecraft.item.EnumRarity.UNCOMMON;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(net.minecraft.item.ItemStack stack, @javax.annotation.Nullable net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
+        String descKey = "tooltip.mwccf.doll.desc";
+        if (net.minecraft.client.resources.I18n.hasKey(descKey)) {
+            tooltip.add(net.minecraft.client.resources.I18n.format(descKey));
+        }
+    }
 }

@@ -135,10 +135,16 @@ public class ItemInspectConfig {
         ARMOR_VANILLA("Броня Ванильная (Тело/Ноги)", "armor_vanilla"),
         HEADLAMP("Фонарик (Headlamp)", "headlamp"),
         BRACELET("Браслет (Volttech)", "bracelet"),
+        BODYCAM("Бодикамера (Bodycam)", "bodycam"),
+        KAWAII_EARS("Кошачьи ушки (Kawaii Ears)", "kawaii_ears"),
+        BACKPACK("Рюкзак (Backpack)", "backpack"),
+        PORTABLE_MAP("Портативная карта (PDA)", "portable_map"),
+        WALKIE_TALKIE("Рация (Walkie Talkie)", "walkie_talkie"),
+        DOLL("Игрушка Сайи (Doll)", "doll"),
+        BAUBLES("Прочие Baubles", "baubles"),
         NOTE("Записка (Note)", "note"),
         DIARY("Дневник (Diary)", "diary"),
         DPOR("Осквернённая страница (DPOR)", "dpor"),
-        BAUBLES("Рюкзак / Прочее Baubles", "baubles"),
         TOOLS_2D("2D Tools (Оружие/Инструменты)", "tools_2d"),
         ITEMS_2D("2D Предметы / Блоки", "items_2d"),
         TEXT_SETTINGS("Текст и разделитель", "text_settings");
@@ -245,11 +251,15 @@ public class ItemInspectConfig {
         groups.put(InspectGroup.ARMOR_VANILLA.key, new GroupTransform(1.8f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.HEADLAMP.key, new GroupTransform(2.5f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.BRACELET.key, new GroupTransform(2.5f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
+        groups.put(InspectGroup.BODYCAM.key, new GroupTransform(2.2f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
+        groups.put(InspectGroup.KAWAII_EARS.key, new GroupTransform(2.2f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
+        groups.put(InspectGroup.BACKPACK.key, new GroupTransform(1.8f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
+        groups.put(InspectGroup.PORTABLE_MAP.key, new GroupTransform(2.2f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
+        groups.put(InspectGroup.WALKIE_TALKIE.key, new GroupTransform(2.2f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.NOTE.key, new GroupTransform(2.0f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.DIARY.key, new GroupTransform(2.0f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
-        // DPOR рендерится в Inspect GUI точно так же, как записка (тот же трансформ по
-        // умолчанию)
         groups.put(InspectGroup.DPOR.key, new GroupTransform(2.0f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
+        groups.put(InspectGroup.DOLL.key, new GroupTransform(2.0f, 0.0f, -0.2f, 0.0f, 205.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.BAUBLES.key, new GroupTransform(2.0f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.TOOLS_2D.key, new GroupTransform(1.8f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
         groups.put(InspectGroup.ITEMS_2D.key, new GroupTransform(1.8f, 0.0f, 0.0f, 0.0f, 25.0f, 15.0f, 0.0f));
@@ -315,8 +325,38 @@ public class ItemInspectConfig {
             return InspectGroup.BRACELET;
         }
 
-        // Check other Baubles: Backpack, etc.
-        if (regName.contains("backpack") || regName.equals("quark:backpack") || cls.contains("backpack")) {
+        // Check Bodycam specifically
+        if (Item3DRenderer.isBodycam(stack)) {
+            return InspectGroup.BODYCAM;
+        }
+
+        // Check Kawaii Ears specifically
+        if (Item3DRenderer.isKawaiiEars(stack)) {
+            return InspectGroup.KAWAII_EARS;
+        }
+
+        // Check Backpack specifically
+        if (Item3DRenderer.isBackpack(stack)) {
+            return InspectGroup.BACKPACK;
+        }
+
+        // Check Portable Map (PDA) specifically
+        if (Item3DRenderer.isPortableMap(stack)) {
+            return InspectGroup.PORTABLE_MAP;
+        }
+
+        // Check Walkie Talkie specifically
+        if (Item3DRenderer.isWalkieTalkie(stack)) {
+            return InspectGroup.WALKIE_TALKIE;
+        }
+
+        // Check Doll
+        if (Item3DRenderer.isDoll(stack)) {
+            return InspectGroup.DOLL;
+        }
+
+        // Check other Baubles (Baubles API / trinkets fallback)
+        if (isGenericBauble(item)) {
             return InspectGroup.BAUBLES;
         }
 
@@ -359,6 +399,18 @@ public class ItemInspectConfig {
 
         // Regular 2D items and blocks
         return InspectGroup.ITEMS_2D;
+    }
+
+    private static boolean isGenericBauble(Item item) {
+        if (item == null) return false;
+        if (net.minecraftforge.fml.common.Loader.isModLoaded("baubles")) {
+            try {
+                if (item instanceof baubles.api.IBauble) return true;
+            } catch (Throwable ignored) {}
+        }
+        String cls = item.getClass().getName().toLowerCase();
+        String reg = item.getRegistryName() != null ? item.getRegistryName().toString().toLowerCase() : "";
+        return cls.contains("bauble") || reg.contains("bauble");
     }
 
     public static GroupTransform getTransform(InspectGroup group) {

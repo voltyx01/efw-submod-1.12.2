@@ -29,6 +29,9 @@ public class EfwModItems {
     /** Любимая игрушка Сайи — плюшевая кукла. */
     public static ItemDoll DOLL;
 
+    /** Окровавленное ожерелье (Bauble). */
+    public static efw.item.ItemBloodyNecklace BLOODY_NECKLACE;
+
     // Расходник для повышения уровня порока (Seven Screen)
     public static DporItem DPOR;
 
@@ -48,6 +51,7 @@ public class EfwModItems {
         BANDAGE = new efw.item.ItemBandage();
         CLOTH = new efw.item.ItemCloth();
         DOLL = new ItemDoll();
+        BLOODY_NECKLACE = new efw.item.ItemBloodyNecklace();
         DPOR = new DporItem();
         MANUAL_MELEE = new ManualItem(ManualItem.ManualType.MELEE);
         MANUAL_FIREARMS = new ManualItem(ManualItem.ManualType.FIREARMS);
@@ -63,6 +67,7 @@ public class EfwModItems {
         ForgeRegistries.ITEMS.register(BANDAGE);
         ForgeRegistries.ITEMS.register(CLOTH);
         ForgeRegistries.ITEMS.register(DOLL);
+        ForgeRegistries.ITEMS.register(BLOODY_NECKLACE);
         ForgeRegistries.ITEMS.register(DPOR);
         ForgeRegistries.ITEMS.register(MANUAL_MELEE);
         ForgeRegistries.ITEMS.register(MANUAL_FIREARMS);
@@ -106,6 +111,10 @@ public class EfwModItems {
 
         ModelLoader.setCustomModelResourceLocation(DOLL, 0,
                 new ModelResourceLocation("mwccf:doll", "inventory"));
+        DOLL.setTileEntityItemStackRenderer(new com.voltyx.mwccf.render.doll.DollItemStackRenderer());
+
+        ModelLoader.setCustomModelResourceLocation(BLOODY_NECKLACE, 0,
+                new ModelResourceLocation("mwccf:bloody_necklace", "inventory"));
 
         // Note — pick model by NBT variant (1–10), no damage value used
         ModelBakery.registerItemVariants(NOTE,

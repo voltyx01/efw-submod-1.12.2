@@ -5,257 +5,269 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.model.ModelBase;
+import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.io.IOUtils;
-import org.lwjgl.opengl.GL11;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * Bedrock-рендерер специально для куклы Сайи.
+ * Bedrock-рендерер куклы Сайи.
  *
- * Ключевое отличие от BedrockBlockModel:
- * В формате Bedrock geo все bone.pivot — АБСОЛЮТНЫЕ координаты в пространстве модели.
- * Правильный алгоритм ротации вокруг пивота:
- *   T(pivot) * R(rotation) * T(-pivot)
- * применяется к каждому боне, кубы рисуются в абсолютных координатах модели.
+ * Использует ту же логику, что GeoArmorModel: куб задаётся относительно своего
+ * бона через ModelRenderer. Y-ось инвертирована: Bedrock +Y (вверх) → MC -Y.
+ * Иерархия родитель→дитя строится через ModelRenderer.addChild().
+ * Анимации применяются как смещения к rotateAngle.
  */
-public class BedrockDollModel {
+public class BedrockDollModel extends ModelBase {
 
     // =========================================================
-    // Data classes
+    // Internal data
     // =========================================================
 
-    public static class FaceUV {
-        public final float u1, v1, u2, v2;
-        public FaceUV(float u1, float v1, float u2, float v2) {
-            this.u1 = u1; this.v1 = v1; this.u2 = u2; this.v2 = v2;
-        }
-    }
+    /** Запись о косточке: хранит ModelRenderer и оригинальный Bedrock-пивот. */
+    private static class BoneEntry {
+        final ModelRenderer renderer;
+        final float pivX, pivY, pivZ;        // абсолютный Bedrock-пивот
+        final float baseRotX, baseRotY, baseRotZ; // базовые углы из geo.json (радианы)
+        final String parentName;
 
-    public static class Cube {
-        public final float[] origin = new float[3];
-        public final float[] size   = new float[3];
-        public final float[] cubePivot;
-        public final float[] cubeRot;
-        public boolean hasPerFaceUV = false;
-        public final Map<String, FaceUV> faceUVMap = new HashMap<>();
-        public float boxU = 0, boxV = 0;
-
-        public Cube(float ox, float oy, float oz,
-                    float sx, float sy, float sz,
-                    float[] cubePivot, float[] cubeRot) {
-            origin[0] = ox; origin[1] = oy; origin[2] = oz;
-            size[0]   = sx; size[1]   = sy; size[2]   = sz;
-            this.cubePivot = cubePivot;
-            this.cubeRot   = cubeRot;
-        }
-    }
-
-    public static class Bone {
-        public final String name;
-        public final String parentName;
-        public final float[] pivot    = new float[3];
-        public final float[] rotation = new float[3];
-
-        public final List<Cube> cubes    = new ArrayList<>();
-        public final List<Bone> children = new ArrayList<>();
-
-        // Animated offsets (added on top of static rotation/position)
-        public final float[] animRot = new float[3];
-        public final float[] animPos = new float[3];
-
-        public Bone(String name, String parentName, float[] pivot, float[] rotation) {
-            this.name       = name;
+        BoneEntry(ModelRenderer renderer, float px, float py, float pz,
+                  float bRx, float bRy, float bRz, String parentName) {
+            this.renderer  = renderer;
+            this.pivX = px; this.pivY = py; this.pivZ = pz;
+            this.baseRotX = bRx; this.baseRotY = bRy; this.baseRotZ = bRz;
             this.parentName = parentName;
-            System.arraycopy(pivot,    0, this.pivot,    0, 3);
-            System.arraycopy(rotation, 0, this.rotation, 0, 3);
         }
     }
+
+    private int texW = 64, texH = 64;
+    private final Map<String, BoneEntry>  bones     = new LinkedHashMap<>();
+    private final List<ModelRenderer>     rootBones = new ArrayList<>();
 
     // =========================================================
     // Animation
     // =========================================================
 
-    public static class Keyframe {
-        public final float time, x, y, z;
-        public Keyframe(float time, float x, float y, float z) {
-            this.time = time; this.x = x; this.y = y; this.z = z;
-        }
+    private static class KF {
+        final float time, x, y, z;
+        KF(float t, float x, float y, float z) { time=t; this.x=x; this.y=y; this.z=z; }
+    }
+    private static class BoneTrack {
+        final List<KF> rot = new ArrayList<>(), pos = new ArrayList<>();
+    }
+    private static class Anim {
+        final float length; final String loop;
+        final Map<String, BoneTrack> tracks = new HashMap<>();
+        Anim(float l, String lp) { length=l; loop=lp; }
     }
 
-    public static class BoneTrack {
-        public final List<Keyframe> rotKFs = new ArrayList<>();
-        public final List<Keyframe> posKFs = new ArrayList<>();
-    }
-
-    public static class Animation {
-        public final String name;
-        public final float  length;
-        public final String loopMode;
-        public final Map<String, BoneTrack> tracks = new HashMap<>();
-        public Animation(String name, float length, String loopMode) {
-            this.name = name; this.length = length; this.loopMode = loopMode;
-        }
-    }
-
-    // =========================================================
-    // Fields
-    // =========================================================
-
-    private float textureWidth  = 64f;
-    private float textureHeight = 64f;
-
-    private final Map<String, Bone> bonesByName = new LinkedHashMap<>();
-    private final List<Bone>        rootBones   = new ArrayList<>();
-    private final Map<String, Animation> animations = new HashMap<>();
+    private final Map<String, Anim> animations = new HashMap<>();
     private boolean loaded = false;
 
     public boolean isLoaded() { return loaded; }
+    public float   getAnimationLength(String name) {
+        Anim a = animations.get(name);
+        return a != null ? a.length : 0.5f;
+    }
 
     // =========================================================
-    // Loading
+    // Load
     // =========================================================
 
     public void load(ResourceLocation geoLoc, ResourceLocation animLoc) {
         if (loaded) return;
         try {
-            // Geo
-            InputStream geoStream = openResource(geoLoc);
-            if (geoStream != null) {
-                try (InputStream s = geoStream) {
-                    String json = IOUtils.toString(s, StandardCharsets.UTF_8);
-                    if (json.startsWith("\uFEFF")) json = json.substring(1);
-                    parseGeometry(json);
-                }
-            }
-            // Animation
+            String geo = readRes(geoLoc);
+            if (geo != null) parseGeo(geo);
             if (animLoc != null) {
-                InputStream animStream = openResource(animLoc);
-                if (animStream != null) {
-                    try (InputStream s = animStream) {
-                        String json = IOUtils.toString(s, StandardCharsets.UTF_8);
-                        if (json.startsWith("\uFEFF")) json = json.substring(1);
-                        parseAnimation(json);
-                    }
-                }
+                String anim = readRes(animLoc);
+                if (anim != null) parseAnim(anim);
             }
             loaded = true;
         } catch (Throwable t) {
-            System.err.println("[BedrockDollModel] Failed to load: " + t.getMessage());
+            System.err.println("[BedrockDollModel] load error: " + t.getMessage());
             t.printStackTrace();
         }
     }
 
-    private InputStream openResource(ResourceLocation loc) {
+    private String readRes(ResourceLocation loc) {
         try {
-            IResource res = Minecraft.getMinecraft().getResourceManager().getResource(loc);
-            return res.getInputStream();
-        } catch (Throwable ignored) {
-            return BedrockDollModel.class.getResourceAsStream(
-                    "/assets/" + loc.getNamespace() + "/" + loc.getPath());
+            IResource r = Minecraft.getMinecraft().getResourceManager().getResource(loc);
+            String s = IOUtils.toString(r.getInputStream(), StandardCharsets.UTF_8);
+            return s.startsWith("\uFEFF") ? s.substring(1) : s;
+        } catch (Throwable t) {
+            return null;
         }
     }
 
     // =========================================================
-    // Geometry parsing
+    // Geo parsing — копирует логику GeoArmorModel
     // =========================================================
 
-    private void parseGeometry(String json) {
+    private void parseGeo(String json) {
         JsonObject root  = new JsonParser().parse(json).getAsJsonObject();
         JsonArray  geoms = root.getAsJsonArray("minecraft:geometry");
         if (geoms == null || geoms.size() == 0) return;
 
         JsonObject geom = geoms.get(0).getAsJsonObject();
         if (geom.has("description")) {
-            JsonObject desc = geom.getAsJsonObject("description");
-            if (desc.has("texture_width"))  textureWidth  = desc.get("texture_width").getAsFloat();
-            if (desc.has("texture_height")) textureHeight = desc.get("texture_height").getAsFloat();
+            JsonObject d = geom.getAsJsonObject("description");
+            if (d.has("texture_width"))  texW = d.get("texture_width").getAsInt();
+            if (d.has("texture_height")) texH = d.get("texture_height").getAsInt();
         }
+
+        this.textureWidth  = texW;
+        this.textureHeight = texH;
 
         JsonArray bonesArr = geom.getAsJsonArray("bones");
         if (bonesArr == null) return;
 
-        bonesByName.clear();
-        rootBones.clear();
+        // Первый проход: создаём ModelRenderer для каждого бона
+        for (JsonElement be : bonesArr) {
+            JsonObject bObj  = be.getAsJsonObject();
+            String name      = bObj.get("name").getAsString();
+            String parent    = bObj.has("parent") ? bObj.get("parent").getAsString() : null;
 
-        for (int i = 0; i < bonesArr.size(); i++) {
-            JsonObject bObj   = bonesArr.get(i).getAsJsonObject();
-            String     name   = bObj.get("name").getAsString();
-            String     parent = bObj.has("parent") ? bObj.get("parent").getAsString() : null;
+            float[] piv = vec3(bObj, "pivot", 0, 0, 0);
+            float px = piv[0], py = piv[1], pz = piv[2];
 
-            float[] pivot = parseVec3(bObj, "pivot",    new float[]{0,0,0});
-            float[] rot   = parseVec3(bObj, "rotation", new float[]{0,0,0});
+            float bRx = 0, bRy = 0, bRz = 0;
+            if (bObj.has("rotation")) {
+                JsonArray r = bObj.getAsJsonArray("rotation");
+                // GeoArmorModel хранит в радианах, Y и Z меняют знак относительно Bedrock
+                bRx = (float) Math.toRadians(r.get(0).getAsFloat());
+                bRy = (float) Math.toRadians(r.get(1).getAsFloat());
+                bRz = (float) Math.toRadians(r.get(2).getAsFloat());
+            }
 
-            Bone bone = new Bone(name, parent, pivot, rot);
+            ModelRenderer mr = new ModelRenderer(this);
+            mr.setTextureSize(texW, texH);
 
+            // Rotation-point (rotationPoint) — позиция бона в пространстве РОДИТЕЛЯ.
+            // GeoArmorModel использует: если родитель известен:
+            //   relX = pivot[0] - parentPivot[0]
+            //   relY = parentPivot[1] - pivot[1]   (Y инвертирован)
+            //   relZ = pivot[2] - parentPivot[2]
+            // Для корневых: rotationPoint = (px, 24-py, pz)  (24 — высота Bedrock персонажа)
+            // Мы установим RotationPoint позже во втором проходе.
+
+            // Базовые углы из geo
+            mr.rotateAngleX = bRx;
+            mr.rotateAngleY = bRy;
+            mr.rotateAngleZ = bRz;
+
+            // Кубы
             if (bObj.has("cubes")) {
                 for (JsonElement ce : bObj.getAsJsonArray("cubes")) {
                     JsonObject cObj = ce.getAsJsonObject();
 
-                    JsonArray orig = cObj.getAsJsonArray("origin");
-                    float ox = orig.get(0).getAsFloat();
-                    float oy = orig.get(1).getAsFloat();
-                    float oz = orig.get(2).getAsFloat();
+                    float[] orig = arr3(cObj.getAsJsonArray("origin"));
+                    float[] sz   = arr3(cObj.getAsJsonArray("size"));
+                    float ox = orig[0], oy = orig[1], oz = orig[2];
+                    float sx = sz[0],  sy = sz[1],   sxi = sz[2];
 
-                    JsonArray szArr = cObj.getAsJsonArray("size");
-                    float sx = szArr.get(0).getAsFloat();
-                    float sy = szArr.get(1).getAsFloat();
-                    float sz = szArr.get(2).getAsFloat();
+                    float inflate = cObj.has("inflate") ? cObj.get("inflate").getAsFloat() : 0f;
+                    boolean mirror = cObj.has("mirror") && cObj.get("mirror").getAsBoolean();
 
-                    float[] cubePivot = cObj.has("pivot")    ? parseVec3Arr(cObj.getAsJsonArray("pivot"))    : null;
-                    float[] cubeRot   = cObj.has("rotation") ? parseVec3Arr(cObj.getAsJsonArray("rotation")) : null;
-
-                    Cube cube = new Cube(ox, oy, oz, sx, sy, sz, cubePivot, cubeRot);
-
+                    // UV
+                    int u = 0, v = 0;
+                    Map<String, float[]> faceUVs = null;
                     if (cObj.has("uv")) {
-                        JsonElement uvElem = cObj.get("uv");
-                        if (uvElem.isJsonObject()) {
-                            cube.hasPerFaceUV = true;
-                            JsonObject uvObj = uvElem.getAsJsonObject();
-                            for (Map.Entry<String, JsonElement> fe : uvObj.entrySet()) {
-                                String faceName = fe.getKey().toLowerCase(Locale.ROOT);
+                        JsonElement uvE = cObj.get("uv");
+                        if (uvE.isJsonArray()) {
+                            JsonArray uva = uvE.getAsJsonArray();
+                            u = uva.get(0).getAsInt();
+                            v = uva.get(1).getAsInt();
+                        } else if (uvE.isJsonObject()) {
+                            faceUVs = new HashMap<>();
+                            for (Map.Entry<String, JsonElement> fe : uvE.getAsJsonObject().entrySet()) {
                                 if (fe.getValue().isJsonObject()) {
-                                    JsonObject fd = fe.getValue().getAsJsonObject();
-                                    float u = 0, v = 0, us = 0, vs = 0;
-                                    if (fd.has("uv")) {
-                                        JsonArray a = fd.getAsJsonArray("uv");
-                                        u = a.get(0).getAsFloat(); v = a.get(1).getAsFloat();
+                                    JsonObject fo = fe.getValue().getAsJsonObject();
+                                    if (fo.has("uv") && fo.has("uv_size")) {
+                                        JsonArray ua = fo.getAsJsonArray("uv");
+                                        JsonArray us = fo.getAsJsonArray("uv_size");
+                                        faceUVs.put(fe.getKey(), new float[]{
+                                            ua.get(0).getAsFloat(), ua.get(1).getAsFloat(),
+                                            us.get(0).getAsFloat(), us.get(1).getAsFloat()
+                                        });
                                     }
-                                    if (fd.has("uv_size")) {
-                                        JsonArray a = fd.getAsJsonArray("uv_size");
-                                        us = a.get(0).getAsFloat(); vs = a.get(1).getAsFloat();
-                                    }
-                                    cube.faceUVMap.put(faceName, new FaceUV(u, v, u + us, v + vs));
                                 }
                             }
-                        } else if (uvElem.isJsonArray()) {
-                            JsonArray uvArr = uvElem.getAsJsonArray();
-                            cube.boxU = uvArr.get(0).getAsFloat();
-                            cube.boxV = uvArr.get(1).getAsFloat();
                         }
                     }
 
-                    bone.cubes.add(cube);
+                    boolean hasCubeRot = cObj.has("rotation") || cObj.has("pivot");
+
+                    if (hasCubeRot) {
+                        // Куб с собственной ротацией → дочерний ModelRenderer
+                        float[] cp = cObj.has("pivot") ? arr3(cObj.getAsJsonArray("pivot")) : new float[]{ox, oy, oz};
+
+                        // Позиция pivot куба относительно пивота бона (Y инвертирован)
+                        float relX = cp[0] - px;
+                        float relY = py - cp[1];
+                        float relZ = cp[2] - pz;
+
+                        ModelRenderer sub = new ModelRenderer(this, u, v);
+                        sub.setTextureSize(texW, texH);
+                        sub.mirror = mirror;
+                        sub.setRotationPoint(relX, relY, relZ);
+
+                        if (cObj.has("rotation")) {
+                            JsonArray cr = cObj.getAsJsonArray("rotation");
+                            sub.rotateAngleX = (float) Math.toRadians(cr.get(0).getAsFloat());
+                            sub.rotateAngleY = (float) Math.toRadians(cr.get(1).getAsFloat());
+                            sub.rotateAngleZ = (float) Math.toRadians(cr.get(2).getAsFloat());
+                        }
+
+                        float bx = ox - cp[0];
+                        float by = cp[1] - oy - sy;
+                        float bz = oz - cp[2];
+
+                        if (faceUVs != null) {
+                            sub.cubeList.add(new com.voltyx.mwccf.geo.FloatModelBox(sub, faceUVs, bx, by, bz, sx, sy, sxi, inflate, mirror));
+                        } else {
+                            sub.cubeList.add(new com.voltyx.mwccf.geo.FloatModelBox(sub, u, v, bx, by, bz, sx, sy, sxi, inflate, mirror));
+                        }
+                        mr.addChild(sub);
+                    } else {
+                        // Обычный куб — позиция относительно пивота бона
+                        float bx = ox - px;
+                        float by = py - oy - sy;   // Y инвертирован
+                        float bz = oz - pz;
+
+                        mr.setTextureOffset(u, v);
+                        if (faceUVs != null) {
+                            mr.cubeList.add(new com.voltyx.mwccf.geo.FloatModelBox(mr, faceUVs, bx, by, bz, sx, sy, sxi, inflate, mirror));
+                        } else {
+                            mr.cubeList.add(new com.voltyx.mwccf.geo.FloatModelBox(mr, u, v, bx, by, bz, sx, sy, sxi, inflate, mirror));
+                        }
+                    }
                 }
             }
 
-            bonesByName.put(name, bone);
+            bones.put(name, new BoneEntry(mr, px, py, pz, bRx, bRy, bRz, parent));
         }
 
-        // Build tree
-        for (Bone bone : bonesByName.values()) {
-            if (bone.parentName != null && bonesByName.containsKey(bone.parentName)) {
-                bonesByName.get(bone.parentName).children.add(bone);
+        // Второй проход: расставляем RotationPoint и строим иерархию
+        for (Map.Entry<String, BoneEntry> e : bones.entrySet()) {
+            BoneEntry bone = e.getValue();
+            if (bone.parentName != null && bones.containsKey(bone.parentName)) {
+                BoneEntry par = bones.get(bone.parentName);
+                float relX = bone.pivX - par.pivX;
+                float relY = par.pivY  - bone.pivY; // Y инвертирован
+                float relZ = bone.pivZ - par.pivZ;
+                bone.renderer.setRotationPoint(relX, relY, relZ);
+                par.renderer.addChild(bone.renderer);
             } else {
-                rootBones.add(bone);
+                // Корневой: относительно центра игрока (24 = высота в Bedrock)
+                bone.renderer.setRotationPoint(bone.pivX, 24f - bone.pivY, bone.pivZ);
+                rootBones.add(bone.renderer);
             }
         }
     }
@@ -264,319 +276,183 @@ public class BedrockDollModel {
     // Animation parsing
     // =========================================================
 
-    private void parseAnimation(String json) {
+    private void parseAnim(String json) {
         JsonObject root = new JsonParser().parse(json).getAsJsonObject();
         if (!root.has("animations")) return;
+        for (Map.Entry<String, JsonElement> ae : root.getAsJsonObject("animations").entrySet()) {
+            JsonObject aObj = ae.getValue().getAsJsonObject();
+            float  len  = aObj.has("animation_length") ? aObj.get("animation_length").getAsFloat() : 1f;
+            String loop = "hold_on_last_frame";
+            if (aObj.has("loop")) loop = aObj.get("loop").getAsString();
 
-        for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("animations").entrySet()) {
-            String     animName = e.getKey();
-            JsonObject aObj     = e.getValue().getAsJsonObject();
-
-            float  length   = aObj.has("animation_length") ? aObj.get("animation_length").getAsFloat() : 1.0f;
-            String loopMode = "hold_on_last_frame";
-            if (aObj.has("loop")) {
-                JsonElement l = aObj.get("loop");
-                if (l.isJsonPrimitive()) loopMode = l.getAsString();
-            }
-
-            Animation anim = new Animation(animName, length, loopMode);
-
+            Anim anim = new Anim(len, loop);
             if (aObj.has("bones")) {
                 for (Map.Entry<String, JsonElement> be : aObj.getAsJsonObject("bones").entrySet()) {
-                    String     bName = be.getKey();
-                    JsonObject bData = be.getValue().getAsJsonObject();
-                    BoneTrack  track = new BoneTrack();
-                    if (bData.has("rotation")) parseKFs(bData.get("rotation"), track.rotKFs);
-                    if (bData.has("position")) parseKFs(bData.get("position"), track.posKFs);
-                    anim.tracks.put(bName, track);
+                    BoneTrack track = new BoneTrack();
+                    JsonObject bd = be.getValue().getAsJsonObject();
+                    if (bd.has("rotation")) parseKFs(bd.get("rotation"), track.rot);
+                    if (bd.has("position")) parseKFs(bd.get("position"), track.pos);
+                    anim.tracks.put(be.getKey(), track);
                 }
             }
-
-            animations.put(animName, anim);
+            animations.put(ae.getKey(), anim);
         }
     }
 
-    private void parseKFs(JsonElement elem, List<Keyframe> target) {
-        if (elem.isJsonObject()) {
+    private void parseKFs(JsonElement elem, List<KF> out) {
+        if (elem.isJsonArray()) {
+            JsonArray a = elem.getAsJsonArray();
+            out.add(new KF(0, a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()));
+        } else if (elem.isJsonObject()) {
             JsonObject obj = elem.getAsJsonObject();
             if (obj.has("vector")) {
-                JsonArray v = obj.getAsJsonArray("vector");
-                target.add(new Keyframe(0f, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
+                JsonArray a = obj.getAsJsonArray("vector");
+                out.add(new KF(0, a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()));
             } else {
-                for (Map.Entry<String, JsonElement> kf : obj.entrySet()) {
+                for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
                     try {
-                        float time = Float.parseFloat(kf.getKey());
-                        JsonElement val = kf.getValue();
-                        if (val.isJsonObject()) {
+                        float t = Float.parseFloat(e.getKey());
+                        JsonElement val = e.getValue();
+                        JsonArray a = null;
+                        if (val.isJsonArray()) a = val.getAsJsonArray();
+                        else if (val.isJsonObject()) {
                             JsonObject vo = val.getAsJsonObject();
-                            JsonArray v = vo.has("vector") ? vo.getAsJsonArray("vector")
-                                        : vo.has("post")   ? vo.getAsJsonArray("post") : null;
-                            if (v != null)
-                                target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
-                        } else if (val.isJsonArray()) {
-                            JsonArray v = val.getAsJsonArray();
-                            target.add(new Keyframe(time, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
+                            if (vo.has("vector")) a = vo.getAsJsonArray("vector");
+                            else if (vo.has("post")) a = vo.getAsJsonArray("post");
                         }
+                        if (a != null) out.add(new KF(t, a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()));
                     } catch (Throwable ignored) {}
                 }
             }
-        } else if (elem.isJsonArray()) {
-            JsonArray v = elem.getAsJsonArray();
-            target.add(new Keyframe(0f, v.get(0).getAsFloat(), v.get(1).getAsFloat(), v.get(2).getAsFloat()));
         }
-        target.sort(Comparator.comparingDouble(k -> k.time));
+        out.sort(Comparator.comparingDouble(k -> k.time));
     }
 
     // =========================================================
-    // Animation application
+    // Apply animation
     // =========================================================
-
-    public float getAnimationLength(String name) {
-        Animation a = animations.get(name);
-        return a != null ? a.length : 0.5f;
-    }
 
     public void applyAnimation(String animName, float time) {
-        resetAnim();
-        Animation anim = animations.get(animName);
+        // Сбрасываем к базовым
+        for (BoneEntry e : bones.values()) {
+            e.renderer.rotateAngleX = e.baseRotX;
+            e.renderer.rotateAngleY = e.baseRotY;
+            e.renderer.rotateAngleZ = e.baseRotZ;
+        }
+
+        Anim anim = animations.get(animName);
         if (anim == null) return;
 
         float[] tmp = new float[3];
         for (Map.Entry<String, BoneTrack> e : anim.tracks.entrySet()) {
-            Bone bone = bonesByName.get(e.getKey());
+            BoneEntry bone = bones.get(e.getKey());
             if (bone == null) continue;
-            BoneTrack track = e.getValue();
-            evalKFs(track.rotKFs, time, tmp);
-            bone.animRot[0] += tmp[0];
-            bone.animRot[1] += tmp[1];
-            bone.animRot[2] += tmp[2];
-            evalKFs(track.posKFs, time, tmp);
-            bone.animPos[0] += tmp[0];
-            bone.animPos[1] += tmp[1];
-            bone.animPos[2] += tmp[2];
+            BoneTrack tr = e.getValue();
+
+            evalKFs(tr.rot, time, tmp);
+            // В Bedrock аnim rotation — в градусах, конвертируем в радианы и добавляем к базе
+            bone.renderer.rotateAngleX += (float) Math.toRadians(tmp[0]);
+            bone.renderer.rotateAngleY += (float) Math.toRadians(tmp[1]);
+            bone.renderer.rotateAngleZ += (float) Math.toRadians(tmp[2]);
+
+            // position пока не применяем (смещение boneEntry.renderer.rotationPoint)
         }
     }
 
-    private void resetAnim() {
-        for (Bone bone : bonesByName.values()) {
-            bone.animRot[0] = bone.animRot[1] = bone.animRot[2] = 0;
-            bone.animPos[0] = bone.animPos[1] = bone.animPos[2] = 0;
+    public void applyAnimationBlended(String animA, float timeA, String animB, float timeB, float weightB) {
+        // Сбрасываем к базовым
+        for (BoneEntry e : bones.values()) {
+            e.renderer.rotateAngleX = e.baseRotX;
+            e.renderer.rotateAngleY = e.baseRotY;
+            e.renderer.rotateAngleZ = e.baseRotZ;
+        }
+
+        Anim a = animations.get(animA);
+        Anim b = animations.get(animB);
+        if (a == null && b == null) return;
+        if (a == null) { applyAnimation(animB, timeB); return; }
+        if (b == null) { applyAnimation(animA, timeA); return; }
+
+        float wB = Math.max(0f, Math.min(1f, weightB));
+        float wA = 1f - wB;
+
+        Set<String> allBones = new HashSet<>(a.tracks.keySet());
+        allBones.addAll(b.tracks.keySet());
+
+        float[] tmpA = new float[3];
+        float[] tmpB = new float[3];
+
+        for (String boneName : allBones) {
+            BoneEntry bone = bones.get(boneName);
+            if (bone == null) continue;
+
+            BoneTrack trA = a.tracks.get(boneName);
+            BoneTrack trB = b.tracks.get(boneName);
+
+            if (trA != null) evalKFs(trA.rot, timeA, tmpA); else { tmpA[0]=tmpA[1]=tmpA[2]=0; }
+            if (trB != null) evalKFs(trB.rot, timeB, tmpB); else { tmpB[0]=tmpB[1]=tmpB[2]=0; }
+
+            float rx = tmpA[0] * wA + tmpB[0] * wB;
+            float ry = tmpA[1] * wA + tmpB[1] * wB;
+            float rz = tmpA[2] * wA + tmpB[2] * wB;
+
+            bone.renderer.rotateAngleX += (float) Math.toRadians(rx);
+            bone.renderer.rotateAngleY += (float) Math.toRadians(ry);
+            bone.renderer.rotateAngleZ += (float) Math.toRadians(rz);
         }
     }
 
-    private void evalKFs(List<Keyframe> kfs, float time, float[] out) {
+    public void addBoneRotation(String boneName, float rotXRad, float rotYRad, float rotZRad) {
+        BoneEntry b = bones.get(boneName);
+        if (b != null) {
+            b.renderer.rotateAngleX += rotXRad;
+            b.renderer.rotateAngleY += rotYRad;
+            b.renderer.rotateAngleZ += rotZRad;
+        }
+    }
+
+    private void evalKFs(List<KF> kfs, float time, float[] out) {
         out[0] = out[1] = out[2] = 0;
         if (kfs.isEmpty()) return;
         if (kfs.size() == 1 || time <= kfs.get(0).time) {
-            Keyframe k = kfs.get(0);
-            out[0] = k.x; out[1] = k.y; out[2] = k.z;
-            return;
+            out[0]=kfs.get(0).x; out[1]=kfs.get(0).y; out[2]=kfs.get(0).z; return;
         }
-        Keyframe last = kfs.get(kfs.size() - 1);
-        if (time >= last.time) {
-            out[0] = last.x; out[1] = last.y; out[2] = last.z;
-            return;
-        }
-        for (int i = 0; i < kfs.size() - 1; i++) {
-            Keyframe k0 = kfs.get(i), k1 = kfs.get(i + 1);
+        KF last = kfs.get(kfs.size()-1);
+        if (time >= last.time) { out[0]=last.x; out[1]=last.y; out[2]=last.z; return; }
+        for (int i = 0; i < kfs.size()-1; i++) {
+            KF k0=kfs.get(i), k1=kfs.get(i+1);
             if (time >= k0.time && time <= k1.time) {
                 float seg = k1.time - k0.time;
-                float t   = (seg <= 0) ? 0 : (time - k0.time) / seg;
-                float f   = (1f - (float) Math.cos(t * Math.PI)) * 0.5f; // cosine ease
-                out[0] = k0.x + (k1.x - k0.x) * f;
-                out[1] = k0.y + (k1.y - k0.y) * f;
-                out[2] = k0.z + (k1.z - k0.z) * f;
+                float t   = (seg<=0) ? 0 : (time-k0.time)/seg;
+                float f   = (1f - (float)Math.cos(t * Math.PI)) * 0.5f;
+                out[0] = k0.x + (k1.x-k0.x)*f;
+                out[1] = k0.y + (k1.y-k0.y)*f;
+                out[2] = k0.z + (k1.z-k0.z)*f;
                 return;
             }
         }
     }
 
     // =========================================================
-    // Rendering — CORRECT Bedrock hierarchy
-    //
-    // In Bedrock geo format, bone.pivot is in ABSOLUTE model space.
-    // The correct bone transform is:
-    //   T(pivot) * R(rotation) * T(-pivot)
-    // applied from model origin, with children inheriting the result.
-    // Cubes are drawn at their absolute model-space origins.
+    // Render
     // =========================================================
 
-    /**
-     * Render the model. Call after binding texture.
-     *
-     * @param scale pixels-per-block scale, typically 1/16 = 0.0625.
-     *              Bedrock units: 1 unit = 1 pixel on a 16px-per-block skin.
-     */
     public void render(float scale) {
-        GlStateManager.pushMatrix();
-        // Bedrock uses left-handed coords (mirror X)
-        GlStateManager.scale(-scale, scale, scale);
-        GL11.glFrontFace(GL11.GL_CW);
-
-        for (Bone root : rootBones) {
-            renderBone(root);
+        for (ModelRenderer r : rootBones) {
+            r.render(scale);
         }
-
-        GL11.glFrontFace(GL11.GL_CCW);
-        GlStateManager.popMatrix();
-    }
-
-    /**
-     * Render a bone and all its children using the correct Bedrock pivot transform.
-     * scale has already been applied by the top-level render() call.
-     */
-    private void renderBone(Bone bone) {
-        float px = bone.pivot[0] + bone.animPos[0];
-        float py = bone.pivot[1] + bone.animPos[1];
-        float pz = bone.pivot[2] + bone.animPos[2];
-
-        float rx = -(bone.rotation[0] + bone.animRot[0]);
-        float ry = -(bone.rotation[1] + bone.animRot[1]);
-        float rz = -(bone.rotation[2] + bone.animRot[2]);
-
-        GlStateManager.pushMatrix();
-
-        // Bedrock bone transform: T(pivot) * R * T(-pivot)
-        GlStateManager.translate(px, py, pz);
-        if (rz != 0f) GlStateManager.rotate(rz, 0f, 0f, 1f);
-        if (ry != 0f) GlStateManager.rotate(ry, 0f, 1f, 0f);
-        if (rx != 0f) GlStateManager.rotate(rx, 1f, 0f, 0f);
-        GlStateManager.translate(-px, -py, -pz);
-
-        // Cubes are drawn at their absolute model-space positions
-        for (Cube cube : bone.cubes) {
-            renderCube(cube, bone);
-        }
-
-        // Children inherit the current transform
-        for (Bone child : bone.children) {
-            renderBone(child);
-        }
-
-        GlStateManager.popMatrix();
-    }
-
-    private void renderCube(Cube cube, Bone bone) {
-        GlStateManager.pushMatrix();
-
-        // Per-cube local rotation around its own pivot (in model space)
-        if (cube.cubePivot != null && cube.cubeRot != null) {
-            float cpx = cube.cubePivot[0];
-            float cpy = cube.cubePivot[1];
-            float cpz = cube.cubePivot[2];
-            GlStateManager.translate(cpx, cpy, cpz);
-            if (cube.cubeRot[2] != 0f) GlStateManager.rotate(-cube.cubeRot[2], 0f, 0f, 1f);
-            if (cube.cubeRot[1] != 0f) GlStateManager.rotate(-cube.cubeRot[1], 0f, 1f, 0f);
-            if (cube.cubeRot[0] != 0f) GlStateManager.rotate(-cube.cubeRot[0], 1f, 0f, 0f);
-            GlStateManager.translate(-cpx, -cpy, -cpz);
-        }
-
-        // Cube in absolute model-space coords
-        float x0 = cube.origin[0];
-        float y0 = cube.origin[1];
-        float z0 = cube.origin[2];
-        float x1 = x0 + cube.size[0];
-        float y1 = y0 + cube.size[1];
-        float z1 = z0 + cube.size[2];
-
-        float tw = textureWidth;
-        float th = textureHeight;
-
-        Tessellator    tess = Tessellator.getInstance();
-        BufferBuilder  buf  = tess.getBuffer();
-
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_NORMAL);
-
-        if (cube.hasPerFaceUV) {
-            // East (+X)
-            FaceUV east = cube.faceUVMap.get("east");
-            if (east != null) drawFace(buf, east, tw, th,
-                x1,y1,z0,  x1,y1,z1,  x1,y0,z1,  x1,y0,z0,  1,0,0);
-            // West (-X)
-            FaceUV west = cube.faceUVMap.get("west");
-            if (west != null) drawFace(buf, west, tw, th,
-                x0,y1,z1,  x0,y1,z0,  x0,y0,z0,  x0,y0,z1,  -1,0,0);
-            // Up (+Y)
-            FaceUV up = cube.faceUVMap.get("up");
-            if (up != null) drawFace(buf, up, tw, th,
-                x1,y1,z0,  x0,y1,z0,  x0,y1,z1,  x1,y1,z1,  0,1,0);
-            // Down (-Y)
-            FaceUV down = cube.faceUVMap.get("down");
-            if (down != null) drawFace(buf, down, tw, th,
-                x1,y0,z0,  x0,y0,z0,  x0,y0,z1,  x1,y0,z1,  0,-1,0);
-            // North (-Z)
-            FaceUV north = cube.faceUVMap.get("north");
-            if (north != null) drawFace(buf, north, tw, th,
-                x0,y1,z0,  x1,y1,z0,  x1,y0,z0,  x0,y0,z0,  0,0,-1);
-            // South (+Z)
-            FaceUV south = cube.faceUVMap.get("south");
-            if (south != null) drawFace(buf, south, tw, th,
-                x1,y1,z1,  x0,y1,z1,  x0,y0,z1,  x1,y0,z1,  0,0,1);
-        } else {
-            // Box UV mapping
-            float u = cube.boxU, v = cube.boxV;
-            float w = cube.size[0], h = cube.size[1], d = cube.size[2];
-            float u0, v0, u1, v1;
-
-            // Up
-            u0=(u+d)/tw; v0=v/th; u1=(u+d+w)/tw; v1=(v+d)/th;
-            vert(buf,x1,y1,z0,u1,v1,0,1,0); vert(buf,x0,y1,z0,u0,v1,0,1,0);
-            vert(buf,x0,y1,z1,u0,v0,0,1,0); vert(buf,x1,y1,z1,u1,v0,0,1,0);
-            // Down
-            u0=(u+d+w)/tw; v0=v/th; u1=(u+d+w+w)/tw; v1=(v+d)/th;
-            vert(buf,x1,y0,z0,u0,v0,0,-1,0); vert(buf,x0,y0,z0,u1,v0,0,-1,0);
-            vert(buf,x0,y0,z1,u1,v1,0,-1,0); vert(buf,x1,y0,z1,u0,v1,0,-1,0);
-            // North
-            u0=(u+d)/tw; v0=(v+d)/th; u1=(u+d+w)/tw; v1=(v+d+h)/th;
-            vert(buf,x0,y1,z0,u0,v0,0,0,-1); vert(buf,x1,y1,z0,u1,v0,0,0,-1);
-            vert(buf,x1,y0,z0,u1,v1,0,0,-1); vert(buf,x0,y0,z0,u0,v1,0,0,-1);
-            // South
-            u0=(u+d+w+d)/tw; v0=(v+d)/th; u1=(u+d+w+d+w)/tw; v1=(v+d+h)/th;
-            vert(buf,x1,y1,z1,u0,v0,0,0,1); vert(buf,x0,y1,z1,u1,v0,0,0,1);
-            vert(buf,x0,y0,z1,u1,v1,0,0,1); vert(buf,x1,y0,z1,u0,v1,0,0,1);
-            // West
-            u0=u/tw; v0=(v+d)/th; u1=(u+d)/tw; v1=(v+d+h)/th;
-            vert(buf,x0,y1,z1,u0,v0,-1,0,0); vert(buf,x0,y1,z0,u1,v0,-1,0,0);
-            vert(buf,x0,y0,z0,u1,v1,-1,0,0); vert(buf,x0,y0,z1,u0,v1,-1,0,0);
-            // East
-            u0=(u+d+w)/tw; v0=(v+d)/th; u1=(u+d+w+d)/tw; v1=(v+d+h)/th;
-            vert(buf,x1,y1,z0,u0,v0,1,0,0); vert(buf,x1,y1,z1,u1,v0,1,0,0);
-            vert(buf,x1,y0,z1,u1,v1,1,0,0); vert(buf,x1,y0,z0,u0,v1,1,0,0);
-        }
-
-        tess.draw();
-        GlStateManager.popMatrix();
-    }
-
-    private void drawFace(BufferBuilder buf, FaceUV uv, float tw, float th,
-                          float ax, float ay, float az,
-                          float bx, float by, float bz,
-                          float cx, float cy, float cz,
-                          float dx, float dy, float dz,
-                          float nx, float ny, float nz) {
-        float u0 = uv.u1 / tw, v0 = uv.v1 / th;
-        float u1 = uv.u2 / tw, v1 = uv.v2 / th;
-        vert(buf,ax,ay,az, u0,v0, nx,ny,nz);
-        vert(buf,bx,by,bz, u1,v0, nx,ny,nz);
-        vert(buf,cx,cy,cz, u1,v1, nx,ny,nz);
-        vert(buf,dx,dy,dz, u0,v1, nx,ny,nz);
-    }
-
-    private static void vert(BufferBuilder buf, float x, float y, float z,
-                              float u, float v, float nx, float ny, float nz) {
-        buf.pos(x, y, z).tex(u, v).normal(nx, ny, nz).endVertex();
     }
 
     // =========================================================
     // Helpers
     // =========================================================
 
-    private float[] parseVec3(JsonObject obj, String key, float[] def) {
-        if (!obj.has(key)) return def;
-        return parseVec3Arr(obj.getAsJsonArray(key));
+    private float[] vec3(JsonObject o, String key, float dx, float dy, float dz) {
+        if (!o.has(key)) return new float[]{dx, dy, dz};
+        return arr3(o.getAsJsonArray(key));
     }
 
-    private float[] parseVec3Arr(JsonArray arr) {
-        return new float[]{ arr.get(0).getAsFloat(), arr.get(1).getAsFloat(), arr.get(2).getAsFloat() };
+    private float[] arr3(JsonArray a) {
+        return new float[]{a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()};
     }
 }

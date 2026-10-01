@@ -1,13 +1,19 @@
 package com.voltyx.mwccf.client.inspect;
 
 import com.voltyx.mwccf.backpack.AssaultBackpack;
+import com.voltyx.mwccf.geo.BodycamLayer;
 import com.voltyx.mwccf.geo.BraceletInspectHandler;
 import com.voltyx.mwccf.geo.GeoArmorModel;
 import com.voltyx.mwccf.geo.HeadlampRenderer;
+import com.voltyx.mwccf.geo.ItemBodycam;
 import com.voltyx.mwccf.geo.ItemBracelet;
 import com.voltyx.mwccf.geo.ItemGeoArmor;
 import com.voltyx.mwccf.geo.ItemHeadlamp;
+import com.voltyx.mwccf.geo.ItemKawaiiEars;
+import com.voltyx.mwccf.geo.ItemPortableMap;
+import com.voltyx.mwccf.geo.KawaiiEarsLayer;
 import com.voltyx.mwccf.mcore.ItemCustomArmor;
+import com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.GlStateManager;
@@ -146,6 +152,14 @@ public class Item3DRenderer {
         else if (stack.getItem() instanceof ItemBracelet) {
             renderBracelet(mc, inWorld);
         }
+        // 4b. Bodycam Bauble
+        else if (isBodycam(stack)) {
+            renderBodycam(mc, inWorld);
+        }
+        // 4c. Kawaii Ears Bauble
+        else if (isKawaiiEars(stack)) {
+            renderKawaiiEars(mc, inWorld);
+        }
         // 5. Backpack
         else if (isBackpack(stack)) {
             renderBackpack(stack, mc, inWorld);
@@ -158,7 +172,11 @@ public class Item3DRenderer {
         else if (isWeapon(stack)) {
             renderWeapon(stack, mc, inWorld);
         }
-        // 8. Standard Items / 2D Tools / Blocks in 3D
+        // 8. Doll (Любимая игрушка Сайи)
+        else if (isDoll(stack)) {
+            renderDoll(stack, mc, inWorld);
+        }
+        // 9. Standard Items / 2D Tools / Blocks in 3D (including Portable Map, Walkie Talkie)
         else {
             renderGenericItem(stack, mc);
         }
@@ -166,7 +184,7 @@ public class Item3DRenderer {
 
     public static boolean isBackpack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
-        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString() : "";
+        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString().toLowerCase() : "";
         return regName.equals("quark:backpack") || regName.contains("backpack");
     }
 
@@ -174,6 +192,108 @@ public class Item3DRenderer {
         if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
         String cls = stack.getItem().getClass().getName();
         return stack.getItem() instanceof com.paneedah.weaponlib.Weapon || cls.contains("weaponlib") || cls.contains("Weapon");
+    }
+
+    public static boolean isDoll(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
+        if (stack.getItem() instanceof efw.item.ItemDoll) return true;
+        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString().toLowerCase() : "";
+        return regName.equals("mwccf:doll") || regName.contains("doll");
+    }
+
+    public static boolean isBodycam(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
+        if (stack.getItem() instanceof ItemBodycam) return true;
+        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString().toLowerCase() : "";
+        return regName.contains("bodycam");
+    }
+
+    public static boolean isKawaiiEars(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
+        if (stack.getItem() instanceof ItemKawaiiEars) return true;
+        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString().toLowerCase() : "";
+        return regName.contains("kawaii_ears") || regName.contains("ears");
+    }
+
+    public static boolean isPortableMap(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
+        if (stack.getItem() instanceof ItemPortableMap) return true;
+        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString().toLowerCase() : "";
+        return regName.contains("portable_map") || regName.contains("pda");
+    }
+
+    public static boolean isWalkieTalkie(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || stack.getItem() == null) return false;
+        if (stack.getItem() instanceof ItemWalkieTalkie) return true;
+        String regName = stack.getItem().getRegistryName() != null ? stack.getItem().getRegistryName().toString().toLowerCase() : "";
+        return regName.contains("walkie_talkie") || regName.contains("walkietalkie");
+    }
+
+    private static void renderBodycam(Minecraft mc, boolean inWorld) {
+        GeoArmorModel model = BodycamLayer.getModel();
+        if (model != null) {
+            model.resetBipedTransforms();
+            GlStateManager.pushMatrix();
+            if (inWorld) {
+                GlStateManager.translate(0.0F, -0.65F, 0.0F);
+            } else {
+                GlStateManager.translate(0.0F, 0.75F, 0.0F); // Center bodycam in inspect GUI
+            }
+            model.currentSlot = EntityEquipmentSlot.CHEST;
+
+            mc.getTextureManager().bindTexture(new ResourceLocation("mwccf", "textures/models/armor/bodycam.png"));
+            if (model.bipedBody != null) {
+                model.bipedBody.render(0.0625F);
+            }
+            GlStateManager.popMatrix();
+        }
+    }
+
+    private static void renderKawaiiEars(Minecraft mc, boolean inWorld) {
+        GeoArmorModel model = KawaiiEarsLayer.getModel();
+        if (model != null) {
+            model.resetBipedTransforms();
+            GlStateManager.pushMatrix();
+            if (inWorld) {
+                GlStateManager.translate(0.0F, -0.65F, 0.0F);
+            } else {
+                GlStateManager.translate(0.0F, 1.5F, 0.0F); // Center ears in inspect GUI (head level)
+            }
+            model.currentSlot = EntityEquipmentSlot.HEAD;
+
+            mc.getTextureManager().bindTexture(new ResourceLocation("mwccf", "textures/models/armor/kawaii_ears.png"));
+            if (model.bipedHead != null) {
+                model.bipedHead.render(0.0625F);
+            }
+            GlStateManager.popMatrix();
+        }
+    }
+
+    private static void renderDoll(ItemStack stack, Minecraft mc, boolean inWorld) {
+        com.voltyx.mwccf.render.doll.BedrockDollModel model = com.voltyx.mwccf.render.doll.DollRenderer.getModel();
+        if (model == null || !model.isLoaded()) return;
+
+        GlStateManager.pushMatrix();
+        if (inWorld) {
+            GlStateManager.scale(1.0F, -1.0F, 1.0F);
+            GlStateManager.translate(0.0F, -0.65F, 0.0F);
+        } else {
+            GlStateManager.translate(0.0F, 0.45F, 0.0F);
+        }
+
+        mc.getTextureManager().bindTexture(new ResourceLocation("mwccf", "textures/entity/doll.png"));
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        com.voltyx.mwccf.render.doll.DollSettings.applyGLBlend();
+        GlStateManager.disableCull();
+        org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CW);
+
+        model.applyAnimation("animation", 0.625F);
+        model.render(0.0625F);
+
+        org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CCW);
+        GlStateManager.enableCull();
+        GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
     }
 
     private static void renderGeoArmor(ItemGeoArmor geoArmor, ItemStack stack, Minecraft mc, boolean inWorld) {

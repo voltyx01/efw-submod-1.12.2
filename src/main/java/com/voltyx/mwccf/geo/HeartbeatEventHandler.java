@@ -51,7 +51,11 @@ public class HeartbeatEventHandler {
                 float damage = (int)((d10 * d10 + d10) / 2.0 * 7.0 * (double)f3 + 1.0);
                 
                 if (damage > 0) {
-                    HeartbeatManager.explosionImpulse = 175f;
+                    float imp = 175f;
+                    if (efw.item.ItemBloodyNecklace.hasBloodyNecklaceEquipped(mc.player)) {
+                        imp *= 0.90f;
+                    }
+                    HeartbeatManager.explosionImpulse = imp;
                 }
             }
         }

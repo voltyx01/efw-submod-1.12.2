@@ -65,6 +65,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.immersiveui.client.ImmersiveUIClientEvents());
 
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new CommandDumpChests());
+		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new com.voltyx.mwccf.render.doll.CommandDoll());
 
 		registerBlinkingLayer();
 	}
@@ -206,6 +207,10 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 					renderByItem(itemStack, 1.0F);
 				}
 			});
+		}
+
+		if (efw.init.EfwModItems.DOLL != null) {
+			efw.init.EfwModItems.DOLL.setTileEntityItemStackRenderer(new com.voltyx.mwccf.render.doll.DollItemStackRenderer());
 		}
 
 		net.minecraftforge.fml.client.registry.RenderingRegistry.registerEntityRenderingHandler(com.voltyx.mwccf.furniture.EntitySeat.class, manager -> {

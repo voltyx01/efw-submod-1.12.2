@@ -1215,5 +1215,15 @@ item.refurbished_furniture.range_hood_off.name=Кухонная вытяжка
 tile.refurbished_furniture.range_hood_on.name=Кухонная вытяжка
 item.refurbished_furniture.range_hood_on.name=Кухонная вытяжка
 
+# Doll
+item.mwccf.doll.name=Плюшевая кукла Сайи
+tooltip.mwccf.doll.desc=Потрепанная мягкая игрушка. Чья-то маленькая рука держала её крепче всего остального.
+inspect.doll.desc=Потрепанная мягкая игрушка. Чья-то маленькая рука держала её крепче всего остального.
+inspect.doll.lore="Сайя не выпускала её из рук. Никогда."
 
-item.mwccf.doll.name=������� ������� ����
+# Bloody Necklace
+item.mwccf.bloody_necklace.name=Окровавленное ожерелье
+tooltip.mwccf.bloody_necklace.desc=Простая цепочка. Застёжка сломана — видно что снимали в спешке. Местами бурые пятна.
+tooltip.mwccf.bloody_necklace.effect=§7При ношении: §a-10%% §7к увеличению пульса от триггеров, §a+10%% §7к защите от урона
+inspect.bloody_necklace.desc=Простая цепочка. Застёжка сломана — видно что снимали в спешке. Местами бурые пятна.
+inspect.bloody_necklace.lore="Чувствуется запах знакомых духов вперемешку с металлом."

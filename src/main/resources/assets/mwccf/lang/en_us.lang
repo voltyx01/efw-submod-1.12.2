@@ -1234,4 +1234,16 @@ tile.refurbished_furniture.range_hood_off.name=Range Hood (Off)
 item.refurbished_furniture.range_hood_off.name=Range Hood (Off)
 tile.refurbished_furniture.range_hood_on.name=Range Hood (On)
 item.refurbished_furniture.range_hood_on.name=Range Hood (On)
+
+# Doll
 item.mwccf.doll.name=Saya's Plush Doll
+tooltip.mwccf.doll.desc=A worn-out plush toy. Someone's small hand held onto it tighter than anything else.
+inspect.doll.desc=A worn-out plush toy. Someone's small hand held onto it tighter than anything else.
+inspect.doll.lore="Saya never let go of it. Never."
+
+# Bloody Necklace
+item.mwccf.bloody_necklace.name=Bloody Necklace
+tooltip.mwccf.bloody_necklace.desc=A simple chain necklace. The clasp is broken — clearly taken off in a hurry. Stained with reddish spots.
+tooltip.mwccf.bloody_necklace.effect=§7When equipped: §a-10%% §7heartbeat trigger increase, §a+10%% §7damage resistance
+inspect.bloody_necklace.desc=A simple chain necklace. The clasp is broken — clearly taken off in a hurry. Stained with reddish spots.
+inspect.bloody_necklace.lore="A faint scent of familiar perfume mixed with the smell of metal."

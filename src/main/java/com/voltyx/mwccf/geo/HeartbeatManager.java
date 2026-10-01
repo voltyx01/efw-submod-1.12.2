@@ -165,13 +165,22 @@ public class HeartbeatManager {
     public static void notifyExplosion(float damage) {
         // damage ~ 0..20. Спайк 20..30 BPM.
         float spike = 20f + Math.min(1f, damage / 15f) * 10f;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && efw.item.ItemBloodyNecklace.hasBloodyNecklaceEquipped(mc.player)) {
+            spike *= 0.90f;
+        }
         explosionImpulse = Math.max(explosionImpulse, spike);
     }
 
     /** Вызывается HeartbeatEventHandler при получении любого урона */
     public static void notifyDamage(float damage) {
         // Урон ~ +20 BPM (из гайда)
-        damageImpulse = Math.max(damageImpulse, 20f);
+        float spike = 20f;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && efw.item.ItemBloodyNecklace.hasBloodyNecklaceEquipped(mc.player)) {
+            spike *= 0.90f;
+        }
+        damageImpulse = Math.max(damageImpulse, spike);
     }
 
     // =====================================================================
@@ -441,8 +450,12 @@ public class HeartbeatManager {
             growthRate += 4f;
             baseCeiling += 30f;
         }
+        boolean hasNecklace = efw.item.ItemBloodyNecklace.hasBloodyNecklaceEquipped(player);
+
         if (mob.newSrpMobSeen) {
-            currentBPM += 30f;
+            float seenSpike = 30f;
+            if (hasNecklace) seenSpike *= 0.90f;
+            currentBPM += seenSpike;
         }
 
         // ── Стрельба — умный cap ─────────────────────────────────────────
@@ -465,6 +478,16 @@ public class HeartbeatManager {
         if (hasMorphine) {
             activeCeiling = Math.max(65f, activeCeiling - 40f);
             growthRate = Math.min(0f, growthRate - 4f);
+        }
+
+        // ── Эффект окровавленного ожерелья: понижает повышение от триггеров на 10% ──
+        if (hasNecklace) {
+            if (activeCeiling > 65f) {
+                activeCeiling = 65f + (activeCeiling - 65f) * 0.90f;
+            }
+            if (growthRate > 0f) {
+                growthRate *= 0.90f;
+            }
         }
 
         // ── Применяем изменения ──────────────────────────────────────────

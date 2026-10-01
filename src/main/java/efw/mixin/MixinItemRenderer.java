@@ -54,4 +54,18 @@ public class MixinItemRenderer {
             }
         }
     }
+
+    /**
+     * Держим прогресс экипировки рук на нуле, пока кукла в руках или прячется.
+     * Когда кукла полностью скрылась за экраном, обычная рука/предмет плавно поднимется снизу.
+     */
+    @Inject(method = "updateEquippedItem", at = @At("RETURN"))
+    private void onUpdateEquippedItem(CallbackInfo ci) {
+        if (com.voltyx.mwccf.render.doll.DollRenderer.isDollActive()) {
+            this.equippedProgressMainHand = 0.0F;
+            this.prevEquippedProgressMainHand = 0.0F;
+            this.equippedProgressOffHand = 0.0F;
+            this.prevEquippedProgressOffHand = 0.0F;
+        }
+    }
 }

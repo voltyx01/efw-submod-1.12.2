@@ -480,10 +480,21 @@ public class GuiItemInspect extends GuiScreen {
             lore = (isGun || activeEntry == null || activeEntry.lore == null || activeEntry.lore.isEmpty()) ? ""
                     : activeEntry.lore;
 
-            if (desc.isEmpty() && this.targetStack != null && this.targetStack.getItem().getRegistryName() != null) {
-                String inspectKey = "inspect." + this.targetStack.getItem().getRegistryName().getPath();
-                if (I18n.hasKey(inspectKey)) {
-                    desc = I18n.format(inspectKey);
+            if (this.targetStack != null && this.targetStack.getItem().getRegistryName() != null) {
+                String path = this.targetStack.getItem().getRegistryName().getPath();
+                if (desc.isEmpty()) {
+                    String descKey = "inspect." + path + ".desc";
+                    if (I18n.hasKey(descKey)) {
+                        desc = I18n.format(descKey);
+                    } else if (I18n.hasKey("inspect." + path)) {
+                        desc = I18n.format("inspect." + path);
+                    }
+                }
+                if (lore.isEmpty() && !isGun) {
+                    String loreKey = "inspect." + path + ".lore";
+                    if (I18n.hasKey(loreKey)) {
+                        lore = I18n.format(loreKey);
+                    }
                 }
             }
         }

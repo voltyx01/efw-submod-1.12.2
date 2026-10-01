@@ -963,6 +963,30 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                                          float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
         if (entityIn instanceof EntityPlayer) {
             com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.lastCarrierTorsoRotateY = this.bipedBody.rotateAngleY;
+
+            EntityPlayer player = (EntityPlayer) entityIn;
+            float pt = net.minecraft.client.Minecraft.getMinecraft().getRenderPartialTicks();
+            boolean isLying = com.voltyx.mwccf.render.doll.DollRenderer.isLyingOrCrawling(player);
+            float dollProgress = isLying ? 0.0F : com.voltyx.mwccf.render.doll.DollRenderer.getHoldProgress(player, pt);
+
+            if (dollProgress > 0.001F && !efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
+                // Поднимаем руки на 70 градусов от idle (-1.2217 радиан)
+                float targetX = -1.2217F;
+                // Сводим руки внутрь перед грудью
+                float targetYRight = -0.42F;
+                float targetZRight = 0.10F;
+                float targetYLeft = 0.42F;
+                float targetZLeft = -0.10F;
+
+                // Плавно интерполируем от текущей позы к позе удержания куклы (без слежения за головой)
+                this.bipedRightArm.rotateAngleX = this.bipedRightArm.rotateAngleX + (targetX - this.bipedRightArm.rotateAngleX) * dollProgress;
+                this.bipedRightArm.rotateAngleY = this.bipedRightArm.rotateAngleY + (targetYRight - this.bipedRightArm.rotateAngleY) * dollProgress;
+                this.bipedRightArm.rotateAngleZ = this.bipedRightArm.rotateAngleZ + (targetZRight - this.bipedRightArm.rotateAngleZ) * dollProgress;
+
+                this.bipedLeftArm.rotateAngleX = this.bipedLeftArm.rotateAngleX + (targetX - this.bipedLeftArm.rotateAngleX) * dollProgress;
+                this.bipedLeftArm.rotateAngleY = this.bipedLeftArm.rotateAngleY + (targetYLeft - this.bipedLeftArm.rotateAngleY) * dollProgress;
+                this.bipedLeftArm.rotateAngleZ = this.bipedLeftArm.rotateAngleZ + (targetZLeft - this.bipedLeftArm.rotateAngleZ) * dollProgress;
+            }
         }
         if ((Object) this instanceof ModelPlayer) {
             ModelPlayer mp = (ModelPlayer) (Object) this;

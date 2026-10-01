@@ -55,6 +55,14 @@ public final class WeaponSlotRestrictions {
     }
 
     /**
+     * Checks if the given ItemStack is Saya's plush doll.
+     */
+    public static boolean isDoll(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        return stack.getItem() instanceof efw.item.ItemDoll;
+    }
+
+    /**
      * Checks if placing the stack into a slot with the given inventory slotIndex is forbidden.
      * @param stack The item stack to check
      * @param slotIndex The index in InventoryPlayer:
