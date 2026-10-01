@@ -21,7 +21,10 @@ public class TileEntityCeilingFanRenderer extends TileEntitySpecialRenderer<Tile
     public void render(TileEntityCeilingFan te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
         if (te == null || !te.hasWorld()) return;
 
-        float angle = te.prevFanAngle + (te.fanAngle - te.prevFanAngle) * partialTicks;
+        float delta = te.fanAngle - te.prevFanAngle;
+        while (delta < -180.0F) delta += 360.0F;
+        while (delta >= 180.0F) delta -= 360.0F;
+        float angle = te.prevFanAngle + delta * partialTicks;
 
         boolean isDark = te.getBlockType().getTranslationKey().contains("dark");
         this.bindTexture(isDark ? TEXTURE_DARK : TEXTURE_LIGHT);

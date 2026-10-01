@@ -1,0 +1,7 @@
+﻿{
+    "parent":  "refurbished_furniture:block/table_east_south_west",
+    "textures":  {
+                     "texture":  "refurbished_furniture:blocks/birch_table",
+                     "particle":  "refurbished_furniture:blocks/birch_table"
+                 }
+}

@@ -63,9 +63,8 @@ public class BlockTrampoline extends Block {
         if (entityIn.isSneaking()) {
             super.onLanded(worldIn, entityIn);
         } else if (entityIn.motionY < 0.0D) {
-            double bounce = -entityIn.motionY * 1.35D;
-            if (bounce > 2.0D) bounce = 2.0D;
-            if (bounce < 0.6D) bounce = 0.6D;
+            double bounce = Math.min(-entityIn.motionY * 1.1D, 0.85D);
+            if (bounce < 0.5D) bounce = 0.5D;
             entityIn.motionY = bounce;
             if (entityIn instanceof EntityLivingBase) {
                 entityIn.onGround = false;

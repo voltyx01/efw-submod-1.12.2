@@ -221,7 +221,7 @@ public class HeadlampRenderer {
         
         GlStateManager.pushMatrix();
         
-        if (player.isSneaking()) {
+        if (player.isSneaking() && !efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F); // ModelBiped does this
         }
         

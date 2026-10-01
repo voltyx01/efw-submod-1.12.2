@@ -1,5 +1,9 @@
-{
+﻿{
 	"credit": "Model by MrCrayfish (https://twitter.com/MrCrayfish) using Blockbench. All Rights Reserved.",
+	"textures": {
+		"texture": "refurbished_furniture:blocks/stone_stepping_stones",
+		"particle": "refurbished_furniture:blocks/stone_stepping_stones"
+	},
 		"elements": [
 		{
 			"from": [1.5, 0, 0.5],

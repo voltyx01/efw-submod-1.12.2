@@ -1,10 +1,58 @@
-{
-  "variants": {
-    "normal": { "model": "refurbished_furniture:oak_table" },
-    "facing=north": { "model": "refurbished_furniture:oak_table" },
-    "facing=south": { "model": "refurbished_furniture:oak_table", "y": 180 },
-    "facing=west": { "model": "refurbished_furniture:oak_table", "y": 270 },
-    "facing=east": { "model": "refurbished_furniture:oak_table", "y": 90 },
-    "inventory": { "model": "refurbished_furniture:oak_table" }
-  }
+﻿{
+    "variants":  {
+                     "east=false,north=false,south=false,west=false":  {
+                                                                           "model":  "refurbished_furniture:oak_table"
+                                                                       },
+                     "east=false,north=true,south=false,west=false":  {
+                                                                          "model":  "refurbished_furniture:oak_table_north"
+                                                                      },
+                     "east=true,north=false,south=false,west=false":  {
+                                                                          "model":  "refurbished_furniture:oak_table_east"
+                                                                      },
+                     "east=false,north=false,south=true,west=false":  {
+                                                                          "model":  "refurbished_furniture:oak_table_south"
+                                                                      },
+                     "east=false,north=false,south=false,west=true":  {
+                                                                          "model":  "refurbished_furniture:oak_table_west"
+                                                                      },
+                     "east=true,north=true,south=false,west=false":  {
+                                                                         "model":  "refurbished_furniture:oak_table_north_east"
+                                                                     },
+                     "east=false,north=true,south=true,west=false":  {
+                                                                         "model":  "refurbished_furniture:oak_table_north_south"
+                                                                     },
+                     "east=false,north=true,south=false,west=true":  {
+                                                                         "model":  "refurbished_furniture:oak_table_west_north"
+                                                                     },
+                     "east=true,north=false,south=true,west=false":  {
+                                                                         "model":  "refurbished_furniture:oak_table_east_south"
+                                                                     },
+                     "east=true,north=false,south=false,west=true":  {
+                                                                         "model":  "refurbished_furniture:oak_table_east_west"
+                                                                     },
+                     "east=false,north=false,south=true,west=true":  {
+                                                                         "model":  "refurbished_furniture:oak_table_south_west"
+                                                                     },
+                     "east=true,north=true,south=true,west=false":  {
+                                                                        "model":  "refurbished_furniture:oak_table_north_east_south"
+                                                                    },
+                     "east=true,north=false,south=true,west=true":  {
+                                                                        "model":  "refurbished_furniture:oak_table_east_south_west"
+                                                                    },
+                     "east=false,north=true,south=true,west=true":  {
+                                                                        "model":  "refurbished_furniture:oak_table_south_west_north"
+                                                                    },
+                     "east=true,north=true,south=false,west=true":  {
+                                                                        "model":  "refurbished_furniture:oak_table_west_north_east"
+                                                                    },
+                     "east=true,north=true,south=true,west=true":  {
+                                                                       "model":  "refurbished_furniture:oak_table_north_east_south_west"
+                                                                   },
+                     "inventory":  {
+                                       "model":  "refurbished_furniture:oak_table"
+                                   },
+                     "normal":  {
+                                    "model":  "refurbished_furniture:oak_table"
+                                }
+                 }
 }

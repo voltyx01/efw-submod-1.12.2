@@ -141,29 +141,44 @@ public class BetterCombatClient {
             return false;
         }
 
-        if (MwccfConfig.betterCombat.isAttackInsteadOfMineWhenEnemiesCloseEnabled) {
-            ItemStack stack = player.getHeldItemMainhand();
-            WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
-            if (attributes != null) {
-                List<Entity> targets = TargetFinder.getInitialTargets(player, null, attributes.attackRange());
-                if (!targets.isEmpty()) {
+        RayTraceResult hit = mc.objectMouseOver;
+        if (hit == null || hit.typeOfHit != RayTraceResult.Type.BLOCK) {
+            return false;
+        }
+
+        BlockPos pos = hit.getBlockPos();
+        IBlockState state = mc.world.getBlockState(pos);
+        if (state.getBlock().isAir(state, mc.world, pos)) {
+            return false;
+        }
+
+        ItemStack stack = player.getHeldItemMainhand();
+        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
+        if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
+            WeaponAttributes.Attack attack = attributes.attacks()[getComboCount() % attributes.attacks().length];
+            List<Entity> visibleTargets = TargetFinder.findAttackTargets(player, mc.pointedEntity, attack, attributes.attackRange());
+
+            // If swing-thru-grass is enabled and we are hitting grass/replaceable/0-hardness block:
+            // ONLY skip mining if there is actually an enemy to hit behind it!
+            if (MwccfConfig.betterCombat.isSwingThruGrassEnabled) {
+                if (state.getMaterial().isReplaceable() || state.getBlockHardness(mc.world, pos) == 0.0f) {
+                    if (!visibleTargets.isEmpty()) {
+                        return false; // swing through grass to hit the enemy
+                    }
+                    return true; // no enemy, break the grass/flower/torch
+                }
+            }
+
+            // If attack-instead-of-mine is enabled:
+            // ONLY prioritize attack if there is a visible target in front of the player within attack range!
+            if (MwccfConfig.betterCombat.isAttackInsteadOfMineWhenEnemiesCloseEnabled) {
+                if (!visibleTargets.isEmpty()) {
                     return false;
                 }
             }
         }
 
-        RayTraceResult hit = mc.objectMouseOver;
-        if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
-            BlockPos pos = hit.getBlockPos();
-            IBlockState state = mc.world.getBlockState(pos);
-            if (MwccfConfig.betterCombat.isSwingThruGrassEnabled) {
-                if (state.getMaterial().isReplaceable() || state.getBlockHardness(mc.world, pos) == 0.0f) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
+        return true;
     }
 
     public static void startUpswing(WeaponAttributes attributes) {

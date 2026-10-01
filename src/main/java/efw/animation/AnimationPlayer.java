@@ -229,6 +229,11 @@ public class AnimationPlayer {
             this.actionLayer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(blend, Ease::inOutSine), playerAnim, true);
         }
         this.lastAttackPlayer = playerAnim;
+
+        if (isCurrentAttack) {
+            this.currentSneakOffsetWeight = 0.0f;
+            this.prevSneakOffsetWeight = 0.0f;
+        }
     }
 
     /**
@@ -493,11 +498,17 @@ public class AnimationPlayer {
 
         // Smooth sneak offset weight (for smooth Y transition when entering/exiting sneak)
         this.prevSneakOffsetWeight = this.currentSneakOffsetWeight;
-        boolean isSneakingNow = this.player != null && this.player.isSneaking();
+        boolean isBCAttack = hasActionWeight() && isActionAttack();
+        boolean isSneakingNow = this.player != null && this.player.isSneaking() && !isBCAttack;
         float targetSneak = isSneakingNow ? 1.0f : 0.0f;
-        this.currentSneakOffsetWeight += (targetSneak - this.currentSneakOffsetWeight) * 0.25f;
-        if (Math.abs(targetSneak - this.currentSneakOffsetWeight) < 0.01f) {
-            this.currentSneakOffsetWeight = targetSneak;
+        if (isBCAttack) {
+            this.currentSneakOffsetWeight = 0.0f;
+            this.prevSneakOffsetWeight = 0.0f;
+        } else {
+            this.currentSneakOffsetWeight += (targetSneak - this.currentSneakOffsetWeight) * 0.25f;
+            if (Math.abs(targetSneak - this.currentSneakOffsetWeight) < 0.01f) {
+                this.currentSneakOffsetWeight = targetSneak;
+            }
         }
 
         // Smooth weapon hold weight (for smooth arm/head Y transition between weapon and unarmed)
@@ -594,12 +605,13 @@ public class AnimationPlayer {
         if (efw.animation.firstperson.FirstPersonMode.isFirstPersonPass()) {
             return java.util.Optional.empty();
         } else {
+            boolean isSneak = this.player != null && this.player.isSneaking() && !efw.AnimationTickHandler.isBetterCombatAttackActive(this.player);
             if ("body".equals(partName) || "torso".equals(partName)) {
-                rotationX -= pitch * 0.75F;
+                if (!isSneak) {
+                    rotationX -= pitch * 0.75F;
+                }
             } else if ("rightArm".equals(partName) || "leftArm".equals(partName)) {
-                rotationX += pitch * 0.25F;
-            } else if ("rightLeg".equals(partName) || "leftLeg".equals(partName)) {
-                rotationX -= pitch * 0.75F;
+                rotationX += pitch * (isSneak ? 0.85F : 0.25F);
             } else {
                 return java.util.Optional.empty();
             }

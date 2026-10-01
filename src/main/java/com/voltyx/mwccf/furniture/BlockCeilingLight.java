@@ -5,8 +5,10 @@ import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.util.BlockRenderLayer;
@@ -22,8 +24,15 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BlockCeilingLight extends Block {
 
+    public static final PropertyDirection FACING = PropertyDirection.create("facing");
     public static final PropertyBool LIT = PropertyBool.create("lit");
-    protected static final AxisAlignedBB AABB = new AxisAlignedBB(0.2D, 0.75D, 0.2D, 0.8D, 1.0D, 0.8D);
+
+    protected static final AxisAlignedBB AABB_CEILING = new AxisAlignedBB(0.3125D, 0.4375D, 0.3125D, 0.6875D, 1.0D, 0.6875D);
+    protected static final AxisAlignedBB AABB_FLOOR   = new AxisAlignedBB(0.3125D, 0.0D, 0.3125D, 0.6875D, 0.5625D, 0.6875D);
+    protected static final AxisAlignedBB AABB_NORTH   = new AxisAlignedBB(0.3125D, 0.3125D, 0.0D, 0.6875D, 0.6875D, 0.5625D);
+    protected static final AxisAlignedBB AABB_SOUTH   = new AxisAlignedBB(0.3125D, 0.3125D, 0.4375D, 0.6875D, 0.6875D, 1.0D);
+    protected static final AxisAlignedBB AABB_WEST    = new AxisAlignedBB(0.0D, 0.3125D, 0.3125D, 0.5625D, 0.6875D, 0.6875D);
+    protected static final AxisAlignedBB AABB_EAST    = new AxisAlignedBB(0.4375D, 0.3125D, 0.3125D, 1.0D, 0.6875D, 0.6875D);
 
     public BlockCeilingLight(String name) {
         super(Material.GLASS);
@@ -31,7 +40,9 @@ public class BlockCeilingLight extends Block {
         this.setRegistryName("refurbished_furniture", name);
         this.setHardness(0.5F);
         this.setSoundType(SoundType.GLASS);
-        this.setDefaultState(this.blockState.getBaseState().withProperty(LIT, true));
+        this.setDefaultState(this.blockState.getBaseState()
+                .withProperty(FACING, EnumFacing.DOWN)
+                .withProperty(LIT, true));
         this.setCreativeTab(FurnitureCreativeTab.INSTANCE);
     }
 
@@ -42,7 +53,23 @@ public class BlockCeilingLight extends Block {
 
     @Override
     public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-        return AABB;
+        EnumFacing facing = state.getValue(FACING);
+        switch (facing) {
+            case DOWN:
+                return AABB_CEILING;
+            case UP:
+                return AABB_FLOOR;
+            case NORTH:
+                return AABB_NORTH;
+            case SOUTH:
+                return AABB_SOUTH;
+            case WEST:
+                return AABB_WEST;
+            case EAST:
+                return AABB_EAST;
+            default:
+                return AABB_CEILING;
+        }
     }
 
     @Override
@@ -62,18 +89,31 @@ public class BlockCeilingLight extends Block {
     }
 
     @Override
+    public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
+        EnumFacing attach = (facing == EnumFacing.DOWN || facing == EnumFacing.UP) ? facing : facing.getOpposite();
+        return this.getDefaultState().withProperty(FACING, attach).withProperty(LIT, true);
+    }
+
+    @Override
     protected BlockStateContainer createBlockState() {
-        return new BlockStateContainer(this, new IProperty[] { LIT });
+        return new BlockStateContainer(this, new IProperty[] { FACING, LIT });
     }
 
     @Override
     public IBlockState getStateFromMeta(int meta) {
-        return this.getDefaultState().withProperty(LIT, (meta & 1) != 0);
+        EnumFacing facing = EnumFacing.byIndex(meta & 7);
+        if (facing.getIndex() > 5) facing = EnumFacing.DOWN;
+        boolean lit = (meta & 8) != 0;
+        return this.getDefaultState().withProperty(FACING, facing).withProperty(LIT, lit);
     }
 
     @Override
     public int getMetaFromState(IBlockState state) {
-        return state.getValue(LIT) ? 1 : 0;
+        int meta = state.getValue(FACING).getIndex();
+        if (state.getValue(LIT)) {
+            meta |= 8;
+        }
+        return meta;
     }
 
     @Override

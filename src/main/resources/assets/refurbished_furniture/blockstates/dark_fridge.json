@@ -1,10 +1,70 @@
 ﻿{
-  "variants": {
-    "normal": { "model": "refurbished_furniture:dark_fridge" },
-    "facing=north": { "model": "refurbished_furniture:dark_fridge" },
-    "facing=south": { "model": "refurbished_furniture:dark_fridge", "y": 180 },
-    "facing=west": { "model": "refurbished_furniture:dark_fridge", "y": 270 },
-    "facing=east": { "model": "refurbished_furniture:dark_fridge", "y": 90 },
-    "inventory": { "model": "refurbished_furniture:dark_fridge" }
-  }
+    "variants":  {
+                     "facing=north,open=false,part=lower":  {
+                                                                "model":  "refurbished_furniture:dark_fridge"
+                                                            },
+                     "facing=north,open=false,part=upper":  {
+                                                                "model":  "refurbished_furniture:dark_freezer"
+                                                            },
+                     "facing=north,open=true,part=lower":  {
+                                                               "model":  "refurbished_furniture:dark_fridge_open"
+                                                           },
+                     "facing=north,open=true,part=upper":  {
+                                                               "model":  "refurbished_furniture:dark_freezer_open"
+                                                           },
+                     "facing=south,open=false,part=lower":  {
+                                                                "model":  "refurbished_furniture:dark_fridge",
+                                                                "y":  180
+                                                            },
+                     "facing=south,open=false,part=upper":  {
+                                                                "model":  "refurbished_furniture:dark_freezer",
+                                                                "y":  180
+                                                            },
+                     "facing=south,open=true,part=lower":  {
+                                                               "model":  "refurbished_furniture:dark_fridge_open",
+                                                               "y":  180
+                                                           },
+                     "facing=south,open=true,part=upper":  {
+                                                               "model":  "refurbished_furniture:dark_freezer_open",
+                                                               "y":  180
+                                                           },
+                     "facing=west,open=false,part=lower":  {
+                                                               "model":  "refurbished_furniture:dark_fridge",
+                                                               "y":  270
+                                                           },
+                     "facing=west,open=false,part=upper":  {
+                                                               "model":  "refurbished_furniture:dark_freezer",
+                                                               "y":  270
+                                                           },
+                     "facing=west,open=true,part=lower":  {
+                                                              "model":  "refurbished_furniture:dark_fridge_open",
+                                                              "y":  270
+                                                          },
+                     "facing=west,open=true,part=upper":  {
+                                                              "model":  "refurbished_furniture:dark_freezer_open",
+                                                              "y":  270
+                                                          },
+                     "facing=east,open=false,part=lower":  {
+                                                               "model":  "refurbished_furniture:dark_fridge",
+                                                               "y":  90
+                                                           },
+                     "facing=east,open=false,part=upper":  {
+                                                               "model":  "refurbished_furniture:dark_freezer",
+                                                               "y":  90
+                                                           },
+                     "facing=east,open=true,part=lower":  {
+                                                              "model":  "refurbished_furniture:dark_fridge_open",
+                                                              "y":  90
+                                                          },
+                     "facing=east,open=true,part=upper":  {
+                                                              "model":  "refurbished_furniture:dark_freezer_open",
+                                                              "y":  90
+                                                          },
+                     "inventory":  {
+                                       "model":  "refurbished_furniture:dark_fridge"
+                                   },
+                     "normal":  {
+                                    "model":  "refurbished_furniture:dark_fridge"
+                                }
+                 }
 }

@@ -1,5 +1,9 @@
-{
+﻿{
 	"credit": "Model by MrCrayfish (https://twitter.com/MrCrayfish) using Blockbench. All Rights Reserved.",
+	"textures": {
+		"texture": "refurbished_furniture:blocks/light_range_hood",
+		"particle": "refurbished_furniture:blocks/light_range_hood"
+	},
 	"loader": "framework:open_model",
 	"components": [
 		{

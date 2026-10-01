@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.util.ResourceLocation;
 
@@ -654,6 +655,9 @@ public class GeoArmorModel extends ModelBiped {
             this.bipedRightLeg.rotationPointX = this.syncedModel.bipedRightLeg.rotationPointX;
             this.bipedRightLeg.rotationPointY = this.syncedModel.bipedRightLeg.rotationPointY;
             this.bipedRightLeg.rotationPointZ = this.syncedModel.bipedRightLeg.rotationPointZ;
+            this.bipedRightLeg.offsetX = this.syncedModel.bipedRightLeg.offsetX;
+            this.bipedRightLeg.offsetY = this.syncedModel.bipedRightLeg.offsetY;
+            this.bipedRightLeg.offsetZ = this.syncedModel.bipedRightLeg.offsetZ;
 
             this.bipedLeftLeg.rotateAngleX = this.syncedModel.bipedLeftLeg.rotateAngleX;
             this.bipedLeftLeg.rotateAngleY = this.syncedModel.bipedLeftLeg.rotateAngleY;
@@ -661,6 +665,13 @@ public class GeoArmorModel extends ModelBiped {
             this.bipedLeftLeg.rotationPointX = this.syncedModel.bipedLeftLeg.rotationPointX;
             this.bipedLeftLeg.rotationPointY = this.syncedModel.bipedLeftLeg.rotationPointY;
             this.bipedLeftLeg.rotationPointZ = this.syncedModel.bipedLeftLeg.rotationPointZ;
+            this.bipedLeftLeg.offsetX = this.syncedModel.bipedLeftLeg.offsetX;
+            this.bipedLeftLeg.offsetY = this.syncedModel.bipedLeftLeg.offsetY;
+            this.bipedLeftLeg.offsetZ = this.syncedModel.bipedLeftLeg.offsetZ;
+
+            this.bipedBody.offsetX = this.syncedModel.bipedBody.offsetX;
+            this.bipedBody.offsetY = this.syncedModel.bipedBody.offsetY;
+            this.bipedBody.offsetZ = this.syncedModel.bipedBody.offsetZ;
         }
 
         GlStateManager.pushMatrix();
@@ -682,7 +693,8 @@ public class GeoArmorModel extends ModelBiped {
             this.bipedLeftLeg.render(scale);
             this.bipedHeadwear.render(scale);
         } else {
-            if (entityIn != null && (entityIn.isSneaking() || (entityIn == Minecraft.getMinecraft().player && Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown()))) {
+            boolean isBC = (entityIn instanceof EntityPlayer) && efw.AnimationTickHandler.isBetterCombatAttackActive((EntityPlayer) entityIn);
+            if (!isBC && entityIn != null && (entityIn.isSneaking() || (entityIn == Minecraft.getMinecraft().player && Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown()))) {
                 GlStateManager.translate(0.0F, 0.2F, 0.0F);
             }
 
@@ -705,7 +717,8 @@ public class GeoArmorModel extends ModelBiped {
                 GlStateManager.scale(0.5F, 0.5F, 0.5F);
                 GlStateManager.translate(0.0F, 24.0F * scale, 0.0F);
             } else {
-                if (entityIn != null && (entityIn.isSneaking() || (entityIn == Minecraft.getMinecraft().player && Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown()))) {
+                boolean isBC = (entityIn instanceof EntityPlayer) && efw.AnimationTickHandler.isBetterCombatAttackActive((EntityPlayer) entityIn);
+                if (!isBC && entityIn != null && (entityIn.isSneaking() || (entityIn == Minecraft.getMinecraft().player && Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown()))) {
                     GlStateManager.translate(0.0F, 0.2F, 0.0F);
                 }
             }

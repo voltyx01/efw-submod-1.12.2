@@ -68,10 +68,10 @@ public class FurnitureBlocks {
             registerBlock(new BlockKitchenCabinetry(type + "_kitchen_drawer"));
         }
 
-        // Tables
+        // Tables & Desks
         for (String type : woodTypes) {
             registerBlock(new BlockTable(type + "_table"));
-            registerBlock(new BlockTable(type + "_desk"));
+            registerBlock(new BlockDesk(type + "_desk"));
         }
 
         // Electronics & Entertainment

@@ -34,12 +34,16 @@ public class TileEntityCeilingFan extends TileEntity implements ITickable {
         this.prevFanAngle = this.fanAngle;
         if (this.powered) {
             this.fanSpeed = Math.min(this.fanSpeed + 0.8F, 18.0F);
-            this.fanAngle = (this.fanAngle + this.fanSpeed) % 360.0F;
+            this.fanAngle += this.fanSpeed;
         } else {
             this.fanSpeed = Math.max(this.fanSpeed - 0.3F, 0.0F);
             if (this.fanSpeed > 0.0F) {
-                this.fanAngle = (this.fanAngle + this.fanSpeed) % 360.0F;
+                this.fanAngle += this.fanSpeed;
             }
+        }
+        if (this.fanAngle >= 360000.0F) {
+            this.fanAngle -= 360000.0F;
+            this.prevFanAngle -= 360000.0F;
         }
     }
 

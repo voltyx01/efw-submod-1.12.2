@@ -203,7 +203,10 @@ public class GenderLayer implements LayerRenderer<AbstractClientPlayer> {
         // Временно добавь в начало renderBreastWithTransforms:
 
         try {
-            // Точно как в 1.18.2 — берём позицию и углы body вручную
+            boolean isBCAttack = efw.AnimationTickHandler.isBetterCombatAttackActive(entity);
+            if (entity.isSneaking() && !isBCAttack) {
+                GlStateManager.translate(0.0F, 0.2F, 0.0F);
+            }
 
             GlStateManager.translate(body.rotationPointX * scale, body.rotationPointY * scale,
                     body.rotationPointZ * scale);
@@ -214,11 +217,7 @@ public class GenderLayer implements LayerRenderer<AbstractClientPlayer> {
             if (body.rotateAngleX != 0)
                 GlStateManager.rotate((float) Math.toDegrees(body.rotateAngleX), 1, 0, 0);
 
-            // Добавь это — компенсация сдвига тела при приседании
-            if (entity.isSneaking()) {
-                GlStateManager.translate(0, 0.2f, 0);
-                GlStateManager.translate(0, 0, -0.1);
-            }
+
 
             if (bounceEnabled) {
                 GlStateManager.translate(totalX / 32f, total / 32f, 0);

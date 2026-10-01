@@ -39,6 +39,7 @@ public class BodycamFeedRenderer {
     private static BodycamCameraEntity dummyCamera = null;
 
     private static java.lang.reflect.Method setupCameraTransformMethod = null;
+    private static java.lang.reflect.Field lightmapUpdateNeededField = null;
     static {
         try {
             setupCameraTransformMethod = net.minecraft.client.renderer.EntityRenderer.class.getDeclaredMethod("func_78479_a", float.class, int.class);
@@ -47,6 +48,15 @@ public class BodycamFeedRenderer {
             try {
                 setupCameraTransformMethod = net.minecraft.client.renderer.EntityRenderer.class.getDeclaredMethod("setupCameraTransform", float.class, int.class);
                 setupCameraTransformMethod.setAccessible(true);
+            } catch (Throwable ignored) {}
+        }
+        try {
+            lightmapUpdateNeededField = net.minecraft.client.renderer.EntityRenderer.class.getDeclaredField("field_78536_aa");
+            lightmapUpdateNeededField.setAccessible(true);
+        } catch (Throwable e1) {
+            try {
+                lightmapUpdateNeededField = net.minecraft.client.renderer.EntityRenderer.class.getDeclaredField("lightmapUpdateNeeded");
+                lightmapUpdateNeededField.setAccessible(true);
             } catch (Throwable ignored) {}
         }
     }
@@ -101,7 +111,7 @@ public class BodycamFeedRenderer {
         // (BodycamCameraEntity extends only EntityLivingBase), which leaves the
         // fog black. mc.player is in the same biome as the carrier so its colour
         // is identical to what the bodycam should show.
-        Entity lookupEntity = (mc.player != null) ? mc.player : rve;
+        Entity lookupEntity = (currentCarrier != null) ? currentCarrier : rve;
         Vec3d skyColor = mc.world.getSkyColor(lookupEntity, (float) event.getRenderPartialTicks());
         event.setRed((float) skyColor.x);
         event.setGreen((float) skyColor.y);
@@ -413,10 +423,16 @@ public class BodycamFeedRenderer {
 
 
 
-            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager.loadIdentity();
             GlStateManager.matrixMode(GL11.GL_PROJECTION);
             GlStateManager.loadIdentity();
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.loadIdentity();
+            GlStateManager.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
+            if (mc.entityRenderer != null && lightmapUpdateNeededField != null) {
+                try {
+                    lightmapUpdateNeededField.setBoolean(mc.entityRenderer, true);
+                } catch (Throwable ignored) {}
+            }
             GlStateManager.enableDepth();
             GlStateManager.depthMask(true);
             GlStateManager.depthFunc(GL11.GL_LEQUAL);

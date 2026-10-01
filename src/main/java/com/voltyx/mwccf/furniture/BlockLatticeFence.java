@@ -40,4 +40,10 @@ public class BlockLatticeFence extends BlockFence {
     public boolean canBeConnectedTo(IBlockAccess world, BlockPos pos, EnumFacing facing) {
         return true;
     }
+
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public net.minecraft.util.BlockRenderLayer getRenderLayer() {
+        return net.minecraft.util.BlockRenderLayer.CUTOUT_MIPPED;
+    }
 }

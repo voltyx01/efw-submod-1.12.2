@@ -19,4 +19,13 @@ public final class RenderContext {
      * a clean idle standing animation, ignoring active in-game player state.
      */
     public static boolean isRenderingPlayerInSevenScreen = false;
+
+    /**
+     * When set, any isSneaking() check on this entity returns false.
+     * Used during RenderPlayer.doRender to ensure the entire player model,
+     * including ModelPlayer wear layers, Baubles, and armor layers,
+     * renders at standing height during Better Combat attack animations.
+     */
+    public static net.minecraft.entity.Entity suppressedSneakEntity = null;
 }
+

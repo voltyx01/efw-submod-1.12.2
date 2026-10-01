@@ -20,6 +20,10 @@ public abstract class MixinMinecraftAttack {
 
     @Inject(method = "processKeyBinds", at = @At("HEAD"))
     private void onProcessKeyBinds(CallbackInfo ci) {
+        Minecraft mc = (Minecraft) (Object) this;
+        if (mc.player != null && (BetterCombatClient.isHarvesting || BetterCombatClient.isTargetingMineableBlock(mc, mc.player))) {
+            return;
+        }
         if (BetterCombatClient.isUpswingActive() || BetterCombatClient.attackCooldown > 0) {
             this.leftClickCounter = Math.max(this.leftClickCounter, BetterCombatClient.attackCooldown);
         }
@@ -36,6 +40,8 @@ public abstract class MixinMinecraftAttack {
 
         if (BetterCombatClient.isTargetingMineableBlock(mc, mc.player)) {
             BetterCombatClient.isHarvesting = true;
+            this.leftClickCounter = 0;
+            BetterCombatClient.cancelCurrentSwing(mc.player);
             return;
         }
         BetterCombatClient.isHarvesting = false;
@@ -79,6 +85,7 @@ public abstract class MixinMinecraftAttack {
             if (WeaponRegistry.getAttributes(stack) != null) {
                 if (BetterCombatClient.isHarvesting || BetterCombatClient.isTargetingMineableBlock(mc, mc.player)) {
                     BetterCombatClient.isHarvesting = true;
+                    this.leftClickCounter = 0;
                     return;
                 }
                 if (BetterCombatClient.isUpswingActive() || BetterCombatClient.attackCooldown > 0) {

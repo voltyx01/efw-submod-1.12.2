@@ -157,10 +157,13 @@ public abstract class MixinRenderGlobal {
     )
     private Vec3d efw$bodycamSkyColor(WorldClient world, Entity entity, float partialTicks) {
         if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
-            Minecraft mc = Minecraft.getMinecraft();
-            EntityPlayerSP player = mc.player;
-            if (player != null) {
-                return world.getSkyColor(player, partialTicks);
+            Entity carrier = com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier();
+            if (carrier != null) {
+                return world.getSkyColor(carrier, partialTicks);
+            }
+            net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
+            if (rve != null) {
+                return world.getSkyColor(rve, partialTicks);
             }
         }
         return world.getSkyColor(entity, partialTicks);
@@ -168,14 +171,13 @@ public abstract class MixinRenderGlobal {
 
     /**
      * Prevents vanilla RenderGlobal from drawing the underground black void box over the horizon
-     * by clamping the horizon to at most the camera eye height.
-     * This keeps d3 >= 0.0D so:
+     * during bodycam rendering by setting horizon 64 blocks below camera eye height.
+     * This keeps d3 >= 64.0D > 0 so:
      * 1. The black void box is never drawn.
-     * 2. The horizon dome/plane glSkyList2 sits naturally at the horizon without flying up
-     *    over the player's head or being banished into the abyss.
+     * 2. The dark bottom dome glSkyList2 is pushed 48 blocks below the camera, never obscuring horizon.
+     * 3. Unaffected in the main game pass!
      */
     @Redirect(
-
         method = "renderSky(FI)V",
         at = @At(
             value = "INVOKE",
@@ -183,10 +185,12 @@ public abstract class MixinRenderGlobal {
         )
     )
     private double efw$adjustHorizon(WorldClient world) {
-        net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
-        if (rve != null) {
-            double eyeY = rve.posY + (double) rve.getEyeHeight();
-            return Math.min(world.getHorizon(), eyeY);
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+            net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
+            if (rve != null) {
+                double eyeY = rve.posY + (double) rve.getEyeHeight();
+                return eyeY - 64.0D;
+            }
         }
         return world.getHorizon();
     }

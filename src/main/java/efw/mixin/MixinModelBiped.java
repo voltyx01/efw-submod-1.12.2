@@ -59,6 +59,8 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
     public ModelRenderer bipedLeftLeg;
 
     @Shadow
+    public boolean isSneak;
+    @Shadow
     protected abstract EnumHandSide getMainHand(Entity entityIn);
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -210,6 +212,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 mpThis.bipedRightArmwear.rotationPointX = mpMain.bipedRightArmwear.rotationPointX;
                 mpThis.bipedRightArmwear.rotationPointY = mpMain.bipedRightArmwear.rotationPointY;
                 mpThis.bipedRightArmwear.rotationPointZ = mpMain.bipedRightArmwear.rotationPointZ;
+                mpThis.bipedRightArmwear.offsetX = mpMain.bipedRightArmwear.offsetX;
+                mpThis.bipedRightArmwear.offsetY = mpMain.bipedRightArmwear.offsetY;
+                mpThis.bipedRightArmwear.offsetZ = mpMain.bipedRightArmwear.offsetZ;
 
                 mpThis.bipedLeftArmwear.rotateAngleX = mpMain.bipedLeftArmwear.rotateAngleX;
                 mpThis.bipedLeftArmwear.rotateAngleY = mpMain.bipedLeftArmwear.rotateAngleY;
@@ -217,6 +222,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 mpThis.bipedLeftArmwear.rotationPointX = mpMain.bipedLeftArmwear.rotationPointX;
                 mpThis.bipedLeftArmwear.rotationPointY = mpMain.bipedLeftArmwear.rotationPointY;
                 mpThis.bipedLeftArmwear.rotationPointZ = mpMain.bipedLeftArmwear.rotationPointZ;
+                mpThis.bipedLeftArmwear.offsetX = mpMain.bipedLeftArmwear.offsetX;
+                mpThis.bipedLeftArmwear.offsetY = mpMain.bipedLeftArmwear.offsetY;
+                mpThis.bipedLeftArmwear.offsetZ = mpMain.bipedLeftArmwear.offsetZ;
 
                 mpThis.bipedRightLegwear.rotateAngleX = mpMain.bipedRightLegwear.rotateAngleX;
                 mpThis.bipedRightLegwear.rotateAngleY = mpMain.bipedRightLegwear.rotateAngleY;
@@ -224,6 +232,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 mpThis.bipedRightLegwear.rotationPointX = mpMain.bipedRightLegwear.rotationPointX;
                 mpThis.bipedRightLegwear.rotationPointY = mpMain.bipedRightLegwear.rotationPointY;
                 mpThis.bipedRightLegwear.rotationPointZ = mpMain.bipedRightLegwear.rotationPointZ;
+                mpThis.bipedRightLegwear.offsetX = mpMain.bipedRightLegwear.offsetX;
+                mpThis.bipedRightLegwear.offsetY = mpMain.bipedRightLegwear.offsetY;
+                mpThis.bipedRightLegwear.offsetZ = mpMain.bipedRightLegwear.offsetZ;
 
                 mpThis.bipedLeftLegwear.rotateAngleX = mpMain.bipedLeftLegwear.rotateAngleX;
                 mpThis.bipedLeftLegwear.rotateAngleY = mpMain.bipedLeftLegwear.rotateAngleY;
@@ -231,6 +242,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 mpThis.bipedLeftLegwear.rotationPointX = mpMain.bipedLeftLegwear.rotationPointX;
                 mpThis.bipedLeftLegwear.rotationPointY = mpMain.bipedLeftLegwear.rotationPointY;
                 mpThis.bipedLeftLegwear.rotationPointZ = mpMain.bipedLeftLegwear.rotationPointZ;
+                mpThis.bipedLeftLegwear.offsetX = mpMain.bipedLeftLegwear.offsetX;
+                mpThis.bipedLeftLegwear.offsetY = mpMain.bipedLeftLegwear.offsetY;
+                mpThis.bipedLeftLegwear.offsetZ = mpMain.bipedLeftLegwear.offsetZ;
 
                 mpThis.bipedBodyWear.rotateAngleX = mpMain.bipedBodyWear.rotateAngleX;
                 mpThis.bipedBodyWear.rotateAngleY = mpMain.bipedBodyWear.rotateAngleY;
@@ -238,6 +252,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 mpThis.bipedBodyWear.rotationPointX = mpMain.bipedBodyWear.rotationPointX;
                 mpThis.bipedBodyWear.rotationPointY = mpMain.bipedBodyWear.rotationPointY;
                 mpThis.bipedBodyWear.rotationPointZ = mpMain.bipedBodyWear.rotationPointZ;
+                mpThis.bipedBodyWear.offsetX = mpMain.bipedBodyWear.offsetX;
+                mpThis.bipedBodyWear.offsetY = mpMain.bipedBodyWear.offsetY;
+                mpThis.bipedBodyWear.offsetZ = mpMain.bipedBodyWear.offsetZ;
             }
             if (this.bipedHeadwear != null && mainBiped.bipedHeadwear != null) {
                 this.bipedHeadwear.rotateAngleX = mainBiped.bipedHeadwear.rotateAngleX;
@@ -246,6 +263,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 this.bipedHeadwear.rotationPointX = mainBiped.bipedHeadwear.rotationPointX;
                 this.bipedHeadwear.rotationPointY = mainBiped.bipedHeadwear.rotationPointY;
                 this.bipedHeadwear.rotationPointZ = mainBiped.bipedHeadwear.rotationPointZ;
+                this.bipedHeadwear.offsetX = mainBiped.bipedHeadwear.offsetX;
+                this.bipedHeadwear.offsetY = mainBiped.bipedHeadwear.offsetY;
+                this.bipedHeadwear.offsetZ = mainBiped.bipedHeadwear.offsetZ;
             }
 
             // Also copy transforms if this model is GeoArmorModel or custom survival instinct ModelBiped
@@ -288,6 +308,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
         // Это предотвращает ЛЮБОЕ накопление (улетание в небо), если какой-то мод
         // переопределил setRotationAngles и не вызвал super (ванильный сброс isSneak).
         boolean isSneak = entityIn.isSneaking() && !efw.util.RenderContext.isRenderingPlayerInSevenScreen;
+        if (player != null && efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
+            isSneak = false;
+        }
 
         efw.animation.AnimationPlayer ap = efw.util.RenderContext.isRenderingPlayerInSevenScreen
                 ? efw.animation.AnimationRegistry.getSevenScreenPlayer()
@@ -297,7 +320,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 && (resetActiveStack.getItemUseAction() == EnumAction.EAT 
                  || resetActiveStack.getItemUseAction() == EnumAction.DRINK);
 
-        if (ap != null && (ap.isPlaying() || ap.getWeight() > 0f) && !isResetConsuming) {
+        if (ap != null && (ap.isPlaying() || ap.getWeight() > 0f || ap.hasActionWeight()) && !isResetConsuming) {
             // Если играет кастомная анимация (которая сама опускает игрока при шифте),
             // мы временно отключаем ванильный сдвиг, чтобы модель не уходила под землю
             // дважды!
@@ -357,6 +380,30 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             modelBiped.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor,
                     entityIn);
         }
+    }
+
+    @Unique
+    private boolean efw$cachedIsSneak;
+
+    @Inject(method = "render", at = @At("HEAD"))
+    public void onRenderHeadSneakFix(Entity entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scale, CallbackInfo ci) {
+        this.efw$cachedIsSneak = this.isSneak;
+        if (entityIn instanceof EntityPlayer && efw.AnimationTickHandler.isBetterCombatAttackActive((EntityPlayer) entityIn)) {
+            this.isSneak = false;
+        }
+    }
+
+    @Inject(method = "render", at = @At("RETURN"))
+    public void onRenderReturnSneakFix(Entity entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scale, CallbackInfo ci) {
+        this.isSneak = this.efw$cachedIsSneak;
+    }
+
+    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;isSneaking()Z"))
+    public boolean redirectIsSneakingInRender(Entity entity) {
+        if (entity instanceof EntityPlayer && efw.AnimationTickHandler.isBetterCombatAttackActive((EntityPlayer) entity)) {
+            return false;
+        }
+        return entity.isSneaking();
     }
 
 
@@ -637,9 +684,12 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             ap.isHoldingWeapon = isHoldingWeapon;
             ap.setPlayer(player);
 
-            float sw = ap.getSneakOffsetWeight(pt);
+            boolean isBCAttack = efw.AnimationTickHandler.isBetterCombatAttackActive(player);
+            float sw = isBCAttack ? 0.0f : ap.getSneakOffsetWeight(pt);
+            boolean visualSneak = (entityIn.isSneaking() || sw > 0.001f) && !isBCAttack;
+
             if (!efw.util.RenderContext.isRenderingPlayerInSevenScreen && !isCrawlingAnim) {
-                if (entityIn.isSneaking() || sw > 0.001f) {
+                if (visualSneak) {
                     float ww = ap.getWeaponSneakWeight(pt);
                     // Base sneak target offsets:
                     // In unarmed sneak (idle_sneak/walking_sneak), the animation itself adds +4.0 to body and arms, and +4.5 to head.
@@ -669,7 +719,6 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
             }
 
             ModelBiped model = (ModelBiped) (Object) this;
-            boolean isBCAttack = ap != null && ap.hasActionWeight() && ap.isActionAttack();
 
             applyBone(this.bipedRightLeg, AnimationApplicator.getOverlayForBone(this.bipedRightLeg, model), ap, "rightLeg", pt);
             applyBone(this.bipedLeftLeg, AnimationApplicator.getOverlayForBone(this.bipedLeftLeg, model), ap, "leftLeg", pt);
@@ -680,17 +729,22 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
 
 
-            // Fix weapon crouch chest overhang:
+            // Fix crouch chest overhang:
             // In weapon hold_upper, torso is translated forward by -1 in Z.
-            // When crouching, pull the torso and head back over the pelvis smoothly with sneak weight and weapon sneak weight.
-            if ((entityIn.isSneaking() || sw > 0.001f) && !isCrawlingAnim) {
+            // In unarmed sneak (idle_sneak/walking_sneak), 30-degree forward torso tilt shifts head and chest forward.
+            // When crouching, pull the torso, head, and arms back over the pelvis smoothly with sneak weight.
+            if (visualSneak && !isCrawlingAnim) {
                 float ww = ap.getWeaponSneakWeight(pt);
-                if (ww > 0.0001f) {
-                    this.bipedBody.rotationPointZ += 1.0F * sw * ww;
-                    this.bipedHead.rotationPointZ += 1.0F * sw * ww;
-                    if (model instanceof ModelPlayer) {
-                        ((ModelPlayer) model).bipedBodyWear.rotationPointZ = this.bipedBody.rotationPointZ;
-                    }
+                float pullBackZ = (1.5F * (1.0f - ww) + 1.0F * ww) * sw;
+                this.bipedBody.rotationPointZ += pullBackZ;
+                this.bipedHead.rotationPointZ += pullBackZ;
+                this.bipedRightArm.rotationPointZ += pullBackZ;
+                this.bipedLeftArm.rotationPointZ += pullBackZ;
+                if (model instanceof ModelPlayer) {
+                    ModelPlayer mp = (ModelPlayer) model;
+                    mp.bipedBodyWear.rotationPointZ = this.bipedBody.rotationPointZ;
+                    mp.bipedRightArmwear.rotationPointZ = this.bipedRightArm.rotationPointZ;
+                    mp.bipedLeftArmwear.rotationPointZ = this.bipedLeftArm.rotationPointZ;
                 }
             }
 
@@ -733,29 +787,72 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 aimWeight = ap.getFadeWeight();
             }
 
-            // Apply Arm Bones
-            boolean disableRightArmAnim = false;
-            boolean disableLeftArmAnim = false;
+            // Capture vanilla arm rotations before applying bones (for generic item use fallback)
+            float vanillaRightRotX = this.bipedRightArm.rotateAngleX;
+            float vanillaRightRotY = this.bipedRightArm.rotateAngleY;
+            float vanillaRightRotZ = this.bipedRightArm.rotateAngleZ;
+            float vanillaLeftRotX = this.bipedLeftArm.rotateAngleX;
+            float vanillaLeftRotY = this.bipedLeftArm.rotateAngleY;
+            float vanillaLeftRotZ = this.bipedLeftArm.rotateAngleZ;
 
-            if (this.swingProgress > 0.0F && !isMWCWeapon && !isBCAttack) {
+            // Apply Arm Bones - always apply bones to ensure shoulder position & crouch alignment
+            applyBone(this.bipedRightArm, AnimationApplicator.getOverlayForBone(this.bipedRightArm, model), ap, "rightArm", pt);
+            applyBone(this.bipedLeftArm, AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model), ap, "leftArm", pt);
+
+            // If player is using a generic item (e.g. eating/using without custom anim), restore vanilla rotation angles
+            if (isGenericItemUse) {
+                this.bipedRightArm.rotateAngleX = vanillaRightRotX;
+                this.bipedRightArm.rotateAngleY = vanillaRightRotY;
+                this.bipedRightArm.rotateAngleZ = vanillaRightRotZ;
+                this.bipedLeftArm.rotateAngleX = vanillaLeftRotX;
+                this.bipedLeftArm.rotateAngleY = vanillaLeftRotY;
+                this.bipedLeftArm.rotateAngleZ = vanillaLeftRotZ;
+                ModelRenderer ro = AnimationApplicator.getOverlayForBone(this.bipedRightArm, model);
+                if (ro != null) {
+                    ro.rotateAngleX = vanillaRightRotX;
+                    ro.rotateAngleY = vanillaRightRotY;
+                    ro.rotateAngleZ = vanillaRightRotZ;
+                }
+                ModelRenderer lo = AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model);
+                if (lo != null) {
+                    lo.rotateAngleX = vanillaLeftRotX;
+                    lo.rotateAngleY = vanillaLeftRotY;
+                    lo.rotateAngleZ = vanillaLeftRotZ;
+                }
+            }
+
+            // If swinging arm without a custom action animation (e.g. punching with bare hands, placing/mining with blocks),
+            // apply smooth vanilla swing rotation to the swinging arm on top of its animated shoulder position.
+            boolean isSwingingArm = this.swingProgress > 0.0F && !isMWCWeapon && !isBCAttack && !ap.hasActionWeight();
+            boolean disableRightArmAnim = isGenericItemUse;
+            boolean disableLeftArmAnim = isGenericItemUse;
+
+            if (isSwingingArm) {
                 EnumHandSide swingingHandSide = (player.swingingHand == net.minecraft.util.EnumHand.OFF_HAND) ? this.getMainHand(entityIn).opposite() : this.getMainHand(entityIn);
+                ModelRenderer swingingArm = (swingingHandSide == net.minecraft.util.EnumHandSide.RIGHT) ? this.bipedRightArm : this.bipedLeftArm;
+                ModelRenderer swingingOverlay = AnimationApplicator.getOverlayForBone(swingingArm, model);
+
                 if (swingingHandSide == net.minecraft.util.EnumHandSide.RIGHT) {
                     disableRightArmAnim = true;
                 } else {
                     disableLeftArmAnim = true;
                 }
-            }
 
-            if (isGenericItemUse) {
-                disableRightArmAnim = true;
-                disableLeftArmAnim = true;
-            }
+                float f1 = 1.0F - this.swingProgress;
+                f1 = f1 * f1;
+                f1 = f1 * f1;
+                f1 = 1.0F - f1;
+                float f2 = MathHelper.sin(f1 * (float) Math.PI);
+                float f3 = MathHelper.sin(this.swingProgress * (float) Math.PI) * -(this.bipedHead.rotateAngleX - 0.7F) * 0.75F;
+                swingingArm.rotateAngleX -= (f2 * 1.2F + f3);
+                swingingArm.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
+                swingingArm.rotateAngleZ += MathHelper.sin(this.swingProgress * (float) Math.PI) * -0.4F;
 
-            if (!disableRightArmAnim) {
-                applyBone(this.bipedRightArm, AnimationApplicator.getOverlayForBone(this.bipedRightArm, model), ap, "rightArm", pt);
-            }
-            if (!disableLeftArmAnim) {
-                applyBone(this.bipedLeftArm, AnimationApplicator.getOverlayForBone(this.bipedLeftArm, model), ap, "leftArm", pt);
+                if (swingingOverlay != null) {
+                    swingingOverlay.rotateAngleX = swingingArm.rotateAngleX;
+                    swingingOverlay.rotateAngleY = swingingArm.rotateAngleY;
+                    swingingOverlay.rotateAngleZ = swingingArm.rotateAngleZ;
+                }
             }
 
 
@@ -854,6 +951,9 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                 this.bipedHeadwear.rotationPointX = this.bipedHead.rotationPointX;
                 this.bipedHeadwear.rotationPointY = this.bipedHead.rotationPointY;
                 this.bipedHeadwear.rotationPointZ = this.bipedHead.rotationPointZ;
+                this.bipedHeadwear.offsetX = this.bipedHead.offsetX;
+                this.bipedHeadwear.offsetY = this.bipedHead.offsetY;
+                this.bipedHeadwear.offsetZ = this.bipedHead.offsetZ;
             }
         }
     }
@@ -863,6 +963,59 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
                                          float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
         if (entityIn instanceof EntityPlayer) {
             com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.lastCarrierTorsoRotateY = this.bipedBody.rotateAngleY;
+        }
+        if ((Object) this instanceof ModelPlayer) {
+            ModelPlayer mp = (ModelPlayer) (Object) this;
+            // Ensure second skin layers (wear) stay perfectly locked to their base limbs
+            mp.bipedRightArmwear.rotateAngleX = this.bipedRightArm.rotateAngleX;
+            mp.bipedRightArmwear.rotateAngleY = this.bipedRightArm.rotateAngleY;
+            mp.bipedRightArmwear.rotateAngleZ = this.bipedRightArm.rotateAngleZ;
+            mp.bipedRightArmwear.rotationPointX = this.bipedRightArm.rotationPointX;
+            mp.bipedRightArmwear.rotationPointY = this.bipedRightArm.rotationPointY;
+            mp.bipedRightArmwear.rotationPointZ = this.bipedRightArm.rotationPointZ;
+            mp.bipedRightArmwear.offsetX = this.bipedRightArm.offsetX;
+            mp.bipedRightArmwear.offsetY = this.bipedRightArm.offsetY;
+            mp.bipedRightArmwear.offsetZ = this.bipedRightArm.offsetZ;
+
+            mp.bipedLeftArmwear.rotateAngleX = this.bipedLeftArm.rotateAngleX;
+            mp.bipedLeftArmwear.rotateAngleY = this.bipedLeftArm.rotateAngleY;
+            mp.bipedLeftArmwear.rotateAngleZ = this.bipedLeftArm.rotateAngleZ;
+            mp.bipedLeftArmwear.rotationPointX = this.bipedLeftArm.rotationPointX;
+            mp.bipedLeftArmwear.rotationPointY = this.bipedLeftArm.rotationPointY;
+            mp.bipedLeftArmwear.rotationPointZ = this.bipedLeftArm.rotationPointZ;
+            mp.bipedLeftArmwear.offsetX = this.bipedLeftArm.offsetX;
+            mp.bipedLeftArmwear.offsetY = this.bipedLeftArm.offsetY;
+            mp.bipedLeftArmwear.offsetZ = this.bipedLeftArm.offsetZ;
+
+            mp.bipedRightLegwear.rotateAngleX = this.bipedRightLeg.rotateAngleX;
+            mp.bipedRightLegwear.rotateAngleY = this.bipedRightLeg.rotateAngleY;
+            mp.bipedRightLegwear.rotateAngleZ = this.bipedRightLeg.rotateAngleZ;
+            mp.bipedRightLegwear.rotationPointX = this.bipedRightLeg.rotationPointX;
+            mp.bipedRightLegwear.rotationPointY = this.bipedRightLeg.rotationPointY;
+            mp.bipedRightLegwear.rotationPointZ = this.bipedRightLeg.rotationPointZ;
+            mp.bipedRightLegwear.offsetX = this.bipedRightLeg.offsetX;
+            mp.bipedRightLegwear.offsetY = this.bipedRightLeg.offsetY;
+            mp.bipedRightLegwear.offsetZ = this.bipedRightLeg.offsetZ;
+
+            mp.bipedLeftLegwear.rotateAngleX = this.bipedLeftLeg.rotateAngleX;
+            mp.bipedLeftLegwear.rotateAngleY = this.bipedLeftLeg.rotateAngleY;
+            mp.bipedLeftLegwear.rotateAngleZ = this.bipedLeftLeg.rotateAngleZ;
+            mp.bipedLeftLegwear.rotationPointX = this.bipedLeftLeg.rotationPointX;
+            mp.bipedLeftLegwear.rotationPointY = this.bipedLeftLeg.rotationPointY;
+            mp.bipedLeftLegwear.rotationPointZ = this.bipedLeftLeg.rotationPointZ;
+            mp.bipedLeftLegwear.offsetX = this.bipedLeftLeg.offsetX;
+            mp.bipedLeftLegwear.offsetY = this.bipedLeftLeg.offsetY;
+            mp.bipedLeftLegwear.offsetZ = this.bipedLeftLeg.offsetZ;
+
+            mp.bipedBodyWear.rotateAngleX = this.bipedBody.rotateAngleX;
+            mp.bipedBodyWear.rotateAngleY = this.bipedBody.rotateAngleY;
+            mp.bipedBodyWear.rotateAngleZ = this.bipedBody.rotateAngleZ;
+            mp.bipedBodyWear.rotationPointX = this.bipedBody.rotationPointX;
+            mp.bipedBodyWear.rotationPointY = this.bipedBody.rotationPointY;
+            mp.bipedBodyWear.rotationPointZ = this.bipedBody.rotationPointZ;
+            mp.bipedBodyWear.offsetX = this.bipedBody.offsetX;
+            mp.bipedBodyWear.offsetY = this.bipedBody.offsetY;
+            mp.bipedBodyWear.offsetZ = this.bipedBody.offsetZ;
         }
     }
 }

@@ -60,6 +60,19 @@ public class AnimationTickHandler {
         return false;
     }
 
+    public static boolean isBetterCombatAttackActive(EntityPlayer player) {
+        if (player == null) return false;
+        AnimationPlayer ap = AnimationRegistry.getPlayer(player);
+        if (ap != null && ap.hasActionWeight() && ap.isActionAttack()) {
+            return true;
+        }
+        if (player == net.minecraft.client.Minecraft.getMinecraft().player
+                && efw.biomeinfo.MwccfConfig.betterCombat != null && efw.biomeinfo.MwccfConfig.betterCombat.enabled) {
+            return net.bettercombat.client.BetterCombatClient.isUpswingActive() || net.bettercombat.client.BetterCombatClient.swingTimer > 0;
+        }
+        return false;
+    }
+
     public static void triggerRoll(EntityPlayer player, net.minecraft.util.math.Vec3d dir) {
         if (player == null) return;
         efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(player);
@@ -683,6 +696,8 @@ public class AnimationTickHandler {
 
         boolean isMoving = (player.moveForward != 0 || player.moveStrafing != 0);
         boolean isSneaking = player.isSneaking();
+        boolean isBCAttackPlaying = isBetterCombatAttackActive(player);
+        boolean visualSneak = isSneaking && !isBCAttackPlaying;
         boolean isCrawlingOrSwimming = false; // Убираем старую переменную, так как теперь у нас свои анимации для этого
         boolean isMovingBackwards = player.moveForward < 0;
         boolean inAir = !player.onGround;
@@ -724,9 +739,23 @@ public class AnimationTickHandler {
         if (isUsingItemOrRightClick) {
             String curAct = ap.getCurrentActionName();
             if (curAct != null && (curAct.startsWith("sword_") || curAct.startsWith("fist_") 
-                    || curAct.equals("pickaxe") || curAct.equals("axe") 
-                    || curAct.equals("shovel") || curAct.equals("hoe"))) {
+                    || curAct.startsWith("pickaxe") || curAct.startsWith("axe") 
+                    || curAct.startsWith("shovel") || curAct.startsWith("hoe"))) {
                 ap.stopAction();
+            }
+        }
+
+        // Seamlessly switch tool mining animation between standing and sneak if player crouches/stands mid-mining
+        if (isCurrentlyHitting && ap.isActionPlaying()) {
+            String cur = ap.getCurrentActionName();
+            if (isSneaking) {
+                if ("pickaxe".equals(cur)) ap.setAction(efw.animation.AnimationRegistry.getClip("pickaxe_sneak"), 0f, 1.3f);
+                else if ("axe".equals(cur)) ap.setAction(efw.animation.AnimationRegistry.getClip("axe_sneak"), 0f, 1.3f);
+                else if ("shovel".equals(cur)) ap.setAction(efw.animation.AnimationRegistry.getClip("shovel_sneak"), 0f, 1.3f);
+            } else {
+                if ("pickaxe_sneak".equals(cur)) ap.setAction(efw.animation.AnimationRegistry.getClip("pickaxe"), 0f, 1.3f);
+                else if ("axe_sneak".equals(cur)) ap.setAction(efw.animation.AnimationRegistry.getClip("axe"), 0f, 1.3f);
+                else if ("shovel_sneak".equals(cur)) ap.setAction(efw.animation.AnimationRegistry.getClip("shovel"), 0f, 1.3f);
             }
         }
 
@@ -762,22 +791,22 @@ public class AnimationTickHandler {
                                 ? item.getRegistryName().getPath().toLowerCase()
                                 : "";
                         if (itemName.contains("pickaxe") || itemName.contains("pick_axe"))
-                            actionAnim = "pickaxe";
+                            actionAnim = isSneaking ? "pickaxe_sneak" : "pickaxe";
                         else if (itemName.contains("axe") || itemName.contains("hatchet") || itemName.contains("paxel")
                                 || itemName.contains("tomahawk"))
-                            actionAnim = "axe";
+                            actionAnim = isSneaking ? "axe_sneak" : "axe";
                         else if (itemName.contains("shovel") || itemName.contains("spade"))
-                            actionAnim = "shovel";
+                            actionAnim = isSneaking ? "shovel_sneak" : "shovel";
                         else if (itemName.contains("hoe"))
-                            actionAnim = "hoe";
+                            actionAnim = isSneaking ? "axe_sneak" : "axe";
                         else if (item instanceof net.minecraft.item.ItemPickaxe)
-                            actionAnim = "pickaxe";
+                            actionAnim = isSneaking ? "pickaxe_sneak" : "pickaxe";
                         else if (item instanceof net.minecraft.item.ItemAxe)
-                            actionAnim = "axe";
+                            actionAnim = isSneaking ? "axe_sneak" : "axe";
                         else if (item instanceof net.minecraft.item.ItemSpade)
-                            actionAnim = "shovel";
+                            actionAnim = isSneaking ? "shovel_sneak" : "shovel";
                         else if (item instanceof net.minecraft.item.ItemHoe)
-                            actionAnim = "hoe";
+                            actionAnim = isSneaking ? "axe_sneak" : "axe";
                         else {
                             // Unknown tool hitting block — still protect from sword anim
                             // if recently mined (block-break false-trigger guard)
@@ -834,8 +863,8 @@ public class AnimationTickHandler {
                     }
                 }
                 if (actionAnim != null) {
-                    boolean isMiningAnim = actionAnim.equals("pickaxe") || actionAnim.equals("axe")
-                            || actionAnim.equals("shovel") || actionAnim.equals("hoe");
+                    boolean isMiningAnim = actionAnim.startsWith("pickaxe") || actionAnim.startsWith("axe")
+                            || actionAnim.startsWith("shovel") || actionAnim.startsWith("hoe");
 
                     if (!ap.isActionPlaying() || !actionAnim.equals(ap.getCurrentActionName())) {
                         efw.animation.AnimationClip clip = efw.animation.AnimationRegistry.getClip(actionAnim);
@@ -856,15 +885,17 @@ public class AnimationTickHandler {
             }
         } else if (!isBetterCombatWeapon) {
             ticksSinceLastSwing++;
-            if (ticksSinceLastSwing > 3) {
+            if (ticksSinceLastSwing > 3 && !isCurrentlyHitting) {
                 String currentAction = ap.getCurrentActionName();
                 if (currentAction != null && (
                         currentAction.startsWith("sword_attack") ||
                         currentAction.startsWith("fist_attack") ||
                         currentAction.startsWith("spear_attack") ||
                         currentAction.equals("heavy_slam") ||
-                        currentAction.equals("axe") || currentAction.equals("axe_sneak") ||
-                        currentAction.equals("pickaxe") || currentAction.equals("shovel") || currentAction.equals("hoe")
+                        currentAction.startsWith("axe") ||
+                        currentAction.startsWith("pickaxe") ||
+                        currentAction.startsWith("shovel") ||
+                        currentAction.startsWith("hoe")
                 )) {
                     if (!net.bettercombat.client.BetterCombatClient.isUpswingActive() && net.bettercombat.client.BetterCombatClient.attackCooldown <= 0) {
                         ap.stopAction();
@@ -1022,7 +1053,7 @@ public class AnimationTickHandler {
 
             if (wadingInShallowWater) {
                 // Standing in shallow water: use normal movement animations
-                if (isSneaking) {
+                if (visualSneak) {
                     animName = isMoving ? (isMovingBackwards ? "walking_sneak_backwards" : "walking_sneak")
                             : "idle_sneak";
                 } else if (isSprinting && isMoving) {
@@ -1079,12 +1110,12 @@ public class AnimationTickHandler {
             if (isUsingItem) {
                 net.minecraft.item.Item item = activeItem.getItem();
                 if (item instanceof net.minecraft.item.ItemBow) {
-                    animName = isSneaking ? "bow_sneak" : "bow_idle";
+                    animName = visualSneak ? "bow_sneak" : "bow_idle";
                 } else if (activeItem.getItemUseAction() == net.minecraft.item.EnumAction.BLOCK) {
                     if (player.getActiveHand() == net.minecraft.util.EnumHand.OFF_HAND) {
-                        animName = isSneaking ? "shield_left_sneak" : "shield_left";
+                        animName = visualSneak ? "shield_left_sneak" : "shield_left";
                     } else {
-                        animName = isSneaking ? "shield_sneak" : "shield";
+                        animName = visualSneak ? "shield_sneak" : "shield";
                     }
                 }
             } else {
@@ -1095,7 +1126,7 @@ public class AnimationTickHandler {
 
             // Если анимация предмета не переопределила, ставим передвижение
             if (animName == null) {
-                if (isSneaking) {
+                if (visualSneak) {
                     if (isMoving) {
                         animName = isMovingBackwards ? "walking_sneak_backwards" : "walking_sneak";
                     } else {

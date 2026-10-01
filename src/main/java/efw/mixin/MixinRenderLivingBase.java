@@ -41,8 +41,18 @@ public abstract class MixinRenderLivingBase {
         return entity.deathTime;
     }
 
-    @org.spongepowered.asm.mixin.injection.Inject(method = "doRender", at = @At("HEAD"))
-    private void onDoRender(EntityLivingBase entity, double x, double y, double z, float entityYaw, float partialTicks, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+    @Inject(method = "doRender(Lnet/minecraft/entity/EntityLivingBase;DDDFF)V", at = @At("HEAD"))
+    private void efw$onLivingDoRenderHead(EntityLivingBase entity, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        if (entity instanceof net.minecraft.entity.player.EntityPlayer && efw.AnimationTickHandler.isBetterCombatAttackActive((net.minecraft.entity.player.EntityPlayer) entity)) {
+            efw.util.RenderContext.suppressedSneakEntity = entity;
+        }
+    }
+
+    @Inject(method = "doRender(Lnet/minecraft/entity/EntityLivingBase;DDDFF)V", at = @At("RETURN"))
+    private void efw$onLivingDoRenderReturn(EntityLivingBase entity, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        if (efw.util.RenderContext.suppressedSneakEntity == entity) {
+            efw.util.RenderContext.suppressedSneakEntity = null;
+        }
     }
 
     @Redirect(method = "renderLayers(Lnet/minecraft/entity/EntityLivingBase;FFFFFFF)V", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/entity/RenderLivingBase;layerRenderers:Ljava/util/List;", opcode = Opcodes.GETFIELD))

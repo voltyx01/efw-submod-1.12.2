@@ -2,6 +2,7 @@ package efw.init;
 
 import efw.item.CDiaryItem;
 import efw.item.DporItem;
+import efw.item.ItemDoll;
 import efw.item.ManualItem;
 import efw.item.NoteItem;
 import net.minecraft.client.renderer.ItemMeshDefinition;
@@ -25,6 +26,9 @@ public class EfwModItems {
     public static efw.item.ItemBandage BANDAGE;
     public static efw.item.ItemCloth CLOTH;
 
+    /** Любимая игрушка Сайи — плюшевая кукла. */
+    public static ItemDoll DOLL;
+
     // Расходник для повышения уровня порока (Seven Screen)
     public static DporItem DPOR;
 
@@ -43,6 +47,7 @@ public class EfwModItems {
         MED_KIT = new efw.item.ItemMedKit();
         BANDAGE = new efw.item.ItemBandage();
         CLOTH = new efw.item.ItemCloth();
+        DOLL = new ItemDoll();
         DPOR = new DporItem();
         MANUAL_MELEE = new ManualItem(ManualItem.ManualType.MELEE);
         MANUAL_FIREARMS = new ManualItem(ManualItem.ManualType.FIREARMS);
@@ -57,6 +62,7 @@ public class EfwModItems {
         ForgeRegistries.ITEMS.register(MED_KIT);
         ForgeRegistries.ITEMS.register(BANDAGE);
         ForgeRegistries.ITEMS.register(CLOTH);
+        ForgeRegistries.ITEMS.register(DOLL);
         ForgeRegistries.ITEMS.register(DPOR);
         ForgeRegistries.ITEMS.register(MANUAL_MELEE);
         ForgeRegistries.ITEMS.register(MANUAL_FIREARMS);
@@ -97,6 +103,9 @@ public class EfwModItems {
 
         ModelLoader.setCustomModelResourceLocation(CLOTH, 0,
                 new ModelResourceLocation("mwccf:cloth", "inventory"));
+
+        ModelLoader.setCustomModelResourceLocation(DOLL, 0,
+                new ModelResourceLocation("mwccf:doll", "inventory"));
 
         // Note — pick model by NBT variant (1–10), no damage value used
         ModelBakery.registerItemVariants(NOTE,

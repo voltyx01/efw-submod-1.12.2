@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import efw.animation.AnimationPlayer;
 import efw.animation.layered.math.Vec3f;
@@ -29,6 +30,11 @@ public class MixinRenderPlayer {
 
     @Inject(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V", at = @At("HEAD"))
     private void efw$beginFirstPersonAttackPass(AbstractClientPlayer player, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        if (efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
+            efw.util.RenderContext.suppressedSneakEntity = player;
+        } else if (efw.util.RenderContext.suppressedSneakEntity == player) {
+            efw.util.RenderContext.suppressedSneakEntity = null;
+        }
         efw$firstPersonPassStarted = FirstPersonMode.isFirstPersonAttackActive(player);
         if (efw$firstPersonPassStarted) {
             efw$previousFirstPersonPass = FirstPersonMode.isFirstPersonPass();
@@ -38,10 +44,31 @@ public class MixinRenderPlayer {
 
     @Inject(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V", at = @At("RETURN"))
     private void efw$endFirstPersonAttackPass(AbstractClientPlayer player, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        if (efw.util.RenderContext.suppressedSneakEntity == player) {
+            efw.util.RenderContext.suppressedSneakEntity = null;
+        }
         if (efw$firstPersonPassStarted) {
             FirstPersonMode.setFirstPersonPass(efw$previousFirstPersonPass);
             efw$firstPersonPassStarted = false;
         }
+    }
+
+    @Redirect(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V",
+              at = @At(value = "INVOKE", target = "Lnet/minecraft/client/entity/AbstractClientPlayer;isSneaking()Z"))
+    private boolean efw$suppressSneakInDoRender(AbstractClientPlayer player) {
+        if (efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
+            return false;
+        }
+        return player.isSneaking();
+    }
+
+    @Redirect(method = "setModelVisibilities(Lnet/minecraft/client/entity/AbstractClientPlayer;)V",
+              at = @At(value = "INVOKE", target = "Lnet/minecraft/client/entity/AbstractClientPlayer;isSneaking()Z"))
+    private boolean efw$suppressSneakInModelVisibilities(AbstractClientPlayer player) {
+        if (efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
+            return false;
+        }
+        return player.isSneaking();
     }
 
     @Inject(method = "setModelVisibilities(Lnet/minecraft/client/entity/AbstractClientPlayer;)V", at = @At("RETURN"))
@@ -117,13 +144,11 @@ public class MixinRenderPlayer {
         AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(entityLiving);
         if (ap == null || !ap.isActive()) return;
 
-        // Apply body-level world-space transform for rolls and Emotecraft/BetterCombat action animations
+        // Apply body-level world-space transform for rolls and Emotecraft action animations
         boolean isRoll = ap.isRollActive(partialTicks);
         boolean isBetterCombatAttack = ap.hasActionWeight() && ap.isActionAttack();
         boolean isEmoteAction = ap.hasActionWeight() && ap.getActionClip() != null && ap.getActionClip().isEmotecraft && !isBetterCombatAttack;
         boolean isFP = FirstPersonMode.isFirstPersonPass() && isBetterCombatAttack;
-
-        if (!isRoll && !isEmoteAction && !isBetterCombatAttack) return;
 
         if (isFP) {
             float eyeHeight = entityLiving.getEyeHeight();
@@ -144,23 +169,35 @@ public class MixinRenderPlayer {
             float fpForward = 0.35F;
             float fpUp = 0.15F;
             GlStateManager.translate(0.0F, -eyeHeight + fpUp, -fpForward);
+            return;
         }
 
-        Vec3f pos = isRoll
-                ? ap.getRollLayerTransform("body", TransformType.POSITION, partialTicks)
-                : (isEmoteAction ? ap.getActionLayerTransform("body", TransformType.POSITION, partialTicks) : Vec3f.ZERO);
-        Vec3f rot = isRoll
-                ? ap.getRollLayerTransform("body", TransformType.ROTATION, partialTicks)
-                : ap.get3DTransform("body", TransformType.ROTATION, partialTicks, Vec3f.ZERO);
+        if (!isRoll && !isEmoteAction && !isBetterCombatAttack) return;
 
-        // BetterCombat attack clips store torso Y for local model-space animation,
-        // NOT for moving the entire player entity up and down in world space.
-        // Applying posY from the layer stack (which includes baseLayer walking/running/breathing bobbing)
-        // caused the entire player model to shift up and down ("breathe"/jump).
-        // For BetterCombat clips we zero out the world position translation completely!
-        float posY = isBetterCombatAttack ? 0.0f : pos.getY();
-        float posX = isBetterCombatAttack ? 0.0f : pos.getX();
-        float posZ = isBetterCombatAttack ? 0.0f : pos.getZ();
+        Vec3f pos;
+        Vec3f rot;
+
+        if (isRoll) {
+            pos = ap.getRollLayerTransform("body", TransformType.POSITION, partialTicks);
+            rot = ap.getRollLayerTransform("body", TransformType.ROTATION, partialTicks);
+        } else if (isBetterCombatAttack) {
+            // For Better Combat attacks, get rotation strictly from actionLayer (isolated from base walk/run layers).
+            // This ensures that when the attack ends and fades out to ZERO, it blends smoothly with 0 snap!
+            pos = Vec3f.ZERO;
+            rot = ap.getActionLayerTransform("body", TransformType.ROTATION, partialTicks);
+            java.util.Optional<efw.animation.layered.modifier.AdjustmentModifier.PartModifier> adj = ap.applyAttackAdjustment("body", partialTicks);
+            if (adj.isPresent()) {
+                float fade = ap.getActionFadeAlpha(partialTicks);
+                rot = rot.add(adj.get().rotation().scale(fade));
+            }
+        } else {
+            pos = ap.getActionLayerTransform("body", TransformType.POSITION, partialTicks);
+            rot = ap.get3DTransform("body", TransformType.ROTATION, partialTicks, Vec3f.ZERO);
+        }
+
+        float posY = pos.getY();
+        float posX = pos.getX();
+        float posZ = pos.getZ();
         float rotX = rot.getX();
         float rotY = rot.getY();
         float rotZ = rot.getZ();
@@ -171,7 +208,8 @@ public class MixinRenderPlayer {
         if (!hasRot && !hasPos) return;
 
         // Pivot at waist (0.7 blocks up from feet), matching 1.20.1 setupRotations.
-        GlStateManager.translate(posX, posY + 0.7f, posZ);
+        float pivotY = 0.7f;
+        GlStateManager.translate(posX, posY + pivotY, posZ);
 
         rotX = (float) Math.toDegrees(rotX);
         float rotYDeg = (float) Math.toDegrees(rotY);
@@ -181,6 +219,6 @@ public class MixinRenderPlayer {
         GlStateManager.rotate(rotYDeg, 0.0f, 1.0f, 0.0f);
         GlStateManager.rotate(rotX, 1.0f, 0.0f, 0.0f);
 
-        GlStateManager.translate(0.0f, -0.7f, 0.0f);
+        GlStateManager.translate(0.0f, -pivotY, 0.0f);
     }
 }

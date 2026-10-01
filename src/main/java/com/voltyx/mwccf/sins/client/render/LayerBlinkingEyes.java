@@ -118,7 +118,7 @@ public class LayerBlinkingEyes implements LayerRenderer<AbstractClientPlayer> {
         boolean dualEyelid = genderPlayer.isDualEyelid();
 
         GlStateManager.pushMatrix();
-        if (player.isSneaking()) {
+        if (player.isSneaking() && !efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
         this.renderPlayer.getMainModel().bipedHead.postRender(scale);
