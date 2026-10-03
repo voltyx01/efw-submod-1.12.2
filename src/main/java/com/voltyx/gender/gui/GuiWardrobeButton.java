@@ -53,16 +53,6 @@ public class GuiWardrobeButton extends GuiButton {
 
             drawModalRectWithCustomSizedTexture(x, this.y, textureX, 0, this.width, this.height, 20, 10);
 
-            if (this.hovered) {
-                this.drawCenteredString(
-                        mc.fontRenderer,
-                        net.minecraft.client.resources.I18n.format("wildfire_gender.buttoninevntory"),
-                        x + this.width / 2 - 1,
-                        this.y + this.height + 1,
-                        0xFFFFFF
-                );
-            }
-
             GlStateManager.popMatrix();
             this.mouseDragged(mc, mouseX, mouseY);
         }

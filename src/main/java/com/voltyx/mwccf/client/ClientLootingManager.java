@@ -16,6 +16,10 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -220,79 +224,139 @@ public class ClientLootingManager {
 
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
-        if (event.getType() != RenderGameOverlayEvent.ElementType.ALL || targetBlock == null)
+        if (event.getType() != RenderGameOverlayEvent.ElementType.ALL)
             return;
 
         Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player == null)
+            return;
+
         ScaledResolution sr = event.getResolution();
+        float x = sr.getScaledWidth() / 2.0f + 0.5f;
+        float y = sr.getScaledHeight() / 2.0f;
 
-        // Теперь координаты рассчитываются как дробные числа (float)
-        float x = sr.getScaledWidth() / 2.0f + 1.0f;
-        float y = sr.getScaledHeight() / 2.0f + 0.5f;
+        float size = 7.0f;
+        float thickness = 2.0f;
 
-        // Сдвигаем на полпикселя влево и вверх (можешь менять эти значения)
-        x -= 0.5f;
-        y -= 0.5f;
+        if (targetBlock != null) {
+            float progress = MathHelper.clamp(lootProgress / (float) REQUIRED_TICKS, 0.0f, 1.0f);
+            drawSquareProgressBar(x, y, size, thickness, progress);
 
-        float progress = lootProgress / (float) REQUIRED_TICKS;
-        float radius = 6.0f;
-        float thickness = 2.5f;
-
-        // Рисуем фоновое полупрозрачное черное кольцо
-        drawThickArc(x, y, radius, thickness, 1.0f, 0x88000000);
-
-        // Рисуем заполняющееся белое кольцо прогресса
-        drawThickArc(x, y, radius, thickness, progress, 0xFFFFFFFF);
-
-        // Текст под прицелом (не рисуем для старого радио)
-        boolean isRadio = mc.world != null && targetBlock != null && mc.world.getBlockState(targetBlock).getBlock() instanceof com.voltyx.mwccf.radio.BlockOldRadio;
-        if (!isRadio) {
-            String lootText = net.minecraft.client.resources.I18n.format("gui.mwccf.looting");
-            mc.fontRenderer.drawStringWithShadow(lootText, x - mc.fontRenderer.getStringWidth(lootText) / 2.0f, y + 20,
-                    0xFFFFFF);
+            // Текст под прицелом (не рисуем для старого радио)
+            boolean isRadio = mc.world != null && mc.world.getBlockState(targetBlock).getBlock() instanceof com.voltyx.mwccf.radio.BlockOldRadio;
+            if (!isRadio) {
+                String lootText = net.minecraft.client.resources.I18n.format("gui.mwccf.looting");
+                mc.fontRenderer.drawStringWithShadow(lootText, x - mc.fontRenderer.getStringWidth(lootText) / 2.0f, y + 20,
+                        0xFFFFFF);
+            }
+        } else if (mc.player.isHandActive()) {
+            ItemStack activeStack = mc.player.getActiveItemStack();
+            if (isMedicalItem(activeStack)) {
+                int totalDuration = getMedicalItemDuration(activeStack);
+                int inUseCount = mc.player.getItemInUseCount();
+                int elapsed = activeStack.getMaxItemUseDuration() - inUseCount;
+                float progress = MathHelper.clamp(elapsed / (float) totalDuration, 0.0f, 1.0f);
+                drawSquareProgressBar(x, y, size, thickness, progress);
+            }
         }
     }
 
-    // Хелпер теперь принимает координаты x и y как float!
-    private void drawThickArc(float x, float y, float radius, float thickness, float progress, int color) {
-        float alpha = (color >> 24 & 255) / 255.0F;
-        float red = (color >> 16 & 255) / 255.0F;
-        float green = (color >> 8 & 255) / 255.0F;
-        float blue = (color & 255) / 255.0F;
+    public static boolean isMedicalItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        Item item = stack.getItem();
+        if (item instanceof com.voltyx.mwccf.item.ItemAdrenaline
+                || item instanceof com.voltyx.mwccf.item.ItemMorphineSyringe
+                || item instanceof efw.item.ItemBandage
+                || item instanceof efw.item.ItemMedKit) {
+            return true;
+        }
+        ResourceLocation reg = item.getRegistryName();
+        if (reg != null) {
+            String path = reg.getPath().toLowerCase();
+            return path.contains("adrenaline")
+                    || path.contains("morphine")
+                    || path.contains("bandage")
+                    || path.contains("med_kit")
+                    || path.contains("medkit")
+                    || path.contains("plaster");
+        }
+        return false;
+    }
+
+    public static int getMedicalItemDuration(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 20;
+        Item item = stack.getItem();
+        if (item instanceof efw.item.ItemBandage || item instanceof efw.item.ItemMedKit) {
+            return 60;
+        }
+        int max = stack.getMaxItemUseDuration();
+        return max > 0 ? max : 20;
+    }
+
+    public static void drawSquareProgressBar(float cx, float cy, float size, float thickness, float progress) {
+        if (progress <= 0.0F) return;
+        progress = Math.min(progress, 1.0F);
+
+        float s = size;
+        float t = thickness;
+        float totalPerimeter = 8.0F * s;
+        float d = progress * totalPerimeter;
 
         GlStateManager.pushMatrix();
-        GlStateManager.enableBlend();
         GlStateManager.disableTexture2D();
-        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA,
-                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE,
-                GlStateManager.DestFactor.ZERO);
-        GlStateManager.color(red, green, blue, alpha);
+        GlStateManager.disableBlend(); // Чистый непрозрачный белый цвет без альфы
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_TRIANGLE_STRIP, DefaultVertexFormats.POSITION);
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        int segments = 40;
-        float targetAngle = 360.0F * progress;
-        float step = 360.0F / segments;
-        float innerRadius = radius - thickness / 2.0F;
-        float outerRadius = radius + thickness / 2.0F;
+        // 1. Верхнее ребро: слева направо (-s, -s) -> (+s, -s)
+        float d1 = Math.min(d, 2.0F * s);
+        if (d1 > 0.0F) {
+            drawQuad(buffer, cx - s, cy - s, cx - s + d1, cy - s + t);
+        }
 
-        for (float i = 0; i < targetAngle + step; i += step) {
-            float currentAngle = (i > targetAngle) ? targetAngle : i;
-            double rad = (currentAngle - 90) * Math.PI / 180.0;
+        // 2. Правое ребро: сверху вниз (+s, -s) -> (+s, +s)
+        if (d > 2.0F * s) {
+            float d2 = Math.min(d - 2.0F * s, 2.0F * s);
+            if (d2 > 0.0F) {
+                drawQuad(buffer, cx + s - t, cy - s, cx + s, cy - s + d2);
+            }
+        }
 
-            buffer.pos(x + Math.cos(rad) * outerRadius, y + Math.sin(rad) * outerRadius, 0.0D).endVertex();
-            buffer.pos(x + Math.cos(rad) * innerRadius, y + Math.sin(rad) * innerRadius, 0.0D).endVertex();
+        // 3. Нижнее ребро: справа налево (+s, +s) -> (-s, +s)
+        if (d > 4.0F * s) {
+            float d3 = Math.min(d - 4.0F * s, 2.0F * s);
+            if (d3 > 0.0F) {
+                drawQuad(buffer, cx + s - d3, cy + s - t, cx + s, cy + s);
+            }
+        }
 
-            if (currentAngle == targetAngle)
-                break;
+        // 4. Левое ребро: снизу вверх (-s, +s) -> (-s, -s)
+        if (d > 6.0F * s) {
+            float d4 = Math.min(d - 6.0F * s, 2.0F * s);
+            if (d4 > 0.0F) {
+                drawQuad(buffer, cx - s, cy + s - d4, cx - s + t, cy + s);
+            }
         }
 
         tessellator.draw();
 
+        GlStateManager.enableBlend();
         GlStateManager.enableTexture2D();
-        GlStateManager.disableBlend();
         GlStateManager.popMatrix();
+    }
+
+    private static void drawQuad(BufferBuilder buffer, float x0, float y0, float x1, float y1) {
+        float minX = Math.min(x0, x1);
+        float maxX = Math.max(x0, x1);
+        float minY = Math.min(y0, y1);
+        float maxY = Math.max(y0, y1);
+
+        buffer.pos(minX, maxY, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        buffer.pos(maxX, maxY, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        buffer.pos(maxX, minY, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        buffer.pos(minX, minY, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
     }
 }

@@ -63,6 +63,8 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.client.ClientZoneRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.gui.GuiWeaponSlotOverlay());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.immersiveui.client.ImmersiveUIClientEvents());
+		com.voltyx.mwccf.darkmode.DarkGuiManager.init();
+		com.voltyx.mwccf.furniture.client.gui.FurnitureGuiHelper.init();
 
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new CommandDumpChests());
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new com.voltyx.mwccf.render.doll.CommandDoll());
@@ -151,6 +153,8 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 	@Override
 	public void preInit(FMLPreInitializationEvent event) {
 		enableStencilEarly();
+		com.voltyx.mwccf.darkmode.DarkGuiManager.init();
+		com.voltyx.mwccf.furniture.client.gui.FurnitureGuiHelper.init();
 		OBJLoader.INSTANCE.addDomain("mwccf");
 
 		// Shoulder Surfing & Lock-On Config & Events
@@ -283,6 +287,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.HeadlampLayer(entry.getValue(), entry.getKey()));
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.KawaiiEarsLayer(entry.getValue(), entry.getKey()));
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.BodycamLayer(entry.getValue(), entry.getKey()));
+			entry.getValue().addLayer(new com.voltyx.mwccf.geo.DollBaubleLayer(entry.getValue(), entry.getKey()));
 		}
 		ItemLoadingScreenRenderer.warmupAll();
 		if (net.minecraftforge.fml.common.Loader.isModLoaded("optifine")) {

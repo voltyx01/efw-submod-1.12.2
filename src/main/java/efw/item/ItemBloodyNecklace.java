@@ -98,9 +98,22 @@ public class ItemBloodyNecklace extends Item implements IBauble {
         if (I18n.hasKey(descKey)) {
             tooltip.add(I18n.format(descKey));
         }
-        String effectKey = "tooltip.mwccf.bloody_necklace.effect";
-        if (I18n.hasKey(effectKey)) {
-            tooltip.add(I18n.format(effectKey));
+
+        tooltip.add("");
+        if (net.minecraft.client.gui.GuiScreen.isShiftKeyDown()) {
+            String memoryTitleKey = "tooltip.mwccf.bloody_necklace.memory_title";
+            if (I18n.hasKey(memoryTitleKey)) {
+                tooltip.add(I18n.format(memoryTitleKey));
+            }
+            String memoryDescKey = "tooltip.mwccf.bloody_necklace.memory_desc";
+            if (I18n.hasKey(memoryDescKey)) {
+                tooltip.add(I18n.format(memoryDescKey));
+            }
+        } else {
+            String memoryShiftKey = "tooltip.mwccf.bloody_necklace.memory_shift";
+            if (I18n.hasKey(memoryShiftKey)) {
+                tooltip.add(I18n.format(memoryShiftKey));
+            }
         }
     }
 

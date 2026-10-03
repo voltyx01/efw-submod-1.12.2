@@ -21,4 +21,14 @@ public abstract class MixinEntityPlayer {
             ci.cancel();
         }
     }
+
+    @Inject(method = "handleStatusUpdate", at = @At("HEAD"), cancellable = true)
+    private void mwccf$cancelHurtStatusWhileRolling(byte id, CallbackInfo ci) {
+        if (id == 2) {
+            EntityLivingBase entity = (EntityLivingBase) (Object) this;
+            if (entity instanceof EntityPlayer && com.voltyx.mwccf.dash.DashEvents.isPlayerRolling((EntityPlayer) entity)) {
+                ci.cancel();
+            }
+        }
+    }
 }

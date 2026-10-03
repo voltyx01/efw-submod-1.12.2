@@ -30,6 +30,7 @@ public class MixinRenderPlayer {
 
     @Inject(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V", at = @At("HEAD"))
     private void efw$beginFirstPersonAttackPass(AbstractClientPlayer player, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(player);
         if (efw.AnimationTickHandler.isBetterCombatAttackActive(player)) {
             efw.util.RenderContext.suppressedSneakEntity = player;
         } else if (efw.util.RenderContext.suppressedSneakEntity == player) {
@@ -44,6 +45,7 @@ public class MixinRenderPlayer {
 
     @Inject(method = "doRender(Lnet/minecraft/client/entity/AbstractClientPlayer;DDDFF)V", at = @At("RETURN"))
     private void efw$endFirstPersonAttackPass(AbstractClientPlayer player, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
         if (efw.util.RenderContext.suppressedSneakEntity == player) {
             efw.util.RenderContext.suppressedSneakEntity = null;
         }
@@ -104,8 +106,24 @@ public class MixinRenderPlayer {
         model.bipedLeftArmwear.showModel = showLeftArm && player.isWearing(EnumPlayerModelParts.LEFT_SLEEVE);
     }
 
+    @Inject(method = "renderRightArm", at = @At("HEAD"))
+    private void onRenderRightArmHead(AbstractClientPlayer clientPlayer, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(clientPlayer);
+    }
+
+    @Inject(method = "renderRightArm", at = @At("RETURN"))
+    private void onRenderRightArmReturn(AbstractClientPlayer clientPlayer, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
+    }
+
+    @Inject(method = "renderLeftArm", at = @At("HEAD"))
+    private void onRenderLeftArmHead(AbstractClientPlayer clientPlayer, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(clientPlayer);
+    }
+
     @Inject(method = "renderLeftArm", at = @At("RETURN"))
     private void onRenderLeftArm(AbstractClientPlayer clientPlayer, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
         if (com.voltyx.mwccf.geo.BraceletUI.hasBraceletEquipped(clientPlayer)) {
             boolean isSlim = "slim".equals(clientPlayer.getSkinType());
             com.voltyx.mwccf.geo.GeoArmorModel bracelet = null;

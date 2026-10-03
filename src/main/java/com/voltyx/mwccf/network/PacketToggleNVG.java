@@ -37,7 +37,7 @@ public class PacketToggleNVG implements IMessage {
                 Item item = helmet.getItem();
                 if (com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler.isNVGHelmet(item)) {
                     NBTTagCompound tag = helmet.hasTagCompound() ? helmet.getTagCompound() : new NBTTagCompound();
-                    int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
+                    int charge = com.voltyx.mwccf.battery.DeviceBatteryHelper.getCharge(helmet);
                     boolean current = tag.hasKey("nv_active") && tag.getBoolean("nv_active") && charge > 0;
                     if (!current && charge <= 0) {
                         tag.setBoolean("nv_active", false);

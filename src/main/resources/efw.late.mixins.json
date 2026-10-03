@@ -10,7 +10,10 @@
     "MixinDimensionManager",
     "MixinAbstractWorldGenerator",
     "XaeroWorldMapSyncedPlayerTrackerMixin",
-    "XaeroMinimapSyncedPlayerTrackerMixin"
+    "XaeroMinimapSyncedPlayerTrackerMixin",
+    "MixinEntityParasiteBase",
+    "MixinEntityAIAttackMeleeStatus",
+    "MixinEntityAIAttackMeleeStatusAOE"
   ],
   "client": [
     "BackpackClientMixin",
@@ -34,7 +37,10 @@
     "XaeroGuiMapMixin",
     "MixinCustomGui",
     "MixinModificationGUI",
-    "CameraOverhaulClientHandlerMixin"
+    "CameraOverhaulClientHandlerMixin",
+    "MixinQuarkChestSearchBar",
+    "MixinARLRenderHelper",
+    "MixinGuiBaublesButton"
   ],
   "injectors": {
     "defaultRequire": 1

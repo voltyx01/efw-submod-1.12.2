@@ -1,12 +1,10 @@
 package com.voltyx.mwccf.mcore;
 
-import net.minecraft.item.Item;
-
-public class ItemBattery extends Item {
+/**
+ * Backward compatibility subclass.
+ */
+public class ItemBattery extends com.voltyx.mwccf.battery.ItemBattery {
     public ItemBattery(String name) {
-        this.setRegistryName("mwccf", name);
-        this.setTranslationKey("mcore." + name);
-        this.setCreativeTab(net.minecraft.creativetab.CreativeTabs.MATERIALS);
-        this.setMaxStackSize(16);
+        super(name, 48000, false, 0);
     }
 }

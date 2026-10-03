@@ -13,7 +13,7 @@ public class EFWLateMixinLoader implements ILateMixinLoader {
 
     @Override
     public List<String> getMixinConfigs() {
-        System.out.println("[EFW-MIXIN-DEBUG] EFWLateMixinLoader: getMixinConfigs called -> registering efw.late.mixins.json");
-        return Collections.singletonList("efw.late.mixins.json");
+        System.out.println("[EFW-MIXIN-DEBUG] EFWLateMixinLoader: getMixinConfigs called -> registering efw.late.mixins.json and mixins.srparasites.json");
+        return java.util.Arrays.asList("efw.late.mixins.json", "mixins.srparasites.json");
     }
 }

@@ -133,6 +133,7 @@ public class DashKeyHandler {
         boolean isAiming = false;
         boolean isLockedOn = false;
         int followTimer = 0;
+        int turningLockTime = 0;
 
         try {
             com.teamderpy.shouldersurfing.client.ShoulderInstance instance = com.teamderpy.shouldersurfing.client.ShoulderInstance.getInstance();
@@ -142,10 +143,14 @@ public class DashKeyHandler {
             }
             isLockedOn = com.teamderpy.shouldersurfing.lockon.LockOnHandler.lockedOn;
             followTimer = com.teamderpy.shouldersurfing.event.ClientEventHandler.followTimer;
+            turningLockTime = com.teamderpy.shouldersurfing.event.ClientEventHandler.turningLockTime;
         } catch (Throwable t) {}
 
-        // При ShoulderSurfing без прицела, без оружия в руках и без локона — кувырок всегда идет вперед по направлению взгляда (rotationYaw)
-        if (doShoulderSurfing && !isLockedOn && !isHoldingRanged && !isAiming && followTimer <= 0) {
+        boolean isInteracting = mc.gameSettings.keyBindAttack.isKeyDown() || mc.gameSettings.keyBindUseItem.isKeyDown() || player.isHandActive();
+        boolean isTrackingCrosshair = isLockedOn || isHoldingRanged || isAiming || followTimer > 0 || turningLockTime > 0 || isInteracting;
+
+        // При ShoulderSurfing без прицела, без оружия в руках, без локона и без трекинга — кувырок всегда идет вперед по направлению взгляда (rotationYaw)
+        if (doShoulderSurfing && !isTrackingCrosshair) {
             float yaw = player.rotationYaw * 0.017453292F;
             double dashX = -net.minecraft.util.math.MathHelper.sin(yaw);
             double dashZ = net.minecraft.util.math.MathHelper.cos(yaw);

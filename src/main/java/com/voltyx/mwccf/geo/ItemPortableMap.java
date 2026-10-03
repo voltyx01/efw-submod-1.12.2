@@ -45,11 +45,7 @@ public class ItemPortableMap extends Item implements IBauble {
                 itemstack.setTagCompound(tag);
             }
             if (player.ticksExisted % 20 == 0) {
-                int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-                if (charge > 0) {
-                    charge = Math.max(0, charge - 20);
-                    tag.setInteger("battery_charge", charge);
-                }
+                com.voltyx.mwccf.battery.DeviceBatteryHelper.consumeCharge(itemstack, 20);
             }
         }
     }
@@ -64,14 +60,14 @@ public class ItemPortableMap extends Item implements IBauble {
     @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
     public void addInformation(ItemStack stack, @javax.annotation.Nullable net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
         NBTTagCompound tag = stack.getTagCompound();
-        int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-        int percent = (int) ((charge / 48000.0f) * 100);
+        int percent = com.voltyx.mwccf.battery.DeviceBatteryHelper.getChargePercent(stack);
+        ItemStack installed = com.voltyx.mwccf.battery.DeviceBatteryHelper.getInstalledBattery(stack);
 
-        if (charge <= 0) {
+        if (installed.isEmpty() || percent <= 0) {
             tooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.required"));
         } else {
             String color = percent > 50 ? "\u00a7a" : (percent > 20 ? "\u00a7e" : "\u00a7c");
-            tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent));
+            tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent) + " \u00a78(" + installed.getDisplayName() + "\u00a78)");
         }
 
         tooltip.add("\u00a77" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.portable_map.desc"));

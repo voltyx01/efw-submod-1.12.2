@@ -461,6 +461,7 @@ public class BetterCombatClient {
         isPerformingAttack = true;
         try {
             for (Entity target : targets) {
+                net.bettercombat.utils.AttackCooldownHelper.setFullAttackStrength(player);
                 player.attackTargetEntityWithCurrentItem(target);
             }
         } finally {

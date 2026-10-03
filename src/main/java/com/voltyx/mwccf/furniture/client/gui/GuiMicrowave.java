@@ -31,7 +31,6 @@ public class GuiMicrowave extends GuiContainer {
     protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
         String s = this.microwaveTile.getDisplayName().getUnformattedText();
         this.fontRenderer.drawString(s, this.xSize / 2 - this.fontRenderer.getStringWidth(s) / 2, 6, 4210752);
-        this.fontRenderer.drawString("Inventory", 8, this.ySize - 96 + 2, 4210752);
     }
 
     @Override

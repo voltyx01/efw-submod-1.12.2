@@ -305,19 +305,52 @@ public class DashEvents {
         }
     }
 
-    @SubscribeEvent
-    public void onKnockBack(LivingKnockBackEvent e) {
+    public static boolean isPlayerRolling(EntityPlayer player) {
+        if (player == null) return false;
+        if (player.world != null && player.world.isRemote) {
+            if (efw.AnimationTickHandler.isPlayerRolling(player)) return true;
+        }
+        DashCapability.IDashData cap = player.getCapability(DashCapability.ROLL_CAP, null);
+        return cap != null && (cap.isDashing() || cap.getPostDashTimer() > 0);
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
+    public void onAttack(net.minecraftforge.event.entity.living.LivingAttackEvent e) {
         if (e.getEntityLiving() instanceof EntityPlayer) {
-            DashCapability.IDashData cap = e.getEntityLiving().getCapability(DashCapability.ROLL_CAP, null);
-            if (cap != null && (cap.isDashing() || cap.getPostDashTimer() > 0)) e.setCanceled(true);
+            EntityPlayer player = (EntityPlayer) e.getEntityLiving();
+            if (isPlayerRolling(player)) {
+                e.setCanceled(true);
+            }
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
+    public void onDamage(net.minecraftforge.event.entity.living.LivingDamageEvent e) {
+        if (e.getEntityLiving() instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) e.getEntityLiving();
+            if (isPlayerRolling(player)) {
+                e.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
+    public void onKnockBack(LivingKnockBackEvent e) {
+        if (e.getEntityLiving() instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) e.getEntityLiving();
+            if (isPlayerRolling(player)) {
+                e.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.HIGHEST)
     public void onHurt(LivingHurtEvent e) {
         if (e.getEntityLiving() instanceof EntityPlayer) {
-            DashCapability.IDashData cap = e.getEntityLiving().getCapability(DashCapability.ROLL_CAP, null);
-            if (cap != null && (cap.isDashing() || cap.getPostDashTimer() > 0)) e.setCanceled(true);
+            EntityPlayer player = (EntityPlayer) e.getEntityLiving();
+            if (isPlayerRolling(player)) {
+                e.setCanceled(true);
+            }
         }
     }
 

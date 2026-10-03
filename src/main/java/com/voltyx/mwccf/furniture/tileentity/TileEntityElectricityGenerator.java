@@ -21,18 +21,22 @@ import net.minecraft.world.World;
 
 public class TileEntityElectricityGenerator extends TileEntityLockableLoot implements ITickable {
 
-    private NonNullList<ItemStack> inventory = NonNullList.withSize(1, ItemStack.EMPTY);
+    private NonNullList<ItemStack> inventory = NonNullList.withSize(3, ItemStack.EMPTY);
     public int burnTime = 0;
     public int currentItemBurnTime = 0;
+    public boolean isGeneratingClient = false;
 
     @Override
     public int getSizeInventory() {
-        return 1;
+        return 3;
     }
 
     @Override
     public boolean isEmpty() {
-        return this.inventory.get(0).isEmpty();
+        for (ItemStack stack : this.inventory) {
+            if (!stack.isEmpty()) return false;
+        }
+        return true;
     }
 
     @Override
@@ -40,8 +44,46 @@ public class TileEntityElectricityGenerator extends TileEntityLockableLoot imple
         return this.hasCustomName() ? this.customName : "container.refurbished_furniture.electricity_generator";
     }
 
+    public boolean hasChargingWork() {
+        for (int slotIdx = 1; slotIdx <= 2; ++slotIdx) {
+            ItemStack toCharge = this.inventory.get(slotIdx);
+            if (!toCharge.isEmpty() && com.voltyx.mwccf.battery.DeviceBatteryHelper.canCharge(toCharge)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasPowerConsumer() {
+        if (this.world == null) return false;
+        for (net.minecraft.util.EnumFacing facing : net.minecraft.util.EnumFacing.VALUES) {
+            BlockPos neighborPos = this.pos.offset(facing);
+            IBlockState state = this.world.getBlockState(neighborPos);
+            net.minecraft.block.Block block = state.getBlock();
+            if (block == net.minecraft.init.Blocks.AIR) continue;
+            if (block == net.minecraft.init.Blocks.REDSTONE_WIRE
+                    || block == net.minecraft.init.Blocks.UNPOWERED_REPEATER
+                    || block == net.minecraft.init.Blocks.POWERED_REPEATER
+                    || block == net.minecraft.init.Blocks.UNPOWERED_COMPARATOR
+                    || block == net.minecraft.init.Blocks.POWERED_COMPARATOR
+                    || block == net.minecraft.init.Blocks.REDSTONE_LAMP
+                    || block == net.minecraft.init.Blocks.LIT_REDSTONE_LAMP
+                    || block.canConnectRedstone(state, this.world, neighborPos, facing.getOpposite())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean shouldGeneratePower() {
+        return this.hasChargingWork() || this.hasPowerConsumer();
+    }
+
     public boolean isGeneratingPower() {
-        return this.burnTime > 0;
+        if (this.world != null && this.world.isRemote) {
+            return this.isGeneratingClient || (this.burnTime > 0 && this.shouldGeneratePower());
+        }
+        return this.burnTime > 0 && this.shouldGeneratePower();
     }
 
     @Override
@@ -56,6 +98,9 @@ public class TileEntityElectricityGenerator extends TileEntityLockableLoot imple
         if (this.currentItemBurnTime == 0 && this.burnTime > 0) {
             this.currentItemBurnTime = this.burnTime;
         }
+        if (compound.hasKey("IsGenerating")) {
+            this.isGeneratingClient = compound.getBoolean("IsGenerating");
+        }
     }
 
     @Override
@@ -63,6 +108,7 @@ public class TileEntityElectricityGenerator extends TileEntityLockableLoot imple
         super.writeToNBT(compound);
         compound.setInteger("BurnTime", this.burnTime);
         compound.setInteger("CurrentItemBurnTime", this.currentItemBurnTime);
+        compound.setBoolean("IsGenerating", this.isGeneratingPower());
         if (!this.checkLootAndWrite(compound)) {
             ItemStackHelper.saveAllItems(compound, this.inventory);
         }
@@ -76,7 +122,13 @@ public class TileEntityElectricityGenerator extends TileEntityLockableLoot imple
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return index == 0 && TileEntityFurnace.isItemFuel(stack);
+        if (index == 0) {
+            return TileEntityFurnace.isItemFuel(stack);
+        }
+        if (index == 1 || index == 2) {
+            return com.voltyx.mwccf.battery.DeviceBatteryHelper.isChargeableItem(stack);
+        }
+        return false;
     }
 
     @Override
@@ -99,18 +151,31 @@ public class TileEntityElectricityGenerator extends TileEntityLockableLoot imple
         boolean wasGenerating = this.isGeneratingPower();
         boolean dirty = false;
 
-        if (this.burnTime > 0) {
-            --this.burnTime;
-        }
+        boolean shouldRun = this.shouldGeneratePower();
 
         if (!this.world.isRemote) {
             ItemStack fuel = this.inventory.get(0);
-            if (this.burnTime <= 0 && !fuel.isEmpty()) {
+            if (this.burnTime <= 0 && shouldRun && !fuel.isEmpty()) {
                 int itemBurn = TileEntityFurnace.getItemBurnTime(fuel);
                 if (itemBurn > 0) {
                     this.currentItemBurnTime = this.burnTime = itemBurn;
                     fuel.shrink(1);
                     dirty = true;
+                }
+            }
+
+            if (this.burnTime > 0 && shouldRun) {
+                --this.burnTime;
+            }
+
+            if (this.isGeneratingPower()) {
+                for (int slotIdx = 1; slotIdx <= 2; ++slotIdx) {
+                    ItemStack toCharge = this.inventory.get(slotIdx);
+                    if (!toCharge.isEmpty() && com.voltyx.mwccf.battery.DeviceBatteryHelper.canCharge(toCharge)) {
+                        if (com.voltyx.mwccf.battery.DeviceBatteryHelper.chargeItem(toCharge, 40)) {
+                            dirty = true;
+                        }
+                    }
                 }
             }
 

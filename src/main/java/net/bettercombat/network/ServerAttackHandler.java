@@ -51,7 +51,7 @@ public class ServerAttackHandler {
                 // Combo damage multiplier
                 double comboMult = attack.damageMultiplier() - 1.0;
                 if (Math.abs(comboMult) > 0.001) {
-                    comboMod = new AttributeModifier(COMBO_MODIFIER_ID, "Combo Multiplier", comboMult, 1); // 1 = MULTIPLY_BASE
+                    comboMod = new AttributeModifier(COMBO_MODIFIER_ID, "Combo Multiplier", comboMult, 2); // 2 = MULTIPLY_TOTAL
                     damageAttr.applyModifier(comboMod);
                 }
 
@@ -93,9 +93,14 @@ public class ServerAttackHandler {
                     ((EntityLivingBase) target).hurtResistantTime = 0;
                 }
 
+                // Ensure full attack cooldown strength (1.0F) so vanilla 1.9 attack cooldown does not slash damage down to 20%
+                net.bettercombat.utils.AttackCooldownHelper.setFullAttackStrength(player);
+
                 player.attackTargetEntityWithCurrentItem(target);
                 hitCount++;
             }
+
+            player.resetCooldown();
 
             if (hitCount > 1 && MwccfConfig.betterCombat.allowReworkedSweeping) {
                 if (MwccfConfig.betterCombat.reworkedSweepingPlaysSound) {

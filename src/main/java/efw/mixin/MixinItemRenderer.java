@@ -39,6 +39,7 @@ public class MixinItemRenderer {
      */
     @Inject(method = "renderItemInFirstPerson(Lnet/minecraft/client/entity/AbstractClientPlayer;FFLnet/minecraft/util/EnumHand;FLnet/minecraft/item/ItemStack;F)V", at = @At("HEAD"), cancellable = true)
     private void onRenderItemInFirstPerson(AbstractClientPlayer player, float partialTicks, float pitch, EnumHand hand, float swingProgress, ItemStack stack, float equipProgress, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(player);
         if (FirstPersonMode.isFirstPersonAttackActive(player)) {
             // Cancel vanilla first-person item/hand rendering during Better Combat attacks.
             // Attack rendering is handled by the world-space player model pass (matching 1.20.1 playerAnim).
@@ -53,6 +54,11 @@ public class MixinItemRenderer {
                 ci.cancel();
             }
         }
+    }
+
+    @Inject(method = "renderItemInFirstPerson(Lnet/minecraft/client/entity/AbstractClientPlayer;FFLnet/minecraft/util/EnumHand;FLnet/minecraft/item/ItemStack;F)V", at = @At("RETURN"))
+    private void onRenderItemInFirstPersonReturn(AbstractClientPlayer player, float partialTicks, float pitch, EnumHand hand, float swingProgress, ItemStack stack, float equipProgress, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
     }
 
     /**

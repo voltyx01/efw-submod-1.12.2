@@ -63,38 +63,30 @@ public class SurvivalInstinctArmorHandler {
             if (!living.world.isRemote) {
                 // Drain battery charge: 20 units every 20 ticks (1 sec)
                 if (living.ticksExisted % 20 == 0) {
-                    net.minecraft.nbt.NBTTagCompound tag = helm.getTagCompound();
-                    int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-                    if (charge > 0) {
-                        charge = Math.max(0, charge - 20);
-                        tag.setInteger("battery_charge", charge);
-                        if (charge <= 0) {
-                            tag.setBoolean("nv_active", false);
-                            hasNVGActive = false;
-                            living.removePotionEffect(MobEffects.NIGHT_VISION);
-                            living.world.playSound(null, living.posX, living.posY, living.posZ,
-                                    com.voltyx.mwccf.ModSounds.NVG_TOGGLE != null ? com.voltyx.mwccf.ModSounds.NVG_TOGGLE : net.minecraft.init.SoundEvents.BLOCK_LEVER_CLICK,
-                                    net.minecraft.util.SoundCategory.PLAYERS, 0.8F, 1.0F);
-                            if (living instanceof net.minecraft.entity.player.EntityPlayerMP) {
-                                net.minecraft.entity.player.EntityPlayerMP mp = (net.minecraft.entity.player.EntityPlayerMP) living;
-                                mp.connection.sendPacket(
-                                        new net.minecraft.network.play.server.SPacketChat(
-                                                new net.minecraft.util.text.TextComponentTranslation("tooltip.mwccf.walkie_talkie.no_battery"),
-                                                net.minecraft.util.text.ChatType.GAME_INFO));
-                                mp.connection.sendPacket(
-                                        new net.minecraft.network.play.server.SPacketEntityEquipment(living.getEntityId(), EntityEquipmentSlot.HEAD, helm));
-                            }
-                            if (living.world instanceof net.minecraft.world.WorldServer) {
-                                ((net.minecraft.world.WorldServer) living.world).getEntityTracker().sendToTracking(living,
-                                        new net.minecraft.network.play.server.SPacketEntityEquipment(living.getEntityId(), EntityEquipmentSlot.HEAD, helm));
-                            }
-                        }
-                    } else {
+                    int remaining = com.voltyx.mwccf.battery.DeviceBatteryHelper.consumeCharge(helm, 20);
+                    if (remaining <= 0) {
+                        net.minecraft.nbt.NBTTagCompound tag = helm.getTagCompound();
                         if (tag != null) {
                             tag.setBoolean("nv_active", false);
                         }
                         hasNVGActive = false;
                         living.removePotionEffect(MobEffects.NIGHT_VISION);
+                        living.world.playSound(null, living.posX, living.posY, living.posZ,
+                                com.voltyx.mwccf.ModSounds.NVG_TOGGLE != null ? com.voltyx.mwccf.ModSounds.NVG_TOGGLE : net.minecraft.init.SoundEvents.BLOCK_LEVER_CLICK,
+                                net.minecraft.util.SoundCategory.PLAYERS, 0.8F, 1.0F);
+                        if (living instanceof net.minecraft.entity.player.EntityPlayerMP) {
+                            net.minecraft.entity.player.EntityPlayerMP mp = (net.minecraft.entity.player.EntityPlayerMP) living;
+                            mp.connection.sendPacket(
+                                    new net.minecraft.network.play.server.SPacketChat(
+                                            new net.minecraft.util.text.TextComponentTranslation("tooltip.mwccf.walkie_talkie.no_battery"),
+                                            net.minecraft.util.text.ChatType.GAME_INFO));
+                            mp.connection.sendPacket(
+                                    new net.minecraft.network.play.server.SPacketEntityEquipment(living.getEntityId(), EntityEquipmentSlot.HEAD, helm));
+                        }
+                        if (living.world instanceof net.minecraft.world.WorldServer) {
+                            ((net.minecraft.world.WorldServer) living.world).getEntityTracker().sendToTracking(living,
+                                    new net.minecraft.network.play.server.SPacketEntityEquipment(living.getEntityId(), EntityEquipmentSlot.HEAD, helm));
+                        }
                     }
                 }
                 if (hasNVGActive) {

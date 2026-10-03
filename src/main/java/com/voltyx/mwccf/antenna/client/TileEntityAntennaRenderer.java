@@ -227,26 +227,26 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
         float p = 1.0F / 16.0F; // 1 model pixel = 0.0625 world units
 
         if ("3".equals(label)) {
-            // Button 3: smeared bloody thumbprint, dark dried blood with deep crimson center
-            drawFrontQuad(buf, bx - 0.35F * p, bx + 0.44F * p, by - 0.40F * p, by + 0.44F * p, z, 0.28F, 0.03F, 0.03F, 0.88F);
-            drawFrontQuad(buf, bx - 0.15F * p, bx + 0.36F * p, by - 0.25F * p, by + 0.35F * p, z, 0.50F, 0.06F, 0.06F, 0.82F);
-            drawFrontQuad(buf, bx - 0.05F * p, bx + 0.24F * p, by - 0.10F * p, by + 0.22F * p, z, 0.68F, 0.08F, 0.08F, 0.70F);
+            // Button 3: smeared bloody thumbprint, dark dried blood with deep coagulated center
+            drawFrontQuad(buf, bx - 0.35F * p, bx + 0.44F * p, by - 0.40F * p, by + 0.44F * p, z, 0.16F, 0.015F, 0.015F, 0.40F);
+            drawFrontQuad(buf, bx - 0.15F * p, bx + 0.36F * p, by - 0.25F * p, by + 0.35F * p, z, 0.24F, 0.020F, 0.020F, 0.48F);
+            drawFrontQuad(buf, bx - 0.05F * p, bx + 0.24F * p, by - 0.10F * p, by + 0.22F * p, z, 0.32F, 0.028F, 0.028F, 0.52F);
         } else if ("6".equals(label)) {
             // Button 6: diagonal blood swipe across the button and a small trickle below
-            drawFrontQuad(buf, bx - 0.42F * p, bx + 0.42F * p, by - 0.42F * p, by + 0.35F * p, z, 0.26F, 0.03F, 0.03F, 0.86F);
-            drawFrontQuad(buf, bx - 0.30F * p, bx + 0.28F * p, by - 0.30F * p, by + 0.18F * p, z, 0.48F, 0.05F, 0.05F, 0.80F);
-            drawFrontQuad(buf, bx - 0.12F * p, bx + 0.08F * p, by - 0.58F * p, by - 0.40F * p, z, 0.32F, 0.04F, 0.04F, 0.75F);
+            drawFrontQuad(buf, bx - 0.42F * p, bx + 0.42F * p, by - 0.42F * p, by + 0.35F * p, z, 0.15F, 0.015F, 0.015F, 0.38F);
+            drawFrontQuad(buf, bx - 0.30F * p, bx + 0.28F * p, by - 0.30F * p, by + 0.18F * p, z, 0.25F, 0.022F, 0.022F, 0.46F);
+            drawFrontQuad(buf, bx - 0.12F * p, bx + 0.08F * p, by - 0.58F * p, by - 0.40F * p, z, 0.18F, 0.018F, 0.018F, 0.42F);
         } else if ("8".equals(label)) {
             // Button 8: heavy bloody fingerprint covering key with blood drip
-            drawFrontQuad(buf, bx - 0.44F * p, bx + 0.44F * p, by - 0.44F * p, by + 0.44F * p, z, 0.30F, 0.03F, 0.03F, 0.92F);
-            drawFrontQuad(buf, bx - 0.30F * p, bx + 0.30F * p, by - 0.26F * p, by + 0.30F * p, z, 0.55F, 0.06F, 0.06F, 0.88F);
-            drawFrontQuad(buf, bx - 0.16F * p, bx + 0.16F * p, by - 0.12F * p, by + 0.14F * p, z, 0.72F, 0.08F, 0.08F, 0.72F);
-            drawFrontQuad(buf, bx - 0.06F * p, bx + 0.06F * p, by - 0.65F * p, by - 0.44F * p, z, 0.36F, 0.04F, 0.04F, 0.85F);
+            drawFrontQuad(buf, bx - 0.44F * p, bx + 0.44F * p, by - 0.44F * p, by + 0.44F * p, z, 0.17F, 0.016F, 0.016F, 0.42F);
+            drawFrontQuad(buf, bx - 0.30F * p, bx + 0.30F * p, by - 0.26F * p, by + 0.30F * p, z, 0.26F, 0.022F, 0.022F, 0.48F);
+            drawFrontQuad(buf, bx - 0.16F * p, bx + 0.16F * p, by - 0.12F * p, by + 0.14F * p, z, 0.32F, 0.028F, 0.028F, 0.54F);
+            drawFrontQuad(buf, bx - 0.06F * p, bx + 0.06F * p, by - 0.65F * p, by - 0.44F * p, z, 0.20F, 0.018F, 0.018F, 0.45F);
         } else if ("0".equals(label)) {
             // Button 0: worn bloody smudge with edge splatter
-            drawFrontQuad(buf, bx - 0.40F * p, bx + 0.38F * p, by - 0.38F * p, by + 0.42F * p, z, 0.27F, 0.03F, 0.03F, 0.86F);
-            drawFrontQuad(buf, bx - 0.22F * p, bx + 0.22F * p, by - 0.18F * p, by + 0.26F * p, z, 0.50F, 0.05F, 0.05F, 0.82F);
-            drawFrontQuad(buf, bx + 0.24F * p, bx + 0.42F * p, by - 0.36F * p, by - 0.22F * p, z, 0.34F, 0.04F, 0.04F, 0.68F);
+            drawFrontQuad(buf, bx - 0.40F * p, bx + 0.38F * p, by - 0.38F * p, by + 0.42F * p, z, 0.15F, 0.015F, 0.015F, 0.38F);
+            drawFrontQuad(buf, bx - 0.22F * p, bx + 0.22F * p, by - 0.18F * p, by + 0.26F * p, z, 0.25F, 0.022F, 0.022F, 0.46F);
+            drawFrontQuad(buf, bx + 0.24F * p, bx + 0.42F * p, by - 0.36F * p, by - 0.22F * p, z, 0.19F, 0.018F, 0.018F, 0.40F);
         }
     }
 

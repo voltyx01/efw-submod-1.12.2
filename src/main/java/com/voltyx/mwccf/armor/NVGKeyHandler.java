@@ -40,7 +40,7 @@ public class NVGKeyHandler {
 
             if (SurvivalInstinctArmorHandler.isNVGHelmet(helm.getItem())) {
                 net.minecraft.nbt.NBTTagCompound tag = helm.hasTagCompound() ? helm.getTagCompound() : new net.minecraft.nbt.NBTTagCompound();
-                int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
+                int charge = com.voltyx.mwccf.battery.DeviceBatteryHelper.getCharge(helm);
                 boolean current = tag.hasKey("nv_active") && tag.getBoolean("nv_active") && charge > 0;
 
                 if (!current && charge <= 0) {

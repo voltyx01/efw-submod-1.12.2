@@ -542,15 +542,37 @@ item.mcore.headlamp.name=Налобный фонарик
 item.mcore.kawaii_ears.name=Кавайные ушки
 tooltip.mwccf.kawaii_ears.desc=Милые анимированные ушки. Надеваются в слот головы Baubles.
 item.mcore.bodycam.name=Бодикам
-tooltip.mwccf.bodycam.desc=Нательная камера. Надевается в слот тела Baubles или нагрудника.
+tooltip.mwccf.bodycam.desc=Нательная камера для записи и трансляции видеопотока.
+tooltip.mwccf.bodycam.online_raw=ВКЛЮЧЕНА (ONLINE)
+tooltip.mwccf.bodycam.offline_raw=ВЫКЛЮЧЕНА (OFFLINE)
+tooltip.mwccf.bodycam.status_online=§7Статус: §aВКЛЮЧЕНА (ONLINE)
+tooltip.mwccf.bodycam.status_offline=§7Статус: §cВЫКЛЮЧЕНА (OFFLINE)
+tooltip.mwccf.bodycam.toggle_hint=§8[Shift+ПКМ / X] Вкл/Выкл питание
+message.mwccf.bodycam.status_fmt=§7[§b%s§7] Статус: %s
+tooltip.mwccf.bodycam.manual_shift=§9Подключение к терминалу §8(зажмите Shift, чтобы посмотреть)
+tooltip.mwccf.bodycam.manual_title=§9Инструкция по подключению к терминалу:
+tooltip.mwccf.bodycam.manual_step1=§81. §7Установите в терминал §bИнтернет-модуль§7 и поднимите сеть: §eifup eth0
+tooltip.mwccf.bodycam.manual_step2=§82. §7Установите драйвер захвата: §eapt install bodycam-driver
+tooltip.mwccf.bodycam.manual_step3=§83. §7Включите камеру хоткеем §eX §7или §eShift+ПКМ
+tooltip.mwccf.bodycam.manual_step4=§84. §7Введите §ebodycam §7в терминале и выберите номер камеры
 
 item.mcore.portable_map.name=Портативная карта
 tooltip.mwccf.portable_map.desc=Отображает миникарту, радар и карту мира при наличии заряда.
 
 item.mcore.battery.name=Батарейка
+item.mwccf.lion_battery_1.name=Зелёный Li-ion аккумулятор
+item.mwccf.lion_battery_2.name=Коричневый Li-ion аккумулятор
+item.mwccf.lion_battery_3.name=Розовый Li-ion аккумулятор
 tooltip.mcore.battery.charge=Заряд: %d%%
+tooltip.mwccf.battery.capacity=Емкость
 tooltip.mcore.battery.required=Нужна батарейка
 tooltip.mcore.battery.none=НЕТ
+tooltip.mwccf.battery.disposable=§7Одноразовая батарейка
+tooltip.mwccf.battery.rechargeable=§bПерезаряжаемый Li-ion аккумулятор
+tooltip.mwccf.battery.swap_hint=§8Shift+ПКМ по устройству для установки или замены
+tooltip.mwccf.battery.charge_hint=Shift+ПКМ батарейкой в инвентаре для замены
+tooltip.mwccf.bodycam.no_id=Не присвоен (выдается в инвентаре)
+container.mwccf.charging=ЗАРЯДКА
 
 item.mwccf.adrenaline.name=РђРґСЂРµРЅР°Р»РёРЅ
 item.mwccf.morphine_syringe.name=РЁРїСЂРёС† СЃ РјРѕСЂС„РёРЅРѕРј
@@ -1218,12 +1240,18 @@ item.refurbished_furniture.range_hood_on.name=Кухонная вытяжка
 # Doll
 item.mwccf.doll.name=Плюшевая кукла Сайи
 tooltip.mwccf.doll.desc=Потрепанная мягкая игрушка. Чья-то маленькая рука держала её крепче всего остального.
+tooltip.mwccf.doll.trauma_shift=§cЭффект Травмы §8(зажмите Shift, чтобы посмотреть)
+tooltip.mwccf.doll.trauma_title=§cЭффект Травмы:
+tooltip.mwccf.doll.trauma_desc=§7Пока игрушка с вами, каждый слой крови усиливает ваш урон вплоть до §c+30%%§7. Не распространяется на огнестрельное оружие.
 inspect.doll.desc=Потрепанная мягкая игрушка. Чья-то маленькая рука держала её крепче всего остального.
 inspect.doll.lore="Сайя не выпускала её из рук. Никогда."
 
 # Bloody Necklace
 item.mwccf.bloody_necklace.name=Окровавленное ожерелье
 tooltip.mwccf.bloody_necklace.desc=Простая цепочка. Застёжка сломана — видно что снимали в спешке. Местами бурые пятна.
+tooltip.mwccf.bloody_necklace.memory_shift=§cЭффект Воспоминаний §8(зажмите Shift, чтобы посмотреть)
+tooltip.mwccf.bloody_necklace.memory_title=§cЭффект Воспоминаний:
+tooltip.mwccf.bloody_necklace.memory_desc=§7При ношении: §a-10%% §7к увеличению пульса от триггеров, §a+10%% §7к защите от урона.
 tooltip.mwccf.bloody_necklace.effect=§7При ношении: §a-10%% §7к увеличению пульса от триггеров, §a+10%% §7к защите от урона
 inspect.bloody_necklace.desc=Простая цепочка. Застёжка сломана — видно что снимали в спешке. Местами бурые пятна.
 inspect.bloody_necklace.lore="Чувствуется запах знакомых духов вперемешку с металлом."

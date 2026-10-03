@@ -32,7 +32,14 @@ public class MixinWeaponRenderer {
 
     @Inject(method = {"render"}, at = {@At("HEAD")}, remap = false, require = 0)
     private void onGeneralRender(ItemStack stack, EntityLivingBase entity, CallbackInfo ci) {
-        // Method left open for rendering extensions
+        if (entity instanceof net.minecraft.entity.player.EntityPlayer) {
+            com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer((net.minecraft.entity.player.EntityPlayer) entity);
+        }
+    }
+
+    @Inject(method = {"render"}, at = {@At("RETURN")}, remap = false, require = 0)
+    private void onGeneralRenderReturn(ItemStack stack, EntityLivingBase entity, CallbackInfo ci) {
+        com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
     }
 
     @Unique

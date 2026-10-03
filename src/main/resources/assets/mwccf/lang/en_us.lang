@@ -741,7 +741,19 @@ item.mcore.headlamp.name=Headlamp
 item.mcore.kawaii_ears.name=Kawaii Ears
 tooltip.mwccf.kawaii_ears.desc=Cute animated ears. Equipped in the Baubles head slot.
 item.mcore.bodycam.name=Bodycam
-tooltip.mwccf.bodycam.desc=Wearable camera. Equipped in the Baubles body slot or chestplate slot.
+tooltip.mwccf.bodycam.desc=Wearable camera for video recording and remote stream transmission.
+tooltip.mwccf.bodycam.online_raw=ONLINE
+tooltip.mwccf.bodycam.offline_raw=OFFLINE
+tooltip.mwccf.bodycam.status_online=§7Status: §aONLINE
+tooltip.mwccf.bodycam.status_offline=§7Status: §cOFFLINE
+tooltip.mwccf.bodycam.toggle_hint=§8[Shift+RMB / X] Toggle Power
+message.mwccf.bodycam.status_fmt=§7[§b%s§7] Status: %s
+tooltip.mwccf.bodycam.manual_shift=§9Terminal Connection §8(hold Shift to view)
+tooltip.mwccf.bodycam.manual_title=§9Terminal Setup Manual:
+tooltip.mwccf.bodycam.manual_step1=§81. §7Install §bInternet Module§7 into terminal and start network: §eifup eth0
+tooltip.mwccf.bodycam.manual_step2=§82. §7Install video capture driver: §eapt install bodycam-driver
+tooltip.mwccf.bodycam.manual_step3=§83. §7Ensure camera is powered on (§eShift+RMB §7or §eX§7 key)
+tooltip.mwccf.bodycam.manual_step4=§84. §7Type §ebodycam §7in terminal and select camera ID from list
 
 item.mcore.portable_map.name=Portable Map
 tooltip.mwccf.portable_map.desc=Displays minimap, radar and world map when charged.
@@ -1238,12 +1250,34 @@ item.refurbished_furniture.range_hood_on.name=Range Hood (On)
 # Doll
 item.mwccf.doll.name=Saya's Plush Doll
 tooltip.mwccf.doll.desc=A worn-out plush toy. Someone's small hand held onto it tighter than anything else.
+tooltip.mwccf.doll.trauma_shift=§cTrauma Effect §8(hold Shift to view)
+tooltip.mwccf.doll.trauma_title=§cTrauma Effect:
+tooltip.mwccf.doll.trauma_desc=§7While the toy is with you, each layer of blood increases your damage by up to §c+30%%§7. Does not affect firearms.
 inspect.doll.desc=A worn-out plush toy. Someone's small hand held onto it tighter than anything else.
 inspect.doll.lore="Saya never let go of it. Never."
 
 # Bloody Necklace
 item.mwccf.bloody_necklace.name=Bloody Necklace
 tooltip.mwccf.bloody_necklace.desc=A simple chain necklace. The clasp is broken — clearly taken off in a hurry. Stained with reddish spots.
+tooltip.mwccf.bloody_necklace.memory_shift=§cMemory Effect §8(hold Shift to view)
+tooltip.mwccf.bloody_necklace.memory_title=§cMemory Effect:
+tooltip.mwccf.bloody_necklace.memory_desc=§7When equipped: §a-10%% §7heartbeat trigger increase, §a+10%% §7damage resistance.
 tooltip.mwccf.bloody_necklace.effect=§7When equipped: §a-10%% §7heartbeat trigger increase, §a+10%% §7damage resistance
 inspect.bloody_necklace.desc=A simple chain necklace. The clasp is broken — clearly taken off in a hurry. Stained with reddish spots.
 inspect.bloody_necklace.lore="A faint scent of familiar perfume mixed with the smell of metal."
+
+# Batteries & Accumulators
+item.mcore.battery.name=Battery
+item.mwccf.lion_battery_1.name=Green Li-ion Battery
+item.mwccf.lion_battery_2.name=Brown Li-ion Battery
+item.mwccf.lion_battery_3.name=Pink Li-ion Battery
+tooltip.mcore.battery.charge=Charge: %d%%
+tooltip.mwccf.battery.capacity=Capacity
+tooltip.mcore.battery.required=Battery Required
+tooltip.mcore.battery.none=NONE
+tooltip.mwccf.battery.disposable=§7Disposable battery
+tooltip.mwccf.battery.rechargeable=§bRechargeable Li-ion accumulator
+tooltip.mwccf.battery.swap_hint=§8Shift+Right-click on a device to install or swap
+tooltip.mwccf.battery.charge_hint=Shift+Right-click with a battery in inventory to swap
+tooltip.mwccf.bodycam.no_id=Unassigned (assigned in inventory)
+container.mwccf.charging=CHARGE

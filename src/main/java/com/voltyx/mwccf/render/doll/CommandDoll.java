@@ -40,6 +40,49 @@ public class CommandDoll extends CommandBase {
 
         String sub = args[0].toLowerCase();
 
+        if (sub.equals("body") || sub.equals("armor") || sub.equals("layer")) {
+            if (args.length >= 2) {
+                String bodyAction = args[1].toLowerCase();
+                if (bodyAction.equals("enable") || bodyAction.equals("on")) {
+                    efw.biomeinfo.MwccfConfig.doll.enableDebugTweaker = true;
+                    net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                    sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "[Doll Body] Дебаг-настройка ВКЛЮЧЕНА в конфиге. Нажмите F7 для открытия."));
+                    return;
+                }
+                if (bodyAction.equals("disable") || bodyAction.equals("off")) {
+                    efw.biomeinfo.MwccfConfig.doll.enableDebugTweaker = false;
+                    DollBodySettings.debugHudEnabled = false;
+                    net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                    sender.sendMessage(new TextComponentString(TextFormatting.RED + "[Doll Body] Дебаг-настройка ВЫКЛЮЧЕНА в конфиге."));
+                    return;
+                }
+                if (bodyAction.equals("save")) {
+                    DollBodySettings.save();
+                    return;
+                }
+                if (bodyAction.equals("dump") || bodyAction.equals("print")) {
+                    DollBodySettings.dumpAndCopy(mc, mc.player);
+                    return;
+                }
+                if (bodyAction.equals("reset")) {
+                    String cat = DollBodySettings.getActiveCategoryName(mc.player);
+                    DollBodySettings.OFFSETS.put(cat, new DollBodySettings.OffsetData(0f, 0f, 0f, 0f, 0f, 0f, 1.0f));
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "[Doll Body] Сброшены настройки для " + cat));
+                    return;
+                }
+                // Check if user specified a category name to select
+                for (int i = 0; i < DollBodySettings.CATEGORIES.size(); i++) {
+                    if (DollBodySettings.CATEGORIES.get(i).equalsIgnoreCase(bodyAction)) {
+                        DollBodySettings.selectedCategoryIndex = i;
+                        sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "[Doll Body] Выбрана категория: " + DollBodySettings.CATEGORIES.get(i)));
+                        return;
+                    }
+                }
+            }
+            DollBodySettings.toggleHud(mc);
+            return;
+        }
+
         if (sub.equals("print") || sub.equals("dump")) {
             DollSettings.dumpAndCopy(mc);
             return;

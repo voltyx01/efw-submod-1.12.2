@@ -59,15 +59,9 @@ public class ItemHeadlamp extends Item implements IBauble {
         if (tag != null && tag.getBoolean("active")) {
             if (!player.world.isRemote) { // Only decrease on server
                 if (player.ticksExisted % 20 == 0) {
-                    int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-                    if (charge > 0) {
-                        charge = Math.max(0, charge - 20);
-                        tag.setInteger("battery_charge", charge);
-                        if (charge <= 0) {
-                            tag.setBoolean("active", false); // turn off
-                        }
-                    } else {
-                        tag.setBoolean("active", false);
+                    int remaining = com.voltyx.mwccf.battery.DeviceBatteryHelper.consumeCharge(itemstack, 20);
+                    if (remaining <= 0) {
+                        tag.setBoolean("active", false); // turn off
                     }
                 }
             }
@@ -88,16 +82,16 @@ public class ItemHeadlamp extends Item implements IBauble {
     public void addInformation(ItemStack stack, @javax.annotation.Nullable net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
         NBTTagCompound tag = stack.getTagCompound();
         boolean active = tag != null && tag.getBoolean("active");
-        int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-        int percent = (int) ((charge / 48000.0f) * 100);
+        int percent = com.voltyx.mwccf.battery.DeviceBatteryHelper.getChargePercent(stack);
+        ItemStack installed = com.voltyx.mwccf.battery.DeviceBatteryHelper.getInstalledBattery(stack);
         
         tooltip.add("\u00a77State: " + (active ? "\u00a7aON" : "\u00a7cOFF"));
         
-        if (charge <= 0) {
+        if (installed.isEmpty() || percent <= 0) {
             tooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.required"));
         } else {
             String color = percent > 50 ? "\u00a7a" : (percent > 20 ? "\u00a7e" : "\u00a7c");
-            tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent));
+            tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent) + " \u00a78(" + installed.getDisplayName() + "\u00a78)");
         }
         
         String keyName = HeadlampKeyHandler.HEADLAMP_TOGGLE_KEY.getDisplayName();

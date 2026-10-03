@@ -1,16 +1,17 @@
 package com.voltyx.mwccf.network;
 
+import com.voltyx.mwccf.battery.DeviceBatteryHelper;
+import com.voltyx.mwccf.geo.ItemBracelet;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.SoundCategory;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import com.voltyx.mwccf.geo.ItemHeadlamp;
-import com.voltyx.mwccf.geo.ItemBracelet;
-import com.voltyx.mwccf.mcore.MCoreItems;
 
 public class PacketChargeDevice implements IMessage {
     private int slotId;
@@ -39,33 +40,57 @@ public class PacketChargeDevice implements IMessage {
                 if (player.openContainer != null && message.slotId >= 0 && message.slotId < player.openContainer.inventorySlots.size()) {
                     Slot slot = player.openContainer.getSlot(message.slotId);
                     ItemStack target = slot.getStack();
-                    ItemStack held = player.inventory.getItemStack(); // What is held by the mouse
+                    ItemStack held = player.inventory.getItemStack(); // Предмет на курсоре мыши
 
-                    if (!held.isEmpty() && held.getItem() == MCoreItems.BATTERY) {
-                        if (!target.isEmpty() && (target.getItem() instanceof ItemHeadlamp || target.getItem() instanceof ItemBracelet || target.getItem() instanceof com.voltyx.mwccf.geo.ItemPortableMap || target.getItem() instanceof com.voltyx.mwccf.geo.ItemBodycam || target.getItem() instanceof com.voltyx.mwccf.walkietalkie.ItemWalkieTalkie || com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler.isNVGHelmet(target.getItem()))) {
-                            NBTTagCompound tag = target.getTagCompound();
-                            int currentCharge = (tag != null && tag.hasKey("battery_charge")) ? tag.getInteger("battery_charge") : 0;
-                            // 50% of 48000 is 24000
-                            if (currentCharge <= 24000) {
-                                if (tag == null) {
-                                    tag = new NBTTagCompound();
-                                    target.setTagCompound(tag);
+                    if (!target.isEmpty() && DeviceBatteryHelper.isPoweredDevice(target)) {
+                        // 1. Установка или свап батарейки / аккумулятора
+                        if (!held.isEmpty() && DeviceBatteryHelper.isBattery(held)) {
+                            ItemStack oldBattery = DeviceBatteryHelper.getInstalledBattery(target);
+
+                            if (held.getCount() == 1) {
+                                // Прямой свап: старая батарейка в курсор, новая в устройство
+                                DeviceBatteryHelper.setInstalledBattery(target, held);
+                                player.inventory.setItemStack(oldBattery);
+                            } else {
+                                // В руке стак: берем 1 штуку
+                                ItemStack single = held.splitStack(1);
+                                DeviceBatteryHelper.setInstalledBattery(target, single);
+                                player.inventory.setItemStack(held);
+
+                                if (!oldBattery.isEmpty()) {
+                                    if (!player.inventory.addItemStackToInventory(oldBattery)) {
+                                        player.dropItem(oldBattery, false);
+                                    }
                                 }
-                                tag.setInteger("battery_charge", 48000);
-                                
-                                // Consume 1 battery
-                                held.shrink(1);
-                                player.inventory.setItemStack(held.isEmpty() ? ItemStack.EMPTY : held);
-                                
-                                player.world.playSound(null, player.posX, player.posY, player.posZ, net.minecraft.init.SoundEvents.ITEM_ARMOR_EQUIP_IRON, net.minecraft.util.SoundCategory.PLAYERS, 0.8F, 1.2F);
+                            }
 
-                                // Update the client
+                            player.world.playSound(null, player.posX, player.posY, player.posZ,
+                                    SoundEvents.ITEM_ARMOR_EQUIP_IRON, SoundCategory.PLAYERS, 0.8F, 1.2F);
+
+                            player.sendSlotContents(player.openContainer, slot.slotNumber, target);
+                            player.connection.sendPacket(new net.minecraft.network.play.server.SPacketSetSlot(-1, -1, player.inventory.getItemStack()));
+                            player.openContainer.detectAndSendChanges();
+                            return;
+                        }
+
+                        // 2. Извлечение батарейки / аккумулятора пустым курсором
+                        if (held.isEmpty()) {
+                            ItemStack oldBattery = DeviceBatteryHelper.removeInstalledBattery(target);
+                            if (!oldBattery.isEmpty()) {
+                                player.inventory.setItemStack(oldBattery);
+                                player.world.playSound(null, player.posX, player.posY, player.posZ,
+                                        SoundEvents.ITEM_ARMOR_EQUIP_GENERIC, SoundCategory.PLAYERS, 0.8F, 0.9F);
+
                                 player.sendSlotContents(player.openContainer, slot.slotNumber, target);
                                 player.connection.sendPacket(new net.minecraft.network.play.server.SPacketSetSlot(-1, -1, player.inventory.getItemStack()));
                                 player.openContainer.detectAndSendChanges();
+                                return;
                             }
                         }
-                    } else if (!held.isEmpty() && held.getItem() == com.voltyx.mwccf.item.ItemMorphineSyringe.INSTANCE) {
+                    }
+
+                    // 3. Заправка морфина в браслет
+                    if (!held.isEmpty() && held.getItem() == com.voltyx.mwccf.item.ItemMorphineSyringe.INSTANCE) {
                         if (!target.isEmpty() && target.getItem() instanceof ItemBracelet) {
                             NBTTagCompound tag = target.getTagCompound();
                             int morphineCount = (tag != null && tag.hasKey("morphine_count")) ? tag.getInteger("morphine_count") : 0;

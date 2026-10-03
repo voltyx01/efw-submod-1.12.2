@@ -1,7 +1,7 @@
-﻿{
-  "parent": "mwccf:custom/adrenaline_syringe",
+{
+  "parent": "mwccf:custom/morphine_syringe",
   "textures": {
-    "0": "mwccf:block/adrenaline_syringe",
-    "particle": "mwccf:item/adrenaline_syringe"
+    "1": "mwccf:block/adrenaline",
+    "particle": "mwccf:item/adrenaline"
   }
 }

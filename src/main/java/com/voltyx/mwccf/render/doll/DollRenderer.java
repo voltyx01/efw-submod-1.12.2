@@ -305,7 +305,12 @@ public class DollRenderer {
         // отменяем стандартную руку и дорисовываем плавный уход куклы до самого конца!
         if (progress > 0f) {
             event.setCanceled(true);
-            renderDoll(mc, progress);
+            com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(mc.player);
+            try {
+                renderDoll(mc, progress);
+            } finally {
+                com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
+            }
         }
     }
 

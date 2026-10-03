@@ -55,20 +55,26 @@ public class LockOnHandler {
 
     @SubscribeEvent
     public void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase != TickEvent.Phase.START || mc.player == null || mc.currentScreen != null) return;
-
-        if (mc.player.getHealth() <= 0 || mc.player.isDead) {
+        if (mc.player == null || mc.player.getHealth() <= 0 || mc.player.isDead) {
             if (lockedOn) leaveLockOn();
             return;
         }
+
+        if (event.phase != TickEvent.Phase.START || mc.currentScreen != null) return;
 
         // Всегда обновляем подсветку — моб под лучом камеры
         highlighted = getEntityUnderCameraRay(LockOnConfig.maxRange);
 
         // ── Обслуживаем активный лок ────────────────────────────
-        if (lockedOn && target != null) {
+        if (lockedOn) {
+            if (target == null || target.isDead || !target.isEntityAlive() || target.world != mc.player.world
+                    || (mc.world != null && !mc.world.loadedEntityList.contains(target)) || target.getHealth() <= 0) {
+                autoChangeTarget();
+                return;
+            }
+
             double distSq = mc.player.getDistanceSq(target);
-            if (target.getHealth() <= 0 || distSq > LockOnConfig.maxRange * LockOnConfig.maxRange) {
+            if (distSq > LockOnConfig.maxRange * LockOnConfig.maxRange) {
                 autoChangeTarget();
                 return;
             }
@@ -82,7 +88,6 @@ public class LockOnHandler {
             }
         }
 
-        // ── Нажатие Lock-On ─────────────────────────────────────
         // ── Нажатие Lock-On ─────────────────────────────────────
         if (LOCK_ON.isPressed()) {
             if (lockedOn) {
@@ -130,10 +135,10 @@ public class LockOnHandler {
     //  Сброс лока
     // ────────────────────────────────────────────────────────────
 
-    private void leaveLockOn() {
+    public static void leaveLockOn() {
         target   = null;
         lockedOn = false;
-        wallTimer = 0;
+        highlighted = null;
     }
 
     // ────────────────────────────────────────────────────────────

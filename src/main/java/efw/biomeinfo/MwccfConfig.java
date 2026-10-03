@@ -575,5 +575,15 @@ public class MwccfConfig {
         @Config.Comment("Show off-hand/other-hand in first person during single-handed attacks")
         public boolean isShowingOtherHandFirstPerson = false;
     }
+
+    @Config.Name("doll_settings")
+    @Config.Comment("Doll Render and Debug Settings")
+    public static final DollSettings doll = new DollSettings();
+
+    public static class DollSettings {
+        @Config.Name("enable_debug_tweaker")
+        @Config.Comment("Enable in-game doll position tweaker HUD (F7 or /doll body). Off by default.")
+        public boolean enableDebugTweaker = false;
+    }
 }
 

@@ -1,5 +1,6 @@
 package com.voltyx.mwccf.furniture.tileentity;
 
+import com.voltyx.mwccf.furniture.client.gui.GeneratorGuiConfig;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -19,11 +20,29 @@ public class ContainerElectricityGenerator extends Container {
     public ContainerElectricityGenerator(InventoryPlayer playerInventory, TileEntityElectricityGenerator generatorTile) {
         this.generatorTile = generatorTile;
 
-        // Fuel Slot at (26, 42)
-        this.addSlotToContainer(new Slot(generatorTile, 0, 26, 42) {
+        GeneratorGuiConfig cfg = GeneratorGuiConfig.get();
+
+        // Fuel Slot
+        this.addSlotToContainer(new Slot(generatorTile, 0, cfg.fuelSlotX, cfg.fuelSlotY) {
             @Override
             public boolean isItemValid(ItemStack stack) {
                 return TileEntityFurnace.isItemFuel(stack);
+            }
+        });
+
+        // Charging Slot 1
+        this.addSlotToContainer(new Slot(generatorTile, 1, cfg.chargeSlot1X, cfg.chargeSlot1Y) {
+            @Override
+            public boolean isItemValid(ItemStack stack) {
+                return com.voltyx.mwccf.battery.DeviceBatteryHelper.isChargeableItem(stack);
+            }
+        });
+
+        // Charging Slot 2
+        this.addSlotToContainer(new Slot(generatorTile, 2, cfg.chargeSlot2X, cfg.chargeSlot2Y) {
+            @Override
+            public boolean isItemValid(ItemStack stack) {
+                return com.voltyx.mwccf.battery.DeviceBatteryHelper.isChargeableItem(stack);
             }
         });
 
@@ -40,17 +59,21 @@ public class ContainerElectricityGenerator extends Container {
         }
     }
 
+    private int isGenerating;
+
     @Override
     public void addListener(IContainerListener listener) {
         super.addListener(listener);
         listener.sendWindowProperty(this, 0, this.generatorTile.burnTime);
         listener.sendWindowProperty(this, 1, this.generatorTile.currentItemBurnTime);
+        listener.sendWindowProperty(this, 2, this.generatorTile.isGeneratingPower() ? 1 : 0);
     }
 
     @Override
     public void detectAndSendChanges() {
         super.detectAndSendChanges();
 
+        int genState = this.generatorTile.isGeneratingPower() ? 1 : 0;
         for (IContainerListener listener : this.listeners) {
             if (this.burnTime != this.generatorTile.burnTime) {
                 listener.sendWindowProperty(this, 0, this.generatorTile.burnTime);
@@ -58,10 +81,14 @@ public class ContainerElectricityGenerator extends Container {
             if (this.currentItemBurnTime != this.generatorTile.currentItemBurnTime) {
                 listener.sendWindowProperty(this, 1, this.generatorTile.currentItemBurnTime);
             }
+            if (this.isGenerating != genState) {
+                listener.sendWindowProperty(this, 2, genState);
+            }
         }
 
         this.burnTime = this.generatorTile.burnTime;
         this.currentItemBurnTime = this.generatorTile.currentItemBurnTime;
+        this.isGenerating = genState;
     }
 
     @Override
@@ -71,6 +98,8 @@ public class ContainerElectricityGenerator extends Container {
             this.generatorTile.burnTime = data;
         } else if (id == 1) {
             this.generatorTile.currentItemBurnTime = data;
+        } else if (id == 2) {
+            this.generatorTile.isGeneratingClient = (data == 1);
         }
     }
 
@@ -88,24 +117,33 @@ public class ContainerElectricityGenerator extends Container {
             ItemStack itemstack1 = slot.getStack();
             itemstack = itemstack1.copy();
 
-            if (index == 0) {
+            if (index >= 0 && index <= 2) {
                 // Move from generator to player inventory
-                if (!this.mergeItemStack(itemstack1, 1, 37, true)) {
+                if (!this.mergeItemStack(itemstack1, 3, 39, true)) {
                     return ItemStack.EMPTY;
                 }
                 slot.onSlotChange(itemstack1, itemstack);
             } else {
-                // Move from player inventory to fuel slot if it's fuel
+                // Move from player inventory
+                boolean merged = false;
                 if (TileEntityFurnace.isItemFuel(itemstack1)) {
-                    if (!this.mergeItemStack(itemstack1, 0, 1, false)) {
+                    if (this.mergeItemStack(itemstack1, 0, 1, false)) {
+                        merged = true;
+                    }
+                }
+                if (!merged && com.voltyx.mwccf.battery.DeviceBatteryHelper.isChargeableItem(itemstack1)) {
+                    if (this.mergeItemStack(itemstack1, 1, 3, false)) {
+                        merged = true;
+                    }
+                }
+                if (!merged) {
+                    if (index >= 3 && index < 30) {
+                        if (!this.mergeItemStack(itemstack1, 30, 39, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    } else if (index >= 30 && index < 39 && !this.mergeItemStack(itemstack1, 3, 30, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (index >= 1 && index < 28) {
-                    if (!this.mergeItemStack(itemstack1, 28, 37, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if (index >= 28 && index < 37 && !this.mergeItemStack(itemstack1, 1, 28, false)) {
-                    return ItemStack.EMPTY;
                 }
             }
 

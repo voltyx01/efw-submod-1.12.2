@@ -18,6 +18,11 @@ public class ConfigEventHandler {
             // Даем команду нашему менеджеру заново прочитать список мобов
             AdvancedHeadshotManager.reloadConfig();
 
+            if (!efw.biomeinfo.MwccfConfig.doll.enableDebugTweaker) {
+                com.voltyx.mwccf.render.doll.DollBodySettings.debugHudEnabled = false;
+                com.voltyx.mwccf.render.doll.DollSettings.debugHudEnabled = false;
+            }
+
             System.out.println("[MWCCF] Конфиг успешно перезагружен!");
         }
     }

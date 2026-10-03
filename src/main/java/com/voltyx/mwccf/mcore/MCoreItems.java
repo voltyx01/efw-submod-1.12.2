@@ -156,6 +156,9 @@ public class MCoreItems {
     public static final Item BODYCAM = createBodycam("bodycam");
     public static final Item PORTABLE_MAP = createPortableMap("portable_map");
     public static final Item BATTERY = createBattery("battery");
+    public static final Item LION_BATTERY_1 = createLiOnBattery("lion_battery_1", 120000, 1);
+    public static final Item LION_BATTERY_2 = createLiOnBattery("lion_battery_2", 250000, 2);
+    public static final Item LION_BATTERY_3 = createLiOnBattery("lion_battery_3", 500000, 3);
     public static final ItemArmor.ArmorMaterial MAT_ARTICGUILLIE = net.minecraftforge.common.util.EnumHelper.addArmorMaterial("ArticGuillie", "mwccf:empty", 23, new int[]{3, 6, 8, 3}, 9, net.minecraft.init.SoundEvents.ITEM_ARMOR_EQUIP_IRON, 1.0F);
     public static final Item ARTICGUILLIE_HELMET = createCustomArmor("artic_guillie_helmet", MAT_ARTICGUILLIE, 1, EntityEquipmentSlot.HEAD, "artic_guillie_armor", "Modelghillie");
     public static final Item ARTICGUILLIE_CHESTPLATE = createCustomArmor("artic_guillie_chestplate", MAT_ARTICGUILLIE, 1, EntityEquipmentSlot.CHEST, "artic_guillie_armor", "Modelghillie");
@@ -321,7 +324,13 @@ public class MCoreItems {
     }
 
     private static Item createBattery(String name) {
-        Item item = new ItemBattery(name);
+        Item item = new com.voltyx.mwccf.battery.ItemBattery(name, 48000, false, 0);
+        ITEMS.add(item);
+        return item;
+    }
+
+    private static Item createLiOnBattery(String name, int maxCharge, int tier) {
+        Item item = new com.voltyx.mwccf.battery.ItemBattery(name, maxCharge, true, tier);
         ITEMS.add(item);
         return item;
     }

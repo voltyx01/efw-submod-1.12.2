@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "mwccf:custom/morphine_syringe",
   "textures": {
-    "layer0": "mwccf:items/syringe"
+    "1": "mwccf:block/syringe",
+    "particle": "mwccf:item/syringe"
   }
 }

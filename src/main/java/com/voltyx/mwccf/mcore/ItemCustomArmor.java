@@ -171,15 +171,14 @@ public class ItemCustomArmor extends ItemArmor {
                 org.lwjgl.input.Keyboard.getKeyName(com.voltyx.mwccf.armor.ExoDashKeyHandler.KEY_EXO_DASH.getKeyCode()) : "X";
 
         if (com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler.isNVGHelmet(this)) {
-            net.minecraft.nbt.NBTTagCompound tag = stack.getTagCompound();
-            int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-            int percent = (int) ((charge / 48000.0f) * 100);
+            int percent = com.voltyx.mwccf.battery.DeviceBatteryHelper.getChargePercent(stack);
+            ItemStack installed = com.voltyx.mwccf.battery.DeviceBatteryHelper.getInstalledBattery(stack);
 
-            if (charge <= 0) {
+            if (installed.isEmpty() || percent <= 0) {
                 tooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.required"));
             } else {
                 String color = percent > 50 ? "\u00a7a" : (percent > 20 ? "\u00a7e" : "\u00a7c");
-                tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent));
+                tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent) + " \u00a78(" + installed.getDisplayName() + "\u00a78)");
             }
             tooltip.add("\u00a78" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.battery.charge_hint"));
         }

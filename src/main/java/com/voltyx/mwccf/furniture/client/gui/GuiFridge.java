@@ -31,7 +31,6 @@ public class GuiFridge extends GuiContainer {
     @Override
     protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
         this.fontRenderer.drawString(this.fridgeTile.getDisplayName().getUnformattedText(), 8, 6, 4210752);
-        this.fontRenderer.drawString("Inventory", 8, this.ySize - 96 + 2, 4210752);
     }
 
     @Override

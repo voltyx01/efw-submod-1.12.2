@@ -11,7 +11,9 @@
     "ItemBackpackMixin",
     "ContainerDiaryMixin",
     "ContainerSlotRestrictionsMixin",
-    "MixinStructureTemplate"
+    "MixinStructureTemplate",
+    "MixinEntityCollision",
+    "MixinPlayerRollCollision"
   ],
   "client": [
     "MixinRenderGlobal",
@@ -54,7 +56,10 @@
     "MixinAdvancementToast",
     "MixinEnchantment",
     "MixinSlot",
-    "MixinContainer"
+    "MixinContainer",
+    "MixinTextureManager",
+    "MixinFontRenderer",
+    "MixinGuiChest"
   ],
   "server": [],
   "injectors": {

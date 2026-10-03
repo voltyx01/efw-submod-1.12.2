@@ -102,17 +102,25 @@ public class ItemWalkieTalkie extends Item implements IBauble {
         // Drain every 20 ticks (1 sec) to prevent inventory/hand animation twitching
         if (entity.ticksExisted % 20 != 0) return;
 
-        int charge = tag.getInteger("battery_charge");
-        if (charge > 0) {
-            int newCharge = Math.max(0, charge - (DRAIN_PER_TICK * 20));
-            tag.setInteger("battery_charge", newCharge);
-            if (newCharge <= 0) {
-                tag.setBoolean(NBT_ACTIVE, false);
-            }
-        } else {
-            // No power — turn off
+        int remaining = com.voltyx.mwccf.battery.DeviceBatteryHelper.consumeCharge(stack, DRAIN_PER_TICK * 20);
+        if (remaining <= 0) {
             tag.setBoolean(NBT_ACTIVE, false);
         }
+    }
+
+    @Override
+    public boolean showDurabilityBar(ItemStack stack) {
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.showDurabilityBar(stack);
+    }
+
+    @Override
+    public double getDurabilityForDisplay(ItemStack stack) {
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.getDurabilityForDisplay(stack);
+    }
+
+    @Override
+    public int getRGBDurabilityForDisplay(ItemStack stack) {
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.getRGBDurabilityForDisplay(stack);
     }
 
     // -----------------------------------------------------------------------
@@ -151,8 +159,8 @@ public class ItemWalkieTalkie extends Item implements IBauble {
         boolean active = tag.getBoolean(NBT_ACTIVE);
         boolean muted  = tag.getBoolean(NBT_MUTED);
         int channel    = tag.getInteger(NBT_CHANNEL);
-        int charge     = tag.getInteger("battery_charge");
-        int pct        = (int)((charge / 48000f) * 100);
+        int pct        = com.voltyx.mwccf.battery.DeviceBatteryHelper.getChargePercent(stack);
+        ItemStack installed = com.voltyx.mwccf.battery.DeviceBatteryHelper.getInstalledBattery(stack);
 
         String stateColor = active ? "\u00a7a" : "\u00a7c";
         String statusText = active
@@ -166,11 +174,11 @@ public class ItemWalkieTalkie extends Item implements IBauble {
 
         tooltip.add(stateColor + statusText + " \u00a77| \u00a7e" + channelText + " \u00a77| " + micText);
 
-        if (charge <= 0) {
+        if (installed.isEmpty() || pct <= 0) {
             tooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.walkie_talkie.no_battery"));
         } else {
             String col = pct > 50 ? "\u00a7a" : (pct > 20 ? "\u00a7e" : "\u00a7c");
-            tooltip.add(col + net.minecraft.client.resources.I18n.format("tooltip.mwccf.walkie_talkie.battery", pct));
+            tooltip.add(col + net.minecraft.client.resources.I18n.format("tooltip.mwccf.walkie_talkie.battery", pct) + " \u00a78(" + installed.getDisplayName() + "\u00a78)");
         }
 
         String keyName = WalkieTalkieKeyHandler.WALKIE_TALKIE_TOGGLE_KEY.getDisplayName();
@@ -213,8 +221,7 @@ public class ItemWalkieTalkie extends Item implements IBauble {
 
     public static boolean hasBattery(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        ensureNbt(stack);
-        return stack.getTagCompound().getInteger("battery_charge") > 0;
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.getCharge(stack) > 0;
     }
 
     /**
@@ -225,7 +232,7 @@ public class ItemWalkieTalkie extends Item implements IBauble {
         ensureNbt(stack);
         NBTTagCompound tag = stack.getTagCompound();
         boolean current = tag.getBoolean(NBT_ACTIVE);
-        if (!current && tag.getInteger("battery_charge") <= 0) {
+        if (!current && com.voltyx.mwccf.battery.DeviceBatteryHelper.getCharge(stack) <= 0) {
             return false; // can't turn on without battery
         }
         boolean next = !current;

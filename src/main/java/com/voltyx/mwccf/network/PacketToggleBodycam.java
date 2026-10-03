@@ -65,8 +65,15 @@ public class PacketToggleBodycam implements IMessage {
                     player.world.playSound(null, player.posX, player.posY, player.posZ,
                             net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, SoundCategory.PLAYERS, 0.7F, pitch);
                     
-                    String status = newState ? "§aВКЛЮЧЕНА (ONLINE)" : "§cВЫКЛЮЧЕНА (OFFLINE)";
-                    player.sendMessage(new TextComponentString("§7[§b" + ItemBodycam.getCamId(targetStack) + "§7] Статус питания: " + status));
+                    net.minecraft.util.text.ITextComponent statusComp = new net.minecraft.util.text.TextComponentTranslation(
+                            newState ? "tooltip.mwccf.bodycam.online_raw" : "tooltip.mwccf.bodycam.offline_raw"
+                    );
+                    statusComp.getStyle().setColor(newState ? net.minecraft.util.text.TextFormatting.GREEN : net.minecraft.util.text.TextFormatting.RED);
+                    player.sendMessage(new net.minecraft.util.text.TextComponentTranslation(
+                            "message.mwccf.bodycam.status_fmt",
+                            ItemBodycam.getCamId(targetStack),
+                            statusComp
+                    ));
                 }
             });
             return null;

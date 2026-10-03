@@ -33,18 +33,31 @@ public class ItemBodycam extends Item implements IBauble {
         this.setCreativeTab(CreativeTabs.MISC);
     }
 
+    public static boolean hasCamId(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && stack.hasTagCompound() 
+                && stack.getTagCompound().hasKey("cam_id") 
+                && !stack.getTagCompound().getString("cam_id").isEmpty();
+    }
+
     public static String getCamId(ItemStack stack) {
-        if (stack.isEmpty()) return "CAM-0000";
+        if (stack == null || stack.isEmpty()) return "CAM-0000";
+        if (hasCamId(stack)) {
+            return stack.getTagCompound().getString("cam_id");
+        }
+        return "CAM-0000";
+    }
+
+    public static String assignUniqueCamId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return "CAM-0000";
         NBTTagCompound tag = stack.getTagCompound();
         if (tag == null) {
             tag = new NBTTagCompound();
             stack.setTagCompound(tag);
         }
-        if (!tag.hasKey("cam_id") || tag.getString("cam_id").isEmpty()) {
-            int rand = 1000 + (int) (Math.random() * 9000);
-            tag.setString("cam_id", "CAM-" + rand);
-        }
-        return tag.getString("cam_id");
+        int rand = 1000 + new java.util.Random().nextInt(9000);
+        String id = "CAM-" + rand;
+        tag.setString("cam_id", id);
+        return id;
     }
 
     public static boolean isPowerEnabled(ItemStack stack) {
@@ -71,16 +84,28 @@ public class ItemBodycam extends Item implements IBauble {
     }
 
     @Override
+    public void onCreated(ItemStack stack, World worldIn, EntityPlayer playerIn) {
+        super.onCreated(stack, worldIn, playerIn);
+        if (!worldIn.isRemote && !hasCamId(stack)) {
+            assignUniqueCamId(stack);
+        }
+    }
+
+    @Override
     public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
-        if (!worldIn.isRemote) {
-            getCamId(stack); // Ensure ID is generated
+        if (!worldIn.isRemote && entityIn instanceof EntityPlayer) {
+            if (!hasCamId(stack)) {
+                assignUniqueCamId(stack);
+            }
         }
     }
 
     @Override
     public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
         ItemStack held = player.getHeldItem(hand);
-        getCamId(held);
+        if (!world.isRemote && !hasCamId(held)) {
+            assignUniqueCamId(held);
+        }
 
         // Sneak + Right Click = Toggle Power
         if (player.isSneaking()) {
@@ -88,8 +113,11 @@ public class ItemBodycam extends Item implements IBauble {
             if (world.isRemote) {
                 player.playSound(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 0.7F, newState ? 1.4F : 0.8F);
             } else {
-                String status = newState ? "§aВКЛЮЧЕНА (ONLINE)" : "§cВЫКЛЮЧЕНА (OFFLINE)";
-                player.sendMessage(new TextComponentString("§7[§b" + getCamId(held) + "§7] Статус: " + status));
+                net.minecraft.util.text.ITextComponent statusComp = new net.minecraft.util.text.TextComponentTranslation(
+                        newState ? "tooltip.mwccf.bodycam.online_raw" : "tooltip.mwccf.bodycam.offline_raw"
+                );
+                statusComp.getStyle().setColor(newState ? net.minecraft.util.text.TextFormatting.GREEN : net.minecraft.util.text.TextFormatting.RED);
+                player.sendMessage(new net.minecraft.util.text.TextComponentTranslation("message.mwccf.bodycam.status_fmt", getCamId(held), statusComp));
             }
             return new ActionResult<>(EnumActionResult.SUCCESS, held);
         }
@@ -124,7 +152,7 @@ public class ItemBodycam extends Item implements IBauble {
     @Override
     @Optional.Method(modid = "baubles")
     public BaubleType getBaubleType(ItemStack itemstack) {
-        return BaubleType.BODY;
+        return BaubleType.TRINKET;
     }
 
     @Override
@@ -152,20 +180,16 @@ public class ItemBodycam extends Item implements IBauble {
 
     private void drainBattery(ItemStack itemstack, EntityLivingBase player) {
         if (!player.world.isRemote) {
-            getCamId(itemstack);
+            if (!hasCamId(itemstack)) {
+                assignUniqueCamId(itemstack);
+            }
             if (!isPowerEnabled(itemstack)) {
                 return; // Powered off cameras don't drain battery!
             }
-            NBTTagCompound tag = itemstack.getTagCompound();
-            if (tag == null) {
-                tag = new NBTTagCompound();
-                itemstack.setTagCompound(tag);
-            }
             if (player.ticksExisted % 20 == 0) {
-                int charge = tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-                if (charge > 0) {
-                    charge = Math.max(0, charge - 20);
-                    tag.setInteger("battery_charge", charge);
+                int remaining = com.voltyx.mwccf.battery.DeviceBatteryHelper.consumeCharge(itemstack, 20);
+                if (remaining <= 0) {
+                    setPowerEnabled(itemstack, false);
                 }
             }
         }
@@ -179,51 +203,72 @@ public class ItemBodycam extends Item implements IBauble {
 
     @Override
     public boolean showDurabilityBar(ItemStack stack) {
-        NBTTagCompound tag = stack.getTagCompound();
-        return tag != null && tag.hasKey("battery_charge") && tag.getInteger("battery_charge") < 48000;
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.showDurabilityBar(stack);
     }
 
     @Override
     public double getDurabilityForDisplay(ItemStack stack) {
-        NBTTagCompound tag = stack.getTagCompound();
-        int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-        return 1.0D - ((double) charge / 48000.0D);
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.getDurabilityForDisplay(stack);
     }
 
     @Override
     public int getRGBDurabilityForDisplay(ItemStack stack) {
-        NBTTagCompound tag = stack.getTagCompound();
-        int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-        float percent = charge / 48000.0f;
-        if (percent > 0.5f) return 0x00FF00;
-        if (percent > 0.2f) return 0xFFFF00;
-        return 0xFF0000;
+        return com.voltyx.mwccf.battery.DeviceBatteryHelper.getRGBDurabilityForDisplay(stack);
     }
 
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
-        String camId = getCamId(stack);
-        boolean enabled = isPowerEnabled(stack);
-        NBTTagCompound tag = stack.getTagCompound();
-        int charge = tag != null && tag.hasKey("battery_charge") ? tag.getInteger("battery_charge") : 0;
-        int percent = (int) ((charge / 48000.0f) * 100);
-
-        tooltip.add("§7ID: §b" + camId);
-        if (enabled) {
-            tooltip.add("§7Статус: §aВКЛЮЧЕНА (ONLINE)");
+        if (hasCamId(stack)) {
+            tooltip.add("§7ID: §b" + getCamId(stack));
         } else {
-            tooltip.add("§7Статус: §cВЫКЛЮЧЕНА (OFFLINE)");
+            tooltip.add("§7ID: §8" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.no_id"));
         }
 
-        if (charge <= 0) {
+        boolean enabled = isPowerEnabled(stack);
+        int percent = com.voltyx.mwccf.battery.DeviceBatteryHelper.getChargePercent(stack);
+        ItemStack installed = com.voltyx.mwccf.battery.DeviceBatteryHelper.getInstalledBattery(stack);
+
+        if (enabled) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.status_online"));
+        } else {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.status_offline"));
+        }
+
+        if (installed.isEmpty() || percent <= 0) {
             tooltip.add("\u00a7c" + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.required"));
         } else {
             String color = percent > 50 ? "\u00a7a" : (percent > 20 ? "\u00a7e" : "\u00a7c");
-            tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent));
+            tooltip.add(color + net.minecraft.client.resources.I18n.format("tooltip.mcore.battery.charge", percent) + " \u00a78(" + installed.getDisplayName() + "\u00a78)");
         }
 
-        tooltip.add("§8[Shift+ПКМ / X] Вкл/Выкл питание");
+        tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.toggle_hint"));
         tooltip.add("\u00a77" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.desc"));
+
+        tooltip.add("");
+        if (net.minecraft.client.gui.GuiScreen.isShiftKeyDown()) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.manual_title"));
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.manual_step1"));
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.manual_step2"));
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.manual_step3"));
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.manual_step4"));
+        } else {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.bodycam.manual_shift"));
+        }
+    }
+
+    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = "mwccf")
+    public static class BodycamEvents {
+        @net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+        public static void onItemPickup(net.minecraftforge.event.entity.player.EntityItemPickupEvent event) {
+            if (event.getEntityPlayer() != null && !event.getEntityPlayer().world.isRemote) {
+                ItemStack stack = event.getItem().getItem();
+                if (!stack.isEmpty() && stack.getItem() instanceof ItemBodycam) {
+                    if (!hasCamId(stack)) {
+                        assignUniqueCamId(stack);
+                    }
+                }
+            }
+        }
     }
 }

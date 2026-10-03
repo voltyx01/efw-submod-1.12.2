@@ -24,6 +24,18 @@ public class GeoArmorModel extends ModelBiped {
     public ModelRenderer getBone(String name) {
         return this.boneMap.get(name);
     }
+
+    public void replaceBone(String name, ModelRenderer renderer) {
+        this.boneMap.put(name, renderer);
+    }
+
+    public ModelRenderer getSlimBone(String name) {
+        return this.slimBoneMap.get(name);
+    }
+
+    public void replaceSlimBone(String name, ModelRenderer renderer) {
+        this.slimBoneMap.put(name, renderer);
+    }
     
     public ModelRenderer leftBoob;
     public ModelRenderer rightBoob;
@@ -62,6 +74,8 @@ public class GeoArmorModel extends ModelBiped {
 
         boneMap.put("Body", this.bipedBody);
         boneMap.put("body", this.bipedBody);
+        boneMap.put("Waist", this.bipedBody);
+        boneMap.put("waist", this.bipedBody);
         boneMap.put("Head", this.bipedHead);
         boneMap.put("head", this.bipedHead);
 
@@ -74,6 +88,8 @@ public class GeoArmorModel extends ModelBiped {
 
         slimBoneMap.put("Body", this.bipedBody);
         slimBoneMap.put("body", this.bipedBody);
+        slimBoneMap.put("Waist", this.bipedBody);
+        slimBoneMap.put("waist", this.bipedBody);
         slimBoneMap.put("Head", this.bipedHead);
         slimBoneMap.put("head", this.bipedHead);
 
@@ -86,6 +102,8 @@ public class GeoArmorModel extends ModelBiped {
 
         bedrockPivotMap.put("Body", new float[]{0, 24, 0});
         bedrockPivotMap.put("body", new float[]{0, 24, 0});
+        bedrockPivotMap.put("Waist", new float[]{0, 12, 0});
+        bedrockPivotMap.put("waist", new float[]{0, 12, 0});
         bedrockPivotMap.put("Head", new float[]{0, 24, 0});
         bedrockPivotMap.put("head", new float[]{0, 24, 0});
 
@@ -129,6 +147,8 @@ public class GeoArmorModel extends ModelBiped {
                     vanillaJavaPivots.put("bipedLeftLeg", new float[]{1.9f, 12, 0});
                     vanillaJavaPivots.put("Body", new float[]{0, 0, 0});
                     vanillaJavaPivots.put("body", new float[]{0, 0, 0});
+                    vanillaJavaPivots.put("Waist", new float[]{0, 0, 0});
+                    vanillaJavaPivots.put("waist", new float[]{0, 0, 0});
                     vanillaJavaPivots.put("Head", new float[]{0, 0, 0});
                     vanillaJavaPivots.put("head", new float[]{0, 0, 0});
 
@@ -450,6 +470,7 @@ public class GeoArmorModel extends ModelBiped {
 
     public EntityEquipmentSlot currentSlot = EntityEquipmentSlot.HEAD;
     public ModelBiped syncedModel = null;
+    public boolean filterBonesBySlot = true;
 
     public void resetBipedTransforms() {
         this.syncedModel = null;
@@ -588,26 +609,35 @@ public class GeoArmorModel extends ModelBiped {
         this.bipedLeftLeg.showModel = this.currentSlot == EntityEquipmentSlot.LEGS || this.currentSlot == EntityEquipmentSlot.FEET;
 
         // Ensure sub-bones attached to legs (like armorLeftLeg vs armorLeftBoot) are correctly filtered per slot
-        for (Map.Entry<String, ModelRenderer> entry : this.boneMap.entrySet()) {
-            String bName = entry.getKey().toLowerCase();
-            ModelRenderer r = entry.getValue();
-            if (r != null && !bName.startsWith("biped")) {
-                if (bName.contains("boot") || bName.contains("shoe")) {
-                    r.showModel = (this.currentSlot == EntityEquipmentSlot.FEET);
-                } else if (bName.contains("leg") || bName.contains("pant")) {
-                    r.showModel = (this.currentSlot == EntityEquipmentSlot.LEGS);
+        if (this.filterBonesBySlot) {
+            for (Map.Entry<String, ModelRenderer> entry : this.boneMap.entrySet()) {
+                String bName = entry.getKey().toLowerCase();
+                ModelRenderer r = entry.getValue();
+                if (r != null && !bName.startsWith("biped")) {
+                    if (bName.contains("boot") || bName.contains("shoe")) {
+                        r.showModel = (this.currentSlot == EntityEquipmentSlot.FEET);
+                    } else if (bName.contains("leg") || bName.contains("pant")) {
+                        r.showModel = (this.currentSlot == EntityEquipmentSlot.LEGS);
+                    }
                 }
             }
-        }
-        for (Map.Entry<String, ModelRenderer> entry : this.slimBoneMap.entrySet()) {
-            String bName = entry.getKey().toLowerCase();
-            ModelRenderer r = entry.getValue();
-            if (r != null && !bName.startsWith("biped")) {
-                if (bName.contains("boot") || bName.contains("shoe")) {
-                    r.showModel = (this.currentSlot == EntityEquipmentSlot.FEET);
-                } else if (bName.contains("leg") || bName.contains("pant")) {
-                    r.showModel = (this.currentSlot == EntityEquipmentSlot.LEGS);
+            for (Map.Entry<String, ModelRenderer> entry : this.slimBoneMap.entrySet()) {
+                String bName = entry.getKey().toLowerCase();
+                ModelRenderer r = entry.getValue();
+                if (r != null && !bName.startsWith("biped")) {
+                    if (bName.contains("boot") || bName.contains("shoe")) {
+                        r.showModel = (this.currentSlot == EntityEquipmentSlot.FEET);
+                    } else if (bName.contains("leg") || bName.contains("pant")) {
+                        r.showModel = (this.currentSlot == EntityEquipmentSlot.LEGS);
+                    }
                 }
+            }
+        } else {
+            for (ModelRenderer r : this.boneMap.values()) {
+                if (r != null) r.showModel = true;
+            }
+            for (ModelRenderer r : this.slimBoneMap.values()) {
+                if (r != null) r.showModel = true;
             }
         }
 
