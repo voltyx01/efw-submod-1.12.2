@@ -192,9 +192,12 @@ public class BedrockDollModel extends ModelBase {
                                     if (fo.has("uv") && fo.has("uv_size")) {
                                         JsonArray ua = fo.getAsJsonArray("uv");
                                         JsonArray us = fo.getAsJsonArray("uv_size");
+                                        // Always read uv_rotation from individual face objects
+                                        float rot = fo.has("uv_rotation") ? fo.get("uv_rotation").getAsFloat() : 0f;
                                         faceUVs.put(fe.getKey(), new float[]{
                                             ua.get(0).getAsFloat(), ua.get(1).getAsFloat(),
-                                            us.get(0).getAsFloat(), us.get(1).getAsFloat()
+                                            us.get(0).getAsFloat(), us.get(1).getAsFloat(),
+                                            rot
                                         });
                                     }
                                 }

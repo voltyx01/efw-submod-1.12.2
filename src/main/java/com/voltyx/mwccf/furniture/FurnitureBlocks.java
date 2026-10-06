@@ -166,6 +166,7 @@ public class FurnitureBlocks {
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.antenna.TileEntityAntenna.class, new ResourceLocation("mwccf", "antenna"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityStorageJar.class, new ResourceLocation("mwccf", "storage_jar"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator.class, new ResourceLocation("mwccf", "electricity_generator"));
+        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch.class, new ResourceLocation("mwccf", "lightswitch"));
         net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(com.voltyx.mwccf.radio.TileEntityOldRadio.class, new ResourceLocation("mwccf", "old_radio"));
 
         PLACED_ITEM = registerBlock(new BlockPlacedItem("placed_item"));

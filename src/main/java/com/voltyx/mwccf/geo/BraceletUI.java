@@ -101,6 +101,7 @@ public class BraceletUI {
         GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
         GlStateManager.disableLighting();
+        GlStateManager.disableCull(); // Зеркалирование по X меняет порядок вершин — без этого грани отсекаются (чёрный экран)
         GlStateManager.disableDepth(); // Отключаем глубину для правильного порядка отрисовки (Z-fighting фикс)
         GlStateManager.disableFog();
         GlStateManager.colorMask(true, true, true, false); // Protect FBO alpha from being ruined by blend ops
@@ -114,7 +115,7 @@ public class BraceletUI {
             GlStateManager.pushMatrix();
             GlStateManager.translate(128 + BraceletInspectHandler.uiOffsetX, 128 + BraceletInspectHandler.uiOffsetY, 0);
             GlStateManager.rotate(BraceletInspectHandler.uiRotZ, 0, 0, 1);
-            GlStateManager.scale(BraceletInspectHandler.uiScale, BraceletInspectHandler.uiScale, 1.0f);
+            GlStateManager.scale(-BraceletInspectHandler.uiScale, BraceletInspectHandler.uiScale, 1.0f);
             GlStateManager.translate(-128, -128, 0);
 
             FontRenderer font = mc.fontRenderer;
@@ -331,6 +332,7 @@ public class BraceletUI {
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GlStateManager.disableBlend();
         GlStateManager.disableLighting();
+        GlStateManager.enableCull();
         GlStateManager.enableDepth();
         GlStateManager.colorMask(true, true, true, true);
         GL11.glLineWidth(1.0F);
@@ -470,10 +472,13 @@ public class BraceletUI {
         
         // Continuous horizontal scanlines along X
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        // Фаза совпадает с drawScanlineOverlay: тёмный зазор 1px в y = 64 + 3k, затем 2px полосы.
+        // Иначе две сетки сдвинуты друг относительно друга и дают рваный муар.
         int step = 3;
-        int size = 2;
-        for (int y = startY; y < endY; y += step) {
-            int y2 = Math.min(y + size, endY);
+        for (int gy = 64 - step * ((64 - startY + step - 1) / step); gy < endY; gy += step) {
+            int y = Math.max(gy + 1, startY);
+            int y2 = Math.min(gy + step, endY);
+            if (y2 <= y) continue;
             buffer.pos(startX, y2, 0).color(bgR, bgG, bgB, 255).endVertex();
             buffer.pos(endX, y2, 0).color(bgR, bgG, bgB, 255).endVertex();
             buffer.pos(endX, y, 0).color(bgR, bgG, bgB, 255).endVertex();

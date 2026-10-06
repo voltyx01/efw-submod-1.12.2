@@ -23,8 +23,8 @@ public class MixinActiveRenderInfo {
     @Shadow private static float rotationYZ;
     @Shadow private static float rotationXY;
 
-    @Inject(method = "updateRenderInfo(Lnet/minecraft/entity/player/EntityPlayer;Z)V", at = @At("RETURN"))
-    private static void onUpdateRenderInfo(net.minecraft.entity.player.EntityPlayer entity, boolean p_74583_1_, CallbackInfo ci) {
+    @Inject(method = "updateRenderInfo(Lnet/minecraft/entity/Entity;Z)V", at = @At("RETURN"), remap = false)
+    private static void onUpdateRenderInfo(Entity entity, boolean p_74583_1_, CallbackInfo ci) {
         if (ShoulderInstance.getInstance().doShoulderSurfing()) {
             ShoulderRenderer renderer = ShoulderRenderer.getInstance();
 

@@ -3,6 +3,7 @@ package com.voltyx.mwccf.immersiveui.system.particles;
 import com.voltyx.mwccf.immersiveui.system.particles.data.ParticleData;
 import com.voltyx.mwccf.immersiveui.system.particles.data.ParticleEmitter;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import org.lwjgl.opengl.GL11;
 
@@ -61,12 +62,12 @@ public class ParticleStorage {
         }
 
         GlStateManager.pushMatrix();
-        GlStateManager.pushAttrib();
 
         RenderHelper.disableStandardItemLighting();
         GlStateManager.disableLighting();
         GlStateManager.disableDepth();
         GlStateManager.depthMask(false);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         GlStateManager.enableTexture2D();
         GlStateManager.enableAlpha();
         GlStateManager.alphaFunc(GL11.GL_GREATER, 0.003921569F);
@@ -86,16 +87,10 @@ public class ParticleStorage {
             }
         }
 
+        // Full clean reset of all states without pushAttrib/popAttrib (which breaks GlStateManager caching)
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(
-                GlStateManager.SourceFactor.SRC_ALPHA,
-                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
-                GlStateManager.SourceFactor.ONE,
-                GlStateManager.DestFactor.ZERO
-        );
-
-        GlStateManager.popAttrib();
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.enableTexture2D();
         GlStateManager.depthMask(true);
         GlStateManager.enableDepth();
         GlStateManager.enableAlpha();
@@ -107,7 +102,8 @@ public class ParticleStorage {
                 GlStateManager.SourceFactor.ONE,
                 GlStateManager.DestFactor.ZERO
         );
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.disableLighting();
+        RenderHelper.disableStandardItemLighting();
 
         GlStateManager.popMatrix();
     }

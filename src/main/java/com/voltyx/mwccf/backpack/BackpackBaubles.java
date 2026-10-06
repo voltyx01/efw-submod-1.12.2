@@ -95,6 +95,11 @@ public final class BackpackBaubles {
                 }
                 return true;
             }
+
+            @Override
+            public boolean willAutoSync(ItemStack stack, EntityLivingBase player) {
+                return true;
+            }
         };
 
         @Override
@@ -181,11 +186,42 @@ public final class BackpackBaubles {
         return handler;
     }
 
-    private static boolean isBackpack(ItemStack stack) {
+    public static boolean isBackpack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         if (backpackItem == null) {
             backpackItem = net.minecraftforge.fml.common.registry.ForgeRegistries.ITEMS.getValue(new ResourceLocation("quark", "backpack"));
         }
         return backpackItem != null && stack.getItem() == backpackItem;
+    }
+
+    public static void syncBaublesSlot5(EntityPlayer player) {
+        if (player != null && !player.world.isRemote) {
+            player.inventory.markDirty();
+            IBaublesItemHandler handler = player.getCapability(baubleHandlerCapability, null);
+            if (handler != null) {
+                ItemStack bp = handler.getStackInSlot(BAUBLE_BODY_SLOT);
+                if (isBackpack(bp)) {
+                    handler.setStackInSlot(BAUBLE_BODY_SLOT, bp);
+                    handler.setChanged(BAUBLE_BODY_SLOT, true);
+                    if (player instanceof net.minecraft.entity.player.EntityPlayerMP) {
+                        baubles.common.network.PacketHandler.INSTANCE.sendTo(
+                                new baubles.common.network.PacketSync(player, BAUBLE_BODY_SLOT, bp),
+                                (net.minecraft.entity.player.EntityPlayerMP) player
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onContainerClose(net.minecraftforge.event.entity.player.PlayerContainerEvent.Close event) {
+        if (event.getContainer() instanceof vazkii.quark.oddities.inventory.ContainerBackpack) {
+            EntityPlayer player = event.getEntityPlayer();
+            syncBaublesSlot5(player);
+            if (player != null && !player.world.isRemote) {
+                player.inventoryContainer.detectAndSendChanges();
+            }
+        }
     }
 }

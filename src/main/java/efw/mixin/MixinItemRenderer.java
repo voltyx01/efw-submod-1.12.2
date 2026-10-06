@@ -34,6 +34,16 @@ public class MixinItemRenderer {
     @Shadow
     private float prevEquippedProgressOffHand;
 
+    @Inject(method = "renderItemInFirstPerson(F)V", at = @At("HEAD"))
+    private void onRenderFirstPersonPassHead(float partialTicks, CallbackInfo ci) {
+        com.teamderpy.shouldersurfing.client.FirstPersonFadeManager.getInstance().preRenderHand();
+    }
+
+    @Inject(method = "renderItemInFirstPerson(F)V", at = @At("RETURN"))
+    private void onRenderFirstPersonPassReturn(float partialTicks, CallbackInfo ci) {
+        com.teamderpy.shouldersurfing.client.FirstPersonFadeManager.getInstance().postRenderHand();
+    }
+
     /**
      * Hides the off-hand item in first-person view when holding an MWC weapon in main hand.
      */

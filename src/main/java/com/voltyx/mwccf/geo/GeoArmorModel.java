@@ -300,11 +300,13 @@ public class GeoArmorModel extends ModelBiped {
                                                 if (fObj.has("uv") && fObj.has("uv_size")) {
                                                     JsonArray uvA = fObj.getAsJsonArray("uv");
                                                     JsonArray szA = fObj.getAsJsonArray("uv_size");
+                                                    float rot = fObj.has("uv_rotation") ? fObj.get("uv_rotation").getAsFloat() : 0f;
                                                     faceUvs.put(fName, new float[]{
                                                         uvA.get(0).getAsFloat(),
                                                         uvA.get(1).getAsFloat(),
                                                         szA.get(0).getAsFloat(),
-                                                        szA.get(1).getAsFloat()
+                                                        szA.get(1).getAsFloat(),
+                                                        rot
                                                     });
                                                 }
                                             }

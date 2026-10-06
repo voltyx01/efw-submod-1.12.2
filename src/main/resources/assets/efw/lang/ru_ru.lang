@@ -15,3 +15,7 @@ item.manual_firearms.name=Руководство по огнестрельном
 item.manual_meds.name=Руководство по медикаментам
 item.manual_lockpick.name=Руководство по взлому
 item.manual_tools.name=Руководство по инструментам
+tooltip.bettercombat.two_handed=Двуручное
+tooltip.bettercombat.attack_range=Дальность атаки
+item.held.two_handed=Двуручное
+attribute.name.generic.attack_range=Дальность атаки

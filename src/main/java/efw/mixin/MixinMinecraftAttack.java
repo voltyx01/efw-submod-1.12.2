@@ -21,7 +21,7 @@ public abstract class MixinMinecraftAttack {
     @Inject(method = "processKeyBinds", at = @At("HEAD"))
     private void onProcessKeyBinds(CallbackInfo ci) {
         Minecraft mc = (Minecraft) (Object) this;
-        if (mc.player != null && (BetterCombatClient.isHarvesting || BetterCombatClient.isTargetingMineableBlock(mc, mc.player))) {
+        if (mc.player != null && (mc.player.getHeldItemMainhand().isEmpty() || BetterCombatClient.isHarvesting || BetterCombatClient.isTargetingMineableBlock(mc, mc.player))) {
             return;
         }
         if (BetterCombatClient.isUpswingActive() || BetterCombatClient.attackCooldown > 0) {
@@ -31,8 +31,20 @@ public abstract class MixinMinecraftAttack {
 
     @Inject(method = "clickMouse", at = @At("HEAD"), cancellable = true)
     private void onMouseClick(CallbackInfo ci) {
-        if (!MwccfConfig.betterCombat.enabled) return;
         Minecraft mc = (Minecraft) (Object) this;
+        if (mc.player != null && efw.AnimationTickHandler.isPlayerRolling(mc.player)) {
+            if (MwccfConfig.betterCombat != null && MwccfConfig.betterCombat.enabled) {
+                ItemStack stack = mc.player.getHeldItemMainhand();
+                WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
+                if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
+                    BetterCombatClient.onAttackInput();
+                }
+            }
+            ci.cancel();
+            return;
+        }
+
+        if (MwccfConfig.betterCombat == null || !MwccfConfig.betterCombat.enabled) return;
         if (mc.player == null) return;
         ItemStack stack = mc.player.getHeldItemMainhand();
         WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
@@ -46,15 +58,8 @@ public abstract class MixinMinecraftAttack {
         }
         BetterCombatClient.isHarvesting = false;
 
-        // Block click if upswing is active or weapon is still in cooldown
-        if (BetterCombatClient.isUpswingActive() || BetterCombatClient.attackCooldown > 0 || this.leftClickCounter > 0) {
-            this.leftClickCounter = Math.max(this.leftClickCounter, BetterCombatClient.attackCooldown);
-            ci.cancel();
-            return;
-        }
-
-        if (!BetterCombatClient.canStartAttack(mc.player)) {
-            this.leftClickCounter = Math.max(this.leftClickCounter, BetterCombatClient.attackCooldown);
+        // Block click if upswing is active
+        if (BetterCombatClient.isUpswingActive()) {
             ci.cancel();
             return;
         }
@@ -71,6 +76,11 @@ public abstract class MixinMinecraftAttack {
 
     @Inject(method = "sendClickBlockToController", at = @At("HEAD"), cancellable = true)
     private void onSendClickBlock(boolean leftClick, CallbackInfo ci) {
+        Minecraft mc = (Minecraft) (Object) this;
+        if (mc.player != null && efw.AnimationTickHandler.isPlayerRolling(mc.player)) {
+            ci.cancel();
+            return;
+        }
         if (!leftClick) {
             if (BetterCombatClient.isUpswingActive() || BetterCombatClient.attackCooldown > 0) {
                 this.leftClickCounter = Math.max(this.leftClickCounter, BetterCombatClient.attackCooldown);
@@ -78,16 +88,17 @@ public abstract class MixinMinecraftAttack {
             }
             return;
         }
-        Minecraft mc = (Minecraft) (Object) this;
         if (mc.player == null) return;
         if (MwccfConfig.betterCombat != null && MwccfConfig.betterCombat.enabled) {
             ItemStack stack = mc.player.getHeldItemMainhand();
             if (WeaponRegistry.getAttributes(stack) != null) {
-                if (BetterCombatClient.isHarvesting || BetterCombatClient.isTargetingMineableBlock(mc, mc.player)) {
+                boolean targetingBlock = BetterCombatClient.isTargetingMineableBlock(mc, mc.player);
+                if (targetingBlock) {
                     BetterCombatClient.isHarvesting = true;
                     this.leftClickCounter = 0;
                     return;
                 }
+                BetterCombatClient.isHarvesting = false;
                 if (BetterCombatClient.isUpswingActive() || BetterCombatClient.attackCooldown > 0) {
                     this.leftClickCounter = Math.max(this.leftClickCounter, BetterCombatClient.attackCooldown);
                 }

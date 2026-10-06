@@ -39,7 +39,9 @@ public class ClientLootingManager {
 
     private static BlockPos targetBlock = null;
     private static int lootProgress = 0;
-    private static final int REQUIRED_TICKS = 30; // 40 тиков (2 секунды)
+    private static int openPauseTicks = 0;
+    private static final int OPEN_PAUSE_TICKS_DEFAULT = 12; // ~0.6 сек пауза, чтобы звук открытия блока успел проиграться
+    private static final int REQUIRED_TICKS = 30; // 30 тиков (1.5 секунды)
 
     private static boolean suppressNextOpenSound = false;
     private static long suppressUntilMillis = 0L;
@@ -62,7 +64,8 @@ public class ClientLootingManager {
             stopActiveLootSound();
             targetBlock = pos;
             lootProgress = 0;
-            playLootStartSounds(pos);
+            SoundEvent openSound = playLootStartSounds(pos);
+            openPauseTicks = openSound != null ? OPEN_PAUSE_TICKS_DEFAULT : 0;
         }
     }
 
@@ -73,28 +76,288 @@ public class ClientLootingManager {
         }
     }
 
-    private static void playLootStartSounds(BlockPos pos) {
+    private static ResourceLocation lastTargetOpenSoundId = null;
+
+    private static SoundEvent getBlockOpenSound(IBlockState state, BlockPos pos) {
+        if (state == null) return null;
+        net.minecraft.block.Block block = state.getBlock();
+        if (block instanceof com.voltyx.mwccf.radio.BlockOldRadio) {
+            return null;
+        }
+
+        Minecraft mc = Minecraft.getMinecraft();
+        net.minecraft.tileentity.TileEntity te = (mc.world != null && pos != null) ? mc.world.getTileEntity(pos) : null;
+        if (te != null) {
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityFridge) {
+                return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_FRIDGE_OPEN;
+            }
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave) {
+                return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_MICROWAVE_OPEN;
+            }
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityStove) {
+                return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_STOVE_OPEN;
+            }
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityCabinet) {
+                if (block instanceof com.voltyx.mwccf.furniture.BlockCooler) {
+                    return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_COOLER_OPEN;
+                } else if (block instanceof com.voltyx.mwccf.furniture.BlockKitchenCabinetry) {
+                    return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_KITCHEN_DRAWER_OPEN;
+                } else {
+                    return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+                }
+            }
+            if (te instanceof net.minecraft.tileentity.TileEntityChest) {
+                return net.minecraft.init.SoundEvents.BLOCK_CHEST_OPEN;
+            }
+            if (te instanceof net.minecraft.tileentity.TileEntityEnderChest) {
+                return net.minecraft.init.SoundEvents.BLOCK_ENDERCHEST_OPEN;
+            }
+            if (te instanceof net.minecraft.tileentity.TileEntityShulkerBox) {
+                return net.minecraft.init.SoundEvents.BLOCK_SHULKER_BOX_OPEN;
+            }
+
+            String teName = te.getClass().getName();
+            if (teName.equals("com.mrcrayfish.furniture.tileentity.TileEntityBin")) {
+                SoundEvent bin = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "bin_open"));
+                return bin != null ? bin : com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+            }
+            if (teName.startsWith("com.mrcrayfish.furniture.tileentity.")) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_open"));
+                if (cfmCab != null) return cfmCab;
+            }
+        }
+
+        ResourceLocation reg = block.getRegistryName();
+        String domain = reg != null ? reg.getNamespace() : "";
+        String path = reg != null ? reg.getPath().toLowerCase(java.util.Locale.ROOT) : "";
+
+        if (block instanceof com.voltyx.mwccf.furniture.BlockCooler || path.contains("cooler") || path.contains("esky")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_open"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_COOLER_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockFridge || path.contains("fridge") || path.contains("freezer")) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_FRIDGE_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockKitchenCabinetry || path.contains("drawer")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_open"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_KITCHEN_DRAWER_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockMicrowave || path.contains("microwave")) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_MICROWAVE_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockStove || path.contains("stove") || path.contains("oven")) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_STOVE_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockRecycleBin || path.contains("bin") || path.contains("trash")) {
+            SoundEvent bin = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "bin_open"));
+            return bin != null ? bin : com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+        }
+        if (path.contains("sliding_door")) {
+            SoundEvent door = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "sliding_door_open"));
+            return door != null ? door : com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockCrate || path.contains("crate")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_open"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockKitchenStorageCabinet || path.contains("cabinet") || path.contains("cupboard") || path.contains("wardrobe") || path.contains("stand")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_open"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+        }
+        if (block instanceof net.minecraft.block.BlockChest || path.contains("chest") || path.contains("safe")) {
+            if (block instanceof net.minecraft.block.BlockEnderChest || path.contains("ender")) {
+                return net.minecraft.init.SoundEvents.BLOCK_ENDERCHEST_OPEN;
+            }
+            return net.minecraft.init.SoundEvents.BLOCK_CHEST_OPEN;
+        }
+        if (block instanceof net.minecraft.block.BlockShulkerBox || path.contains("shulker")) {
+            return net.minecraft.init.SoundEvents.BLOCK_SHULKER_BOX_OPEN;
+        }
+        if (block instanceof net.minecraft.block.BlockTrapDoor || path.contains("trapdoor")) {
+            if (path.contains("iron")) {
+                return net.minecraft.init.SoundEvents.BLOCK_IRON_TRAPDOOR_OPEN;
+            }
+            return net.minecraft.init.SoundEvents.BLOCK_WOODEN_TRAPDOOR_OPEN;
+        }
+        if (block instanceof net.minecraft.block.BlockDoor || path.contains("door")) {
+            if (path.contains("iron")) {
+                return net.minecraft.init.SoundEvents.BLOCK_IRON_DOOR_OPEN;
+            }
+            return net.minecraft.init.SoundEvents.BLOCK_WOODEN_DOOR_OPEN;
+        }
+
+        if ("cfm".equals(domain)) {
+            SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_open"));
+            if (cfmCab != null) return cfmCab;
+        }
+        if ("refurbished_furniture".equals(domain) || "mwccf".equals(domain)) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_OPEN;
+        }
+        return net.minecraft.init.SoundEvents.BLOCK_CHEST_OPEN;
+    }
+
+    private static SoundEvent getBlockCloseSound(IBlockState state, BlockPos pos) {
+        if (state == null) return null;
+        net.minecraft.block.Block block = state.getBlock();
+        if (block instanceof com.voltyx.mwccf.radio.BlockOldRadio) {
+            return null;
+        }
+
+        Minecraft mc = Minecraft.getMinecraft();
+        net.minecraft.tileentity.TileEntity te = (mc.world != null && pos != null) ? mc.world.getTileEntity(pos) : null;
+        if (te != null) {
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityFridge) {
+                return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_FRIDGE_CLOSE;
+            }
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityMicrowave) {
+                return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_MICROWAVE_CLOSE;
+            }
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityStove) {
+                return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_STOVE_CLOSE;
+            }
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityCabinet) {
+                if (block instanceof com.voltyx.mwccf.furniture.BlockCooler) {
+                    return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_COOLER_CLOSE;
+                } else if (block instanceof com.voltyx.mwccf.furniture.BlockKitchenCabinetry) {
+                    return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_KITCHEN_DRAWER_CLOSE;
+                } else {
+                    return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+                }
+            }
+            if (te instanceof net.minecraft.tileentity.TileEntityChest) {
+                return net.minecraft.init.SoundEvents.BLOCK_CHEST_CLOSE;
+            }
+            if (te instanceof net.minecraft.tileentity.TileEntityEnderChest) {
+                return net.minecraft.init.SoundEvents.BLOCK_ENDERCHEST_CLOSE;
+            }
+            if (te instanceof net.minecraft.tileentity.TileEntityShulkerBox) {
+                return net.minecraft.init.SoundEvents.BLOCK_SHULKER_BOX_CLOSE;
+            }
+
+            String teName = te.getClass().getName();
+            if (teName.equals("com.mrcrayfish.furniture.tileentity.TileEntityBin")) {
+                SoundEvent bin = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "bin_close"));
+                return bin != null ? bin : com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+            }
+            if (teName.startsWith("com.mrcrayfish.furniture.tileentity.")) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_close"));
+                if (cfmCab != null) return cfmCab;
+            }
+        }
+
+        ResourceLocation reg = block.getRegistryName();
+        String domain = reg != null ? reg.getNamespace() : "";
+        String path = reg != null ? reg.getPath().toLowerCase(java.util.Locale.ROOT) : "";
+
+        if (block instanceof com.voltyx.mwccf.furniture.BlockCooler || path.contains("cooler") || path.contains("esky")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_close"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_COOLER_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockFridge || path.contains("fridge") || path.contains("freezer")) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_FRIDGE_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockKitchenCabinetry || path.contains("drawer")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_close"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_KITCHEN_DRAWER_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockMicrowave || path.contains("microwave")) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_MICROWAVE_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockStove || path.contains("stove") || path.contains("oven")) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_STOVE_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockRecycleBin || path.contains("bin") || path.contains("trash")) {
+            SoundEvent bin = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "bin_close"));
+            return bin != null ? bin : com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+        }
+        if (path.contains("sliding_door")) {
+            SoundEvent door = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "sliding_door_close"));
+            return door != null ? door : com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockCrate || path.contains("crate")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_close"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+        }
+        if (block instanceof com.voltyx.mwccf.furniture.BlockKitchenStorageCabinet || path.contains("cabinet") || path.contains("cupboard") || path.contains("wardrobe") || path.contains("stand")) {
+            if ("cfm".equals(domain)) {
+                SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_close"));
+                if (cfmCab != null) return cfmCab;
+            }
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+        }
+        if (block instanceof net.minecraft.block.BlockChest || path.contains("chest") || path.contains("safe")) {
+            if (block instanceof net.minecraft.block.BlockEnderChest || path.contains("ender")) {
+                return net.minecraft.init.SoundEvents.BLOCK_ENDERCHEST_CLOSE;
+            }
+            return net.minecraft.init.SoundEvents.BLOCK_CHEST_CLOSE;
+        }
+        if (block instanceof net.minecraft.block.BlockShulkerBox || path.contains("shulker")) {
+            return net.minecraft.init.SoundEvents.BLOCK_SHULKER_BOX_CLOSE;
+        }
+        if (block instanceof net.minecraft.block.BlockTrapDoor || path.contains("trapdoor")) {
+            if (path.contains("iron")) {
+                return net.minecraft.init.SoundEvents.BLOCK_IRON_TRAPDOOR_CLOSE;
+            }
+            return net.minecraft.init.SoundEvents.BLOCK_WOODEN_TRAPDOOR_CLOSE;
+        }
+        if (block instanceof net.minecraft.block.BlockDoor || path.contains("door")) {
+            if (path.contains("iron")) {
+                return net.minecraft.init.SoundEvents.BLOCK_IRON_DOOR_CLOSE;
+            }
+            return net.minecraft.init.SoundEvents.BLOCK_WOODEN_DOOR_CLOSE;
+        }
+
+        if ("cfm".equals(domain)) {
+            SoundEvent cfmCab = SoundEvent.REGISTRY.getObject(new ResourceLocation("cfm", "cabinet_close"));
+            if (cfmCab != null) return cfmCab;
+        }
+        if ("refurbished_furniture".equals(domain) || "mwccf".equals(domain)) {
+            return com.voltyx.mwccf.furniture.FurnitureSounds.BLOCK_CABINET_CLOSE;
+        }
+        return net.minecraft.init.SoundEvents.BLOCK_CHEST_CLOSE;
+    }
+
+    private static SoundEvent playLootStartSounds(BlockPos pos) {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.world == null || mc.player == null) {
-            return;
+            return null;
         }
 
         IBlockState state = mc.world.getBlockState(pos);
-        ResourceLocation blockId = state.getBlock().getRegistryName();
-        boolean isCrate = blockId != null && blockId.equals(CRATE_BLOCK_ID);
+        SoundEvent openSound = getBlockOpenSound(state, pos);
+        lastTargetOpenSoundId = openSound != null ? openSound.getRegistryName() : null;
 
-        if (!isCrate) {
+        if (openSound != null) {
             suppressNextOpenSound = false;
-
-            SoundEvent openSound = SoundEvent.REGISTRY.getObject(CABINET_OPEN_SOUND_ID);
-            if (openSound != null) {
-                mc.world.playSound(mc.player, pos, openSound, SoundCategory.BLOCKS, 1.0F, 1.0F);
-            }
-
-            suppressNextOpenSound = true;
-            suppressUntilMillis = System.currentTimeMillis() + SUPPRESS_WINDOW_MS;
-            lastLootedPos = pos;
+            suppressUntilMillis = 0L;
+            PositionedSoundRecord record = new PositionedSoundRecord(
+                    openSound, SoundCategory.BLOCKS, 0.8F, 1.0F,
+                    pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F
+            );
+            mc.getSoundHandler().playSound(record);
         }
+        return openSound;
     }
 
     private static void playLootInterruptSound(BlockPos pos) {
@@ -104,14 +367,13 @@ public class ClientLootingManager {
         }
 
         IBlockState state = mc.world.getBlockState(pos);
-        ResourceLocation blockId = state.getBlock().getRegistryName();
-        boolean isCrate = blockId != null && blockId.equals(CRATE_BLOCK_ID);
-
-        if (!isCrate) {
-            SoundEvent closeSound = SoundEvent.REGISTRY.getObject(CABINET_CLOSE_SOUND_ID);
-            if (closeSound != null) {
-                mc.world.playSound(mc.player, pos, closeSound, SoundCategory.BLOCKS, 1.0F, 1.0F);
-            }
+        SoundEvent closeSound = getBlockCloseSound(state, pos);
+        if (closeSound != null) {
+            PositionedSoundRecord record = new PositionedSoundRecord(
+                    closeSound, SoundCategory.BLOCKS, 0.8F, 1.0F,
+                    pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F
+            );
+            mc.getSoundHandler().playSound(record);
         }
     }
 
@@ -150,45 +412,51 @@ public class ClientLootingManager {
         }
 
         if (isRightClicking && lookingAtTarget) {
-            lootProgress++;
+            if (openPauseTicks > 0) {
+                openPauseTicks--;
+            } else {
+                lootProgress++;
 
-            if (lootProgress == 1) {
-                SoundEvent lootSound = SoundEvent.REGISTRY.getObject(LOOT_PROGRESS_SOUND_ID);
-                if (lootSound != null) {
-                    activeLootSound = new PositionedSoundRecord(lootSound, SoundCategory.BLOCKS, 1.0F, 1.0F,
-                            targetBlock.getX() + 0.5F, targetBlock.getY() + 0.5F, targetBlock.getZ() + 0.5F);
-                    mc.getSoundHandler().playSound(activeLootSound);
-                }
-            }
-
-            if (lootProgress >= REQUIRED_TICKS) {
-                boolean isRadio = mc.world != null && targetBlock != null && mc.world.getBlockState(targetBlock).getBlock() instanceof com.voltyx.mwccf.radio.BlockOldRadio;
-                MwccfMod.PACKET_HANDLER.sendToServer(new PacketLootingComplete(targetBlock));
-
-                if (isRadio) {
-                    if (mc.player != null) {
-                        mc.player.playSound(efw.init.EfwModSounds.DIARYOPEN, 1.5f, 1.0f);
+                if (lootProgress == 1) {
+                    SoundEvent lootSound = SoundEvent.REGISTRY.getObject(LOOT_PROGRESS_SOUND_ID);
+                    if (lootSound != null) {
+                        activeLootSound = new PositionedSoundRecord(lootSound, SoundCategory.BLOCKS, 1.0F, 1.0F,
+                                targetBlock.getX() + 0.5F, targetBlock.getY() + 0.5F, targetBlock.getZ() + 0.5F);
+                        mc.getSoundHandler().playSound(activeLootSound);
                     }
-                    com.voltyx.mwccf.client.inspect.InspectTransitionHandler.startTransition(
-                            new net.minecraft.item.ItemStack(com.voltyx.mwccf.mcore.MCoreItems.RADIO_BOARD), null);
                 }
 
-                if (suppressNextOpenSound) {
-                    suppressUntilMillis = System.currentTimeMillis() + SUPPRESS_WINDOW_MS;
+                if (lootProgress >= REQUIRED_TICKS) {
+                    boolean isRadio = mc.world != null && targetBlock != null && mc.world.getBlockState(targetBlock).getBlock() instanceof com.voltyx.mwccf.radio.BlockOldRadio;
+                    MwccfMod.PACKET_HANDLER.sendToServer(new PacketLootingComplete(targetBlock));
+
+                    if (isRadio) {
+                        if (mc.player != null) {
+                            mc.player.playSound(efw.init.EfwModSounds.ITEMSOUND, 1.5f, 1.0f);
+                        }
+                        com.voltyx.mwccf.client.inspect.InspectTransitionHandler.startTransition(
+                                new net.minecraft.item.ItemStack(com.voltyx.mwccf.mcore.MCoreItems.RADIO_BOARD), null);
+                    }
+
+                    suppressNextOpenSound = true;
+                    suppressUntilMillis = System.currentTimeMillis() + 1500L;
+                    lastLootedPos = targetBlock;
+
+                    lastCompletedLootPos = targetBlock;
+                    lastCompletedLootTime = System.currentTimeMillis();
+
+                    stopActiveLootSound();
+                    targetBlock = null;
+                    lootProgress = 0;
+                    openPauseTicks = 0;
                 }
-
-                lastCompletedLootPos = targetBlock;
-                lastCompletedLootTime = System.currentTimeMillis();
-
-                stopActiveLootSound();
-                targetBlock = null;
-                lootProgress = 0;
             }
         } else {
             stopActiveLootSound();
             playLootInterruptSound(targetBlock);
             targetBlock = null;
             lootProgress = 0;
+            openPauseTicks = 0;
         }
     }
 
@@ -198,15 +466,16 @@ public class ClientLootingManager {
             return;
         }
 
-        ISound sound = event.getSound();
-
         if (System.currentTimeMillis() > suppressUntilMillis) {
             suppressNextOpenSound = false;
             return;
         }
 
+        ISound sound = event.getSound();
         ResourceLocation soundLocation = sound.getSoundLocation();
-        boolean nameMatches = soundLocation != null && soundLocation.equals(CABINET_OPEN_SOUND_ID);
+        if (soundLocation == null) {
+            return;
+        }
 
         boolean posMatches = true;
         if (lastLootedPos != null) {
@@ -217,8 +486,14 @@ public class ClientLootingManager {
             posMatches = distSq <= POS_MATCH_RADIUS_SQ;
         }
 
+        String path = soundLocation.getPath().toLowerCase(java.util.Locale.ROOT);
+        boolean nameMatches = (lastTargetOpenSoundId != null && soundLocation.equals(lastTargetOpenSoundId))
+                || path.contains("open")
+                || soundLocation.equals(CABINET_OPEN_SOUND_ID);
+
         if (nameMatches && posMatches) {
             event.setResultSound(null);
+            suppressNextOpenSound = false;
         }
     }
 
@@ -232,10 +507,12 @@ public class ClientLootingManager {
             return;
 
         ScaledResolution sr = event.getResolution();
-        float x = sr.getScaledWidth() / 2.0f + 0.5f;
-        float y = sr.getScaledHeight() / 2.0f;
+        int midX = sr.getScaledWidth() / 2;
+        int midY = sr.getScaledHeight() / 2;
+        float x = midX + 0.5f;
+        float y = midY + 0.5f;
 
-        float size = 7.0f;
+        float size = 7.5f;
         float thickness = 2.0f;
 
         if (targetBlock != null) {

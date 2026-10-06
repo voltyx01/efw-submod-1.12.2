@@ -399,7 +399,7 @@ public class GuiItemInspect extends GuiScreen {
         if (currentDiaryPage > 0) {
             boolean hoverLeft = Math.abs(mouseX - leftArrowX) <= 20 && Math.abs(mouseY - midY) <= 30;
             int colorLeft = hoverLeft ? 0xFFFFFFFF : 0x88FFFFFF;
-            drawFlatMountainArrow(leftArrowX, midY, 14, 28, true, colorLeft);
+            drawFlatMountainArrow(leftArrowX, midY, 14, 28, true, colorLeft, hoverLeft);
         }
 
         // Right Arrow (pointing right: > ) - Wide/tall flat mountain shape (height
@@ -407,24 +407,38 @@ public class GuiItemInspect extends GuiScreen {
         if (currentDiaryPage < storedNotes.tagCount() - 1) {
             boolean hoverRight = Math.abs(mouseX - rightArrowX) <= 20 && Math.abs(mouseY - midY) <= 30;
             int colorRight = hoverRight ? 0xFFFFFFFF : 0x88FFFFFF;
-            drawFlatMountainArrow(rightArrowX, midY, 14, 28, false, colorRight);
+            drawFlatMountainArrow(rightArrowX, midY, 14, 28, false, colorRight, hoverRight);
         }
     }
 
     /**
-     * Draws a 1-pixel wide pixelated mountain arrow pointing left or right.
+     * Draws a pixelated mountain arrow pointing left or right.
      * Flat / wide shape: height is larger than width, no center stick.
      */
-    private void drawFlatMountainArrow(int centerX, int centerY, int width, int height, boolean pointLeft, int color) {
+    private void drawFlatMountainArrow(int centerX, int centerY, int width, int height, boolean pointLeft, int color, boolean hovered) {
+        GlStateManager.pushMatrix();
+        GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO);
+
         int halfH = height / 2;
+        int strokeWidth = hovered ? 2 : 1;
         for (int dy = -halfH; dy <= halfH; dy++) {
-            // Linear slope: tip is at centerX, base is at (centerX + width) or (centerX -
-            // width)
+            // Linear slope: tip is at centerX, base is at (centerX + width) or (centerX - width)
             float t = (float) Math.abs(dy) / (float) halfH;
             int xOffset = (int) (t * width);
             int px = pointLeft ? (centerX + xOffset) : (centerX - xOffset);
-            drawRect(px, centerY + dy, px + 1, centerY + dy + 1, color);
+            drawRect(px, centerY + dy, px + strokeWidth, centerY + dy + 1, color);
         }
+
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.depthMask(true);
+        GlStateManager.enableDepth();
+        GlStateManager.popMatrix();
     }
 
     private void drawItemInfo() {

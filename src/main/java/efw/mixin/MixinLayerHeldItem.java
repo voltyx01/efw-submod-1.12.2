@@ -49,6 +49,14 @@ public class MixinLayerHeldItem {
 
 
 
+    @org.spongepowered.asm.mixin.injection.Redirect(method = "renderHeldItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;isSneaking()Z"))
+    private boolean redirectIsSneakingInHeldItem(EntityLivingBase entity) {
+        if (entity instanceof EntityPlayer && efw.AnimationTickHandler.isBetterCombatAttackActive((EntityPlayer) entity)) {
+            return false;
+        }
+        return entity.isSneaking();
+    }
+
     @Inject(method = "renderHeldItem", at = @At("HEAD"), cancellable = true)
     private void onRenderHeldItemPre(EntityLivingBase entityLivingBaseIn, ItemStack stack, ItemCameraTransforms.TransformType transformType, EnumHandSide handSide, CallbackInfo ci) {
         if (efw.util.RenderContext.isRenderingPlayerInSevenScreen) {

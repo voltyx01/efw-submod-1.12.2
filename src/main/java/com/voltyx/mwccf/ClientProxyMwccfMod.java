@@ -198,20 +198,6 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getInstance());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.antenna.client.AntennaCameraController());
 
-		net.minecraft.item.Item antennaItem = net.minecraft.item.Item.getItemFromBlock(com.voltyx.mwccf.furniture.FurnitureBlocks.ANTENNA);
-		if (antennaItem != null) {
-			antennaItem.setTileEntityItemStackRenderer(new net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer() {
-				private final com.voltyx.mwccf.antenna.TileEntityAntenna dummy = new com.voltyx.mwccf.antenna.TileEntityAntenna();
-				@Override
-				public void renderByItem(net.minecraft.item.ItemStack itemStack, float partialTicks) {
-					net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher.instance.render(dummy, 0.0D, 0.0D, 0.0D, 0.0F, partialTicks);
-				}
-				@Override
-				public void renderByItem(net.minecraft.item.ItemStack itemStack) {
-					renderByItem(itemStack, 1.0F);
-				}
-			});
-		}
 
 		if (efw.init.EfwModItems.DOLL != null) {
 			efw.init.EfwModItems.DOLL.setTileEntityItemStackRenderer(new com.voltyx.mwccf.render.doll.DollItemStackRenderer());
@@ -297,6 +283,16 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 
 	@Override
 	public void serverLoad(FMLServerStartingEvent event) {
+	}
+
+	@Override
+	public void updateGeneratorSound(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator generator) {
+		com.voltyx.mwccf.furniture.client.audio.GeneratorSoundManager.updateGenerator(generator);
+	}
+
+	@Override
+	public void stopGeneratorSound(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator generator) {
+		com.voltyx.mwccf.furniture.client.audio.GeneratorSoundManager.stopGenerator(generator);
 	}
 
 }

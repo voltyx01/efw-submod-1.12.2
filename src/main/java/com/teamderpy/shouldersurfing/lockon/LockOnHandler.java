@@ -39,6 +39,7 @@ public class LockOnHandler {
     private int   wallTimer   = 0;
     private float targetYaw;
     private float targetPitch;
+    public static long lastRollEndTime = 0;
 
     // ────────────────────────────────────────────────────────────
     //  Инициализация
@@ -61,6 +62,9 @@ public class LockOnHandler {
         }
 
         if (event.phase != TickEvent.Phase.START || mc.currentScreen != null) return;
+        if (efw.AnimationTickHandler.isPlayerRolling(mc.player)) {
+            lastRollEndTime = System.currentTimeMillis();
+        }
 
         // Всегда обновляем подсветку — моб под лучом камеры
         highlighted = getEntityUnderCameraRay(LockOnConfig.maxRange);
@@ -314,9 +318,15 @@ public class LockOnHandler {
     private void smoothLook(EntityPlayer player) {
         float pt = Minecraft.getMinecraft().getRenderPartialTicks();
 
+        // Быстрый доворот к цели после кувырка
+        long timeSinceRoll = System.currentTimeMillis() - lastRollEndTime;
+        boolean isPostRoll = timeSinceRoll < 800; // Активно во время кувырка и в течение 800мс после него
+
+        float curSpeed = isPostRoll ? LockOnConfig.postRollRotationSpeed : LockOnConfig.rotationSpeed;
+
         // 1. Считаем плавные углы для ВСЕХ режимов (теперь это безопасно!)
-        float newYaw   = interpolate(player.rotationYaw,   targetYaw,   LockOnConfig.rotationSpeed);
-        float newPitch = interpolate(player.rotationPitch, targetPitch, LockOnConfig.rotationSpeed);
+        float newYaw   = interpolate(player.rotationYaw,   targetYaw,   curSpeed, isPostRoll);
+        float newPitch = interpolate(player.rotationPitch, targetPitch, curSpeed, isPostRoll);
 
         // 2. Применяем кинематографичную плавность к телу (отключаем ванильные дергания)
         player.rotationYaw   = newYaw;
@@ -353,13 +363,13 @@ public class LockOnHandler {
         }
     }
 
-    private float interpolate(float current, float target, float speed) {
+    private float interpolate(float current, float target, float speed, boolean fast) {
         float diff = MathHelper.wrapDegrees(target - current);
 
         // Эффект кинематографичного затухания (Ease-Out).
-        // Вместо жесткого роботизированного шага, берем 15% от оставшегося угла.
-        // Чем ближе перекрестье к цели, тем мягче и точнее движение.
-        float step = diff * 0.15F;
+        // После кувырка шаг 45% от оставшегося угла для быстрого и четкого наведения на цель,
+        // в обычном режиме — 15%.
+        float step = fast ? diff * 0.45F : diff * 0.15F;
 
         // Ограничиваем максимальную скорость, чтобы при переключении
         // на врага за спиной камера не делала мгновенный оборот на 180.

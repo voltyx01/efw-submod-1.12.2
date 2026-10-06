@@ -34,7 +34,7 @@ public abstract class BackpacksMixin {
         if (e instanceof net.minecraft.entity.player.EntityPlayer) {
             ItemStack chestArmor = ((EntityLivingBase)e).getItemStackFromSlot(EntityEquipmentSlot.CHEST);
             ItemStack stack = com.voltyx.mwccf.backpack.BackpackBaubles.getBackpackStack(chestArmor, (EntityLivingBase)e);
-            if (stack == itemStack) {
+            if (stack == itemStack || ItemStack.areItemStacksEqual(stack, itemStack)) {
                 cir.setReturnValue(true);
             }
         }

@@ -61,7 +61,8 @@ public class AnimationTickHandler {
     }
 
     public static boolean isBetterCombatAttackActive(EntityPlayer player) {
-        if (player == null) return false;
+        if (player == null || isPlayerCrawling(player)) return false;
+        if (player.getHeldItemMainhand().isEmpty()) return false;
         AnimationPlayer ap = AnimationRegistry.getPlayer(player);
         if (ap != null && ap.hasActionWeight() && ap.isActionAttack()) {
             return true;
@@ -309,25 +310,32 @@ public class AnimationTickHandler {
 
         boolean wasRollingRender = wasRollingRenderMap.getOrDefault(player, false);
         if (!isRolling && wasRollingRender) {
-            Float dwy = dashWorldYaws.get(player);
-            if (dwy != null) {
-                float targetYaw = player.renderYawOffset;
-                float weaponWeight = isLyingAnim ? 1.0f : weaponHoldWeightMap.getOrDefault(player, 0.0f);
-                if (weaponWeight > 0.0f) {
-                    targetYaw = isLocal ? player.rotationYaw : player.rotationYawHead;
-                }
-                float bodyOffset = net.minecraft.util.math.MathHelper.wrapDegrees(dwy - targetYaw);
-                postRollYawOffsetMap.put(player, bodyOffset);
-                prevPostRollYawOffsetMap.put(player, bodyOffset);
+            if (isLocal && com.teamderpy.shouldersurfing.lockon.LockOnHandler.lockedOn && com.teamderpy.shouldersurfing.lockon.LockOnHandler.target != null) {
+                postRollYawOffsetMap.put(player, 0f);
+                prevPostRollYawOffsetMap.put(player, 0f);
+                postRollHeadYawOffsetMap.put(player, 0f);
+                prevPostRollHeadYawOffsetMap.put(player, 0f);
+            } else {
+                Float dwy = dashWorldYaws.get(player);
+                if (dwy != null) {
+                    float targetYaw = player.renderYawOffset;
+                    float weaponWeight = isLyingAnim ? 1.0f : weaponHoldWeightMap.getOrDefault(player, 0.0f);
+                    if (weaponWeight > 0.0f) {
+                        targetYaw = isLocal ? player.rotationYaw : player.rotationYawHead;
+                    }
+                    float bodyOffset = net.minecraft.util.math.MathHelper.wrapDegrees(dwy - targetYaw);
+                    postRollYawOffsetMap.put(player, bodyOffset);
+                    prevPostRollYawOffsetMap.put(player, bodyOffset);
 
-                float lookYaw = isLocal ? player.rotationYaw : player.rotationYawHead;
-                float headOffset = net.minecraft.util.math.MathHelper.wrapDegrees(dwy - lookYaw);
-                float diff = headOffset - bodyOffset;
-                while (diff > 180f) diff -= 360f;
-                while (diff < -180f) diff += 360f;
-                headOffset = bodyOffset + diff;
-                postRollHeadYawOffsetMap.put(player, headOffset);
-                prevPostRollHeadYawOffsetMap.put(player, headOffset);
+                    float lookYaw = isLocal ? player.rotationYaw : player.rotationYawHead;
+                    float headOffset = net.minecraft.util.math.MathHelper.wrapDegrees(dwy - lookYaw);
+                    float diff = headOffset - bodyOffset;
+                    while (diff > 180f) diff -= 360f;
+                    while (diff < -180f) diff += 360f;
+                    headOffset = bodyOffset + diff;
+                    postRollHeadYawOffsetMap.put(player, headOffset);
+                    prevPostRollHeadYawOffsetMap.put(player, headOffset);
+                }
             }
         }
         wasRollingRenderMap.put(player, isRolling);
@@ -765,7 +773,7 @@ public class AnimationTickHandler {
         if (efw.biomeinfo.MwccfConfig.betterCombat != null && efw.biomeinfo.MwccfConfig.betterCombat.enabled) {
             net.minecraft.item.ItemStack heldMain = player.getHeldItemMainhand();
             boolean isMiningBlock = isCurrentlyHitting || recentlyHitBlockTicks > 0;
-            if (!isMiningBlock && (net.bettercombat.logic.WeaponRegistry.getAttributes(heldMain) != null
+            if (!heldMain.isEmpty() && !isMiningBlock && (net.bettercombat.logic.WeaponRegistry.getAttributes(heldMain) != null
                     || net.bettercombat.client.BetterCombatClient.isUpswingActive()
                     || net.bettercombat.client.BetterCombatClient.swingTimer > 0)) {
                 isBetterCombatWeapon = true;
@@ -853,14 +861,11 @@ public class AnimationTickHandler {
                         }
                     }
                 } else {
-                    // Пустая рука
-                    if (isMiningBlock) {
-                        actionAnim = null; // Для копания оставляем ванильную анимацию
-                    } else {
-                        // Для ударов пустой рукой используем кулачные удары
-                        alternateSwordAnim = !alternateSwordAnim;
-                        actionAnim = alternateSwordAnim ? "fist_attack2" : "fist_attack";
+                    // Пустая рука — всегда ванильная анимация удара
+                    if (ap != null && ap.isActionAttack()) {
+                        ap.snapAction();
                     }
+                    actionAnim = null;
                 }
                 if (actionAnim != null) {
                     boolean isMiningAnim = actionAnim.startsWith("pickaxe") || actionAnim.startsWith("axe")
@@ -998,14 +1003,23 @@ public class AnimationTickHandler {
         // Post-roll smooth body turn: decay each tick
         boolean wasRolling = wasRollingMap.getOrDefault(player, false);
         if (!isRolling) {
-            prevPostRollYawOffsetMap.put(player, postRollYawOffsetMap.getOrDefault(player, 0f));
-            // Decay smoothly every tick (0.65 factor ≈ 250ms to reach ~5%)
-            float cur = postRollYawOffsetMap.getOrDefault(player, 0f);
-            postRollYawOffsetMap.put(player, cur * 0.65f);
-            // Head yaw decays at same rate
-            prevPostRollHeadYawOffsetMap.put(player, postRollHeadYawOffsetMap.getOrDefault(player, 0f));
-            float curHead = postRollHeadYawOffsetMap.getOrDefault(player, 0f);
-            postRollHeadYawOffsetMap.put(player, curHead * 0.65f);
+            if (player == net.minecraft.client.Minecraft.getMinecraft().player
+                    && com.teamderpy.shouldersurfing.lockon.LockOnHandler.lockedOn
+                    && com.teamderpy.shouldersurfing.lockon.LockOnHandler.target != null) {
+                postRollYawOffsetMap.put(player, 0f);
+                prevPostRollYawOffsetMap.put(player, 0f);
+                postRollHeadYawOffsetMap.put(player, 0f);
+                prevPostRollHeadYawOffsetMap.put(player, 0f);
+            } else {
+                prevPostRollYawOffsetMap.put(player, postRollYawOffsetMap.getOrDefault(player, 0f));
+                // Decay smoothly every tick (0.65 factor ≈ 250ms to reach ~5%)
+                float cur = postRollYawOffsetMap.getOrDefault(player, 0f);
+                postRollYawOffsetMap.put(player, cur * 0.65f);
+                // Head yaw decays at same rate
+                prevPostRollHeadYawOffsetMap.put(player, postRollHeadYawOffsetMap.getOrDefault(player, 0f));
+                float curHead = postRollHeadYawOffsetMap.getOrDefault(player, 0f);
+                postRollHeadYawOffsetMap.put(player, curHead * 0.65f);
+            }
         }
         wasRollingMap.put(player, isRolling);
 
@@ -1094,6 +1108,9 @@ public class AnimationTickHandler {
         } else if (player.capabilities.isFlying) {
             animName = "idle_creative_flying";
         } else if (isPlayerCrawling(player) || player.height < 1.0F) { // Ползание (AquaAcrobatics)
+            if (ap.isActionAttack()) {
+                ap.snapAction();
+            }
             if (isMovingBackwards) {
                 animName = "lie_move";
             } else if (isMoving) {

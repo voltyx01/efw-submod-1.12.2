@@ -178,15 +178,20 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
         float deltaTime = immersiveui$deltaTime;
         float amplitude = ImmersiveUIConfig.floatingItemRotationAmplitude;
         float easingSpeed = ImmersiveUIConfig.floatingItemEasingSpeed;
-        float inertiaDamping = 0.75F;
+
+        float maxAngle = (float) Math.toRadians(32.0F) * amplitude;
+        float dt = MathHelper.clamp(deltaTime, 0.001F, 0.05F);
+        float targetAngle = 0.0F;
 
         if (immersiveui$oX != Integer.MIN_VALUE && immersiveui$oY != Integer.MIN_VALUE) {
-            float targetAngle = MathHelper.clamp(-immersiveui$deltaX / 8.0F * amplitude, -1.5707963F / (2.0F / amplitude), 1.5707963F / (2.0F / amplitude));
-            immersiveui$currentAngleVelocity += (targetAngle - immersiveui$currentAngle) * easingSpeed * deltaTime;
+            targetAngle = MathHelper.clamp(-immersiveui$deltaX * 0.035F * amplitude, -maxAngle, maxAngle);
         }
 
-        immersiveui$currentAngle = MathHelper.clamp(immersiveui$currentAngle + immersiveui$currentAngleVelocity * deltaTime, -1.5707963F / (2.0F / amplitude), 1.5707963F / (2.0F / amplitude));
-        immersiveui$currentAngleVelocity = immersiveui$currentAngleVelocity * (float) Math.pow(inertiaDamping, deltaTime);
+        float springK = 280.0F * Math.max(0.2F, easingSpeed);
+        float damping = 22.0F;
+        float accel = (targetAngle - immersiveui$currentAngle) * springK - immersiveui$currentAngleVelocity * damping;
+        immersiveui$currentAngleVelocity += accel * dt;
+        immersiveui$currentAngle = MathHelper.clamp(immersiveui$currentAngle + immersiveui$currentAngleVelocity * dt, -maxAngle * 1.2F, maxAngle * 1.2F);
 
         GlStateManager.pushMatrix();
         GlStateManager.translate(x + 8.0F, y + 8.0F, 232.0F);
@@ -444,9 +449,14 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
         return particle;
     }
 
+    @Inject(method = "drawScreen",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GlStateManager;popMatrix()V", shift = At.Shift.AFTER))
+    public void immersiveui$renderParticles(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ParticleStorage.renderAll(partialTicks);
+    }
+
     @Inject(method = "drawScreen", at = @At("TAIL"))
     public void immersiveui$onDrawScreenTail(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        ParticleStorage.renderAll(partialTicks);
         immersiveui$oX = mouseX;
         immersiveui$oY = mouseY;
     }

@@ -17,7 +17,13 @@ public class MixinMinecraftLoadWorld {
             at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;loadingScreen:Lnet/minecraft/client/LoadingScreenRenderer;", shift = At.Shift.AFTER))
     private void afterSetLoadingScreen(net.minecraft.client.multiplayer.WorldClient worldClientIn, String loadingMessage, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
         Minecraft mc = (Minecraft) (Object) this;
-        if (worldClientIn == null) {
+        mc.loadingScreen = new CustomLoadingScreenRenderer(mc);
+    }
+
+    @Inject(method = "resize", at = @At("RETURN"))
+    private void onResize(int width, int height, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+        Minecraft mc = (Minecraft) (Object) this;
+        if (!(mc.loadingScreen instanceof CustomLoadingScreenRenderer)) {
             mc.loadingScreen = new CustomLoadingScreenRenderer(mc);
         }
     }

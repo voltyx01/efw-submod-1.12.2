@@ -47,6 +47,10 @@ public class AttackAnimationHelper {
             return;
         }
 
+        if (efw.AnimationTickHandler.isPlayerCrawling(player)) {
+            return;
+        }
+
         if (!isVanillaWeaponAttack(player, animatedHand)) {
             return;
         }

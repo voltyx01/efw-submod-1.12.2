@@ -47,6 +47,7 @@ public class FirstPersonAttackRenderer {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP player = mc.player;
         if (player == null || mc.world == null) return;
+        if (efw.AnimationTickHandler.isPlayerCrawling(player)) return;
         if (isBetterCombatAttack(player)) {
             event.setCanceled(true);
             return;

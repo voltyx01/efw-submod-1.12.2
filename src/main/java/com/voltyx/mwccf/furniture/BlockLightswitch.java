@@ -79,19 +79,51 @@ public class BlockLightswitch extends BlockFurnitureHorizontal {
     }
 
     @Override
+    public boolean hasTileEntity(IBlockState state) {
+        return true;
+    }
+
+    @Override
+    public net.minecraft.tileentity.TileEntity createTileEntity(World world, IBlockState state) {
+        return new com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch();
+    }
+
+    @Override
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, net.minecraft.entity.EntityLivingBase placer, net.minecraft.item.ItemStack stack) {
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+        if (!worldIn.isRemote) {
+            net.minecraft.tileentity.TileEntity te = worldIn.getTileEntity(pos);
+            if (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch) {
+                ((com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch) te).initFromPlacedStack(stack, pos);
+            }
+        }
+    }
+
+    @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        net.minecraft.item.ItemStack held = playerIn.getHeldItem(hand);
+        net.minecraft.tileentity.TileEntity te = worldIn.getTileEntity(pos);
+        com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch switchTe =
+                (te instanceof com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch) ?
+                (com.voltyx.mwccf.furniture.tileentity.TileEntityLightswitch) te : null;
+
+        if (playerIn.isSneaking() && held.isEmpty()) {
+            if (!worldIn.isRemote && switchTe != null) {
+                int count = switchTe.getLinkedOffsets().size();
+                playerIn.sendStatusMessage(new net.minecraft.util.text.TextComponentTranslation(
+                        "message.mwccf.lightswitch.count", count), true);
+            }
+            return true;
+        }
+
         boolean powered = !state.getValue(POWERED);
         worldIn.setBlockState(pos, state.withProperty(POWERED, powered), 3);
         worldIn.notifyNeighborsOfStateChange(pos, this, false);
         worldIn.playSound(null, pos, FurnitureSounds.BLOCK_LIGHTSWITCH_FLICK, SoundCategory.BLOCKS, 1.0F, powered ? 1.0F : 0.8F);
 
-        // Toggle all nearby ceiling lights in radius 10
         if (!worldIn.isRemote) {
-            for (BlockPos.MutableBlockPos p : BlockPos.getAllInBoxMutable(pos.add(-10, -5, -10), pos.add(10, 5, 10))) {
-                IBlockState targetState = worldIn.getBlockState(p);
-                if (targetState.getBlock() instanceof BlockCeilingLight) {
-                    worldIn.setBlockState(p, targetState.withProperty(BlockCeilingLight.LIT, powered), 3);
-                }
+            if (switchTe != null) {
+                switchTe.toggleLights(powered);
             }
         }
         return true;

@@ -415,7 +415,12 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
     public void mwccf$onSetRotationAnglesHead(float limbSwing, float limbSwingAmount, float ageInTicks,
             float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
         if (entityIn instanceof EntityPlayer) {
-            efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer((EntityPlayer) entityIn);
+            EntityPlayer player = (EntityPlayer) entityIn;
+            if (player.getHeldItemMainhand().isEmpty()) {
+                // Bare hands: allow full vanilla swing progress
+                return;
+            }
+            efw.animation.AnimationPlayer ap = efw.animation.AnimationRegistry.getPlayer(player);
             if (ap != null && ap.hasActionWeight()) {
                 // ПОЛНОСТЬЮ ОТКЛЮЧАЕМ ванильную анимацию взмаха (swingProgress),
                 // если проигрывается наша экшн-анимация. Иначе они конфликтуют (смешиваются)
@@ -722,9 +727,7 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
             applyBone(this.bipedRightLeg, AnimationApplicator.getOverlayForBone(this.bipedRightLeg, model), ap, "rightLeg", pt);
             applyBone(this.bipedLeftLeg, AnimationApplicator.getOverlayForBone(this.bipedLeftLeg, model), ap, "leftLeg", pt);
-            if (!isBCAttack) {
-                applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
-            }
+            applyBone(this.bipedBody, AnimationApplicator.getOverlayForBone(this.bipedBody, model), ap, "torso", pt);
 
 
 
@@ -823,11 +826,34 @@ public abstract class MixinModelBiped extends ModelBase implements IModelBipedSw
 
             // If swinging arm without a custom action animation (e.g. punching with bare hands, placing/mining with blocks),
             // apply smooth vanilla swing rotation to the swinging arm on top of its animated shoulder position.
-            boolean isSwingingArm = this.swingProgress > 0.0F && !isMWCWeapon && !isBCAttack && !ap.hasActionWeight();
+            boolean isBareHandSwing = player.getHeldItemMainhand().isEmpty() && this.swingProgress > 0.0F;
+            boolean isSwingingArm = isBareHandSwing || (this.swingProgress > 0.0F && !isMWCWeapon && !isBCAttack && !ap.hasActionWeight());
             boolean disableRightArmAnim = isGenericItemUse;
             boolean disableLeftArmAnim = isGenericItemUse;
 
-            if (isSwingingArm) {
+            if (isBareHandSwing) {
+                EnumHandSide swingingHandSide = (player.swingingHand == net.minecraft.util.EnumHand.OFF_HAND) ? this.getMainHand(entityIn).opposite() : this.getMainHand(entityIn);
+                ModelRenderer swingingArm = (swingingHandSide == net.minecraft.util.EnumHandSide.RIGHT) ? this.bipedRightArm : this.bipedLeftArm;
+                ModelRenderer swingingOverlay = AnimationApplicator.getOverlayForBone(swingingArm, model);
+
+                if (swingingHandSide == net.minecraft.util.EnumHandSide.RIGHT) {
+                    this.bipedRightArm.rotateAngleX = vanillaRightRotX;
+                    this.bipedRightArm.rotateAngleY = vanillaRightRotY;
+                    this.bipedRightArm.rotateAngleZ = vanillaRightRotZ;
+                    disableRightArmAnim = true;
+                } else {
+                    this.bipedLeftArm.rotateAngleX = vanillaLeftRotX;
+                    this.bipedLeftArm.rotateAngleY = vanillaLeftRotY;
+                    this.bipedLeftArm.rotateAngleZ = vanillaLeftRotZ;
+                    disableLeftArmAnim = true;
+                }
+
+                if (swingingOverlay != null) {
+                    swingingOverlay.rotateAngleX = swingingArm.rotateAngleX;
+                    swingingOverlay.rotateAngleY = swingingArm.rotateAngleY;
+                    swingingOverlay.rotateAngleZ = swingingArm.rotateAngleZ;
+                }
+            } else if (isSwingingArm) {
                 EnumHandSide swingingHandSide = (player.swingingHand == net.minecraft.util.EnumHand.OFF_HAND) ? this.getMainHand(entityIn).opposite() : this.getMainHand(entityIn);
                 ModelRenderer swingingArm = (swingingHandSide == net.minecraft.util.EnumHandSide.RIGHT) ? this.bipedRightArm : this.bipedLeftArm;
                 ModelRenderer swingingOverlay = AnimationApplicator.getOverlayForBone(swingingArm, model);

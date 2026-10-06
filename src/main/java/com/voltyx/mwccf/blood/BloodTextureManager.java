@@ -108,7 +108,7 @@ public class BloodTextureManager {
         if (path.startsWith("textures/particle/")) return false;
         if (path.startsWith("textures/environment/")) return false;
         if (path.startsWith("textures/colormap/")) return false;
-        if (path.startsWith("textures/misc/")) return false;
+        if (path.startsWith("textures/misc/") && !path.contains("backpack")) return false;
         if (path.contains("glint")) return false;
         if (path.contains("shadow")) return false;
         if (res.equals(TextureMap.LOCATION_BLOCKS_TEXTURE)) return false;

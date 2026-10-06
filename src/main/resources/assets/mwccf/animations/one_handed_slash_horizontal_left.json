@@ -360,7 +360,7 @@
                 "easing": "EASEOUTQUAD",
                 "turn": 0,
                 "rightArm":{
-                    "roll":-1.2513736486434937
+                    "roll":-0.35
                 }
             },
             {
@@ -488,7 +488,7 @@
                 "easing": "EASEOUTQUAD",
                 "turn": 0,
                 "rightArm":{
-                    "pitch":-2.8364431858062744
+                    "pitch":-1.95
                 }
             },
             {

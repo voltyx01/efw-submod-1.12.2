@@ -33,6 +33,11 @@ public class ItemSIShield extends ItemShield {
     }
 
     @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return ("" + net.minecraft.util.text.translation.I18n.translateToLocal(this.getTranslationKey(stack) + ".name")).trim();
+    }
+
+    @Override
     public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
         if (this.repairItemSupplier != null && this.repairItemSupplier.get() != null) {
             return repair.getItem() == this.repairItemSupplier.get();

@@ -10,6 +10,8 @@ public class EfwModSounds {
     public static SoundEvent DIARYOPEN;
     public static SoundEvent BANDAGE;
     public static SoundEvent MED;
+    public static SoundEvent DOLL_UP;
+    public static SoundEvent DOLL_DOWN;
 
     public static void register() {
         ITEMSOUND  = registerEfw("itemsound");
@@ -17,6 +19,8 @@ public class EfwModSounds {
         DIARYOPEN  = registerEfw("diaryopen");
         BANDAGE    = registerMwccf("bandage");
         MED        = registerMwccf("med");
+        DOLL_UP    = registerMwccf("item.doll.up");
+        DOLL_DOWN  = registerMwccf("item.doll.down");
     }
 
     private static SoundEvent registerEfw(String name) {

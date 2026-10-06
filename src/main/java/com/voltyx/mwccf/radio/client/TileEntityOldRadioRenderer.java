@@ -3,6 +3,7 @@ package com.voltyx.mwccf.radio.client;
 import com.voltyx.mwccf.radio.BlockOldRadio;
 import com.voltyx.mwccf.radio.TileEntityOldRadio;
 import com.voltyx.mwccf.render.bedrock.BedrockBlockModel;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.util.EnumFacing;
@@ -49,7 +50,7 @@ public class TileEntityOldRadioRenderer extends TileEntitySpecialRenderer<TileEn
             default: break;
         }
 
-        this.bindTexture(TEXTURE);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(TEXTURE);
 
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -60,6 +61,7 @@ public class TileEntityOldRadioRenderer extends TileEntitySpecialRenderer<TileEn
         MODEL.render(1.0F / 16.0F);
 
         GlStateManager.enableCull();
+        GlStateManager.disableBlend();
         GlStateManager.popMatrix();
     }
 }

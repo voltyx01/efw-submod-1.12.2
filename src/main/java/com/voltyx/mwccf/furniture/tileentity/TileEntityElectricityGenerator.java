@@ -195,10 +195,23 @@ public class TileEntityElectricityGenerator extends TileEntityLockableLoot imple
                 double pz = this.pos.getZ() + 0.5D + (this.world.rand.nextDouble() - 0.5D) * 0.2D;
                 this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, px, py, pz, 0.0D, 0.05D, 0.0D);
             }
+            com.voltyx.mwccf.MwccfMod.proxy.updateGeneratorSound(this);
         }
+    }
 
-        if (this.isGeneratingPower() && this.world.getTotalWorldTime() % 40 == 0) {
-            this.world.playSound(null, this.pos, FurnitureSounds.BLOCK_ELECTRICITY_GENERATOR_ENGINE, SoundCategory.BLOCKS, 0.6F, 1.0F);
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        if (this.world != null && this.world.isRemote) {
+            com.voltyx.mwccf.MwccfMod.proxy.stopGeneratorSound(this);
+        }
+    }
+
+    @Override
+    public void onChunkUnload() {
+        super.onChunkUnload();
+        if (this.world != null && this.world.isRemote) {
+            com.voltyx.mwccf.MwccfMod.proxy.stopGeneratorSound(this);
         }
     }
 

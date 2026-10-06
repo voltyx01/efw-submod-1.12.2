@@ -227,6 +227,9 @@ public class WildfirePlayerListScreen extends GuiScreen {
 	 * Often part of GuiInventory, extracted here for convenience.
 	 */
 	public static void drawEntityOnScreen(int posX, int posY, int scale, float mouseX, float mouseY, EntityPlayer ent) {
+		boolean prevInGui = efw.util.RenderContext.isRenderingPlayerInGui;
+		efw.util.RenderContext.isRenderingPlayerInGui = true;
+		try {
 		GlStateManager.enableColorMaterial();
 
 		// ВКЛЮЧАЕМ нормализацию масштаба. Без этого свет "взрывается" и заливает модель
@@ -321,6 +324,9 @@ public class WildfirePlayerListScreen extends GuiScreen {
 		GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
 		GlStateManager.disableTexture2D();
 		GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+		} finally {
+			efw.util.RenderContext.isRenderingPlayerInGui = prevInGui;
+		}
 	}
 
 	/**

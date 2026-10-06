@@ -103,6 +103,8 @@ public class PacketChargeDevice implements IMessage {
 
                                 held.shrink(1);
                                 player.inventory.setItemStack(held.isEmpty() ? ItemStack.EMPTY : held);
+                                player.world.playSound(null, player.posX, player.posY, player.posZ,
+                                        SoundEvents.ITEM_ARMOR_EQUIP_IRON, SoundCategory.PLAYERS, 0.8F, 1.2F);
                                 player.sendSlotContents(player.openContainer, slot.slotNumber, target);
                                 player.connection.sendPacket(new net.minecraft.network.play.server.SPacketSetSlot(-1, -1, player.inventory.getItemStack()));
                                 player.openContainer.detectAndSendChanges();

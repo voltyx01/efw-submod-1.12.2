@@ -87,6 +87,7 @@ public class InventoryChargeHandler {
                                     target.setTagCompound(tag);
                                 }
                                 tag.setInteger("morphine_count", morphineCount + 1);
+                                mc.player.playSound(SoundEvents.ITEM_ARMOR_EQUIP_IRON, 0.8F, 1.2F);
                                 event.setCanceled(true);
                                 return;
                             }

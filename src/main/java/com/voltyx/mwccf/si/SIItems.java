@@ -18,13 +18,12 @@ public class SIItems {
     public static final Item ALUMINIUM = createMaterial("aluminium", CreativeTabs.MATERIALS);
     public static final Item ELECTRONIC_SCRAP = createMaterial("electronic_scrap", CreativeTabs.MATERIALS);
     public static final Item GASOLINE_CAN = createMaterial("gasoline_can", CreativeTabs.MATERIALS);
-    public static final Item BATTERIES = createMaterial("batteries", CreativeTabs.MATERIALS);
     public static final Item NAIL = createMaterial("nail", CreativeTabs.COMBAT);
     public static final Item NAILS_BOX = createMaterial("nails_box", CreativeTabs.COMBAT);
 
     // --- 1. Fists ---
     public static final Item AMERICAN_FIST = register(new ItemSIFist("american_fist", SIMaterials.TOOL_STEELLIUM, 310, 5.5F, 2.5F, false, null, () -> Items.IRON_INGOT));
-    public static final Item ELECTRIC_FIST = register(new ItemSIFist("electric_fist", SIMaterials.TOOL_STEELLIUM, 412, 7.0F, 2.0F, true, SISounds.ELECTRIC_FIST_01, () -> BATTERIES));
+    public static final Item ELECTRIC_FIST = register(new ItemSIFist("electric_fist", SIMaterials.TOOL_STEELLIUM, 412, 7.0F, 2.0F, true, SISounds.ELECTRIC_FIST_01, () -> ELECTRONIC_SCRAP));
 
     // --- 2. Knives & Improvised Sharp ---
     public static final Item HUNT_KNIFE = register(new ItemSISword("hunt_knife", SIMaterials.TOOL_STEELLIUM, 1000, 7.0F, 2.0F, 0, false, null, () -> STEELLIUM));
@@ -46,7 +45,7 @@ public class SIItems {
     public static final Item BASEBALL_BAT_WITH_NAILS_SWORD = register(new ItemSISword("b_aseball_bat_with_nails_sword", SIMaterials.TOOL_WOOD_PLANK, 65, 6.0F, 1.6F, 320, false, null, () -> Item.getItemFromBlock(Blocks.PLANKS)));
     public static final Item METAL_BASEBALLBAT_HAMMER = register(new ItemSISword("metal_baseballbat_hammer", SIMaterials.TOOL_STEELLIUM, 341, 6.5F, 1.7F, 0, false, null, () -> STEELLIUM));
     public static final Item POLICE_BATON_MACE = register(new ItemSISword("police_baton_mace", SIMaterials.TOOL_STEELLIUM, 342, 6.0F, 2.0F, 0, false, null, () -> Items.IRON_INGOT));
-    public static final Item ELECTRIC_BATON_SWORD = register(new ItemSISword("electric_baton_sword", SIMaterials.TOOL_STEELLIUM, 321, 6.4F, 1.6F, 0, true, SISounds.ELECTRIC_FIST_01, () -> BATTERIES));
+    public static final Item ELECTRIC_BATON_SWORD = register(new ItemSISword("electric_baton_sword", SIMaterials.TOOL_STEELLIUM, 321, 6.4F, 1.6F, 0, true, SISounds.ELECTRIC_FIST_01, () -> ELECTRONIC_SCRAP));
 
     // --- 5. Hammers & Tools ---
     public static final Item HAND_HAMMER = register(new ItemSIPickaxe("hand_hammer", SIMaterials.TOOL_STEELLIUM, 232, 6.5F, 1.6F, true, null, () -> STEELLIUM));
@@ -75,7 +74,7 @@ public class SIItems {
     public static final Item LANCE_WIT_SCREWDRIVER = register(new ItemSIPolearm("lance_wit_screwdriver", SIMaterials.TOOL_STEELLIUM, 196, 5.5F, 1.6F, 0.5D, 0, null, () -> STEELLIUM));
     public static final Item GLAIVE_WITH_MACHETE = register(new ItemSIPolearm("glaive_with_machete", SIMaterials.TOOL_STEELLIUM, 200, 7.5F, 1.4F, 0.5D, 0, null, () -> Items.IRON_INGOT));
     public static final Item GLAIVE_CHAINSAW = register(new ItemSIPolearm("glaive_chainsaw", SIMaterials.TOOL_STEELLIUM, 230, 14.0F, 0.7F, 0.75D, 1200, SISounds.CHAINSAW_SWING, () -> GASOLINE_CAN));
-    public static final Item GLAIVE_CIRCULAR_SAW = register(new ItemSIPolearm("glaive_circular_saw", SIMaterials.TOOL_STEELLIUM, 190, 10.0F, 0.9F, 0.75D, 1200, SISounds.CIRCULARSAW_SWING, () -> BATTERIES));
+    public static final Item GLAIVE_CIRCULAR_SAW = register(new ItemSIPolearm("glaive_circular_saw", SIMaterials.TOOL_STEELLIUM, 190, 10.0F, 0.9F, 0.75D, 1200, SISounds.CIRCULARSAW_SWING, () -> ELECTRONIC_SCRAP));
 
     // --- 8. Sickle ---
     public static final Item SICKLE = register(new ItemSISword("sickle", SIMaterials.TOOL_STEELLIUM, 321, 6.0F, 1.8F, 0, false, null, () -> STEELLIUM));

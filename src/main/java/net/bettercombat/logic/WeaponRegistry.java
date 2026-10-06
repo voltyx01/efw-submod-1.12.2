@@ -45,7 +45,8 @@ public class WeaponRegistry {
 
     public static WeaponAttributes getAttributes(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
-            return registrations.get(new ResourceLocation("bettercombat", "fist"));
+            // Пустая рука — ванильный удар, BetterCombat его не трогает
+            return null;
         }
 
         WeaponAttributes nbtAttributes = WeaponAttributesHelper.readFromNBT(itemStack);

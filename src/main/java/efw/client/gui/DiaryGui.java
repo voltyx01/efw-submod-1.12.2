@@ -297,15 +297,15 @@ public class DiaryGui extends GuiContainer {
             int textColor;
 
             if (!this.enabled) {
-                bgColor = 0x22FFFFFF;
-                borderColor = 0x33FFFFFF;
-                textColor = 0x55AAAAAA;
+                bgColor = 0x22000000;
+                borderColor = 0x22FFFFFF;
+                textColor = 0x44AAAAAA;
             } else if (this.hovered) {
-                bgColor = 0x66FFFFFF;
-                borderColor = 0xAAFFFFFF;
+                bgColor = 0x99000000;
+                borderColor = 0xFFFFFFFF;
                 textColor = 0xFFFFFFA0; // subtle warm glow on hover
             } else {
-                bgColor = 0x33FFFFFF;
+                bgColor = 0x55000000;
                 borderColor = 0x55FFFFFF;
                 textColor = 0xFFE0E0E0;
             }
@@ -316,6 +316,13 @@ public class DiaryGui extends GuiContainer {
             drawRect(this.x + 1, this.y + 1, this.x + this.width - 1, this.y + this.height - 1, bgColor);
 
             this.mouseDragged(mc, mouseX, mouseY);
+
+            GlStateManager.enableBlend();
+            GlStateManager.enableAlpha();
+            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ZERO);
 
             this.drawCenteredString(fontrenderer, this.displayString,
                     this.x + this.width / 2,

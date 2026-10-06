@@ -13,6 +13,7 @@ import net.bettercombat.logic.WeaponRegistry;
 import net.bettercombat.network.BetterCombatNetwork;
 import net.bettercombat.network.PacketAttackAnimation;
 import net.bettercombat.network.PacketAttackRequest;
+import net.bettercombat.network.ServerAttackHandler;
 import net.bettercombat.registry.BetterCombatSounds;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -22,7 +23,9 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemSword;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
@@ -73,6 +76,18 @@ public class BetterCombatClient {
         PlayerAttackProperties.setComboCount(player, count);
     }
 
+    public static boolean isAttackHeld(Minecraft mc) {
+        if (mc == null || mc.gameSettings == null || mc.gameSettings.keyBindAttack == null) return false;
+        if (mc.gameSettings.keyBindAttack.isKeyDown()) return true;
+        if (mc.inGameHasFocus && mc.gameSettings.keyBindAttack.getKeyCode() < 0) {
+            int button = mc.gameSettings.keyBindAttack.getKeyCode() + 100;
+            if (button >= 0 && button <= 15 && org.lwjgl.input.Mouse.isButtonDown(button)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean canStartAttack(EntityPlayerSP player) {
         if (player == null || player.isRiding() || player.isHandActive()) {
             return false;
@@ -104,11 +119,6 @@ public class BetterCombatClient {
             return false;
         }
 
-        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
-        if (localAp != null && localAp.isRollPlaying()) {
-            return false;
-        }
-
         ItemStack stack = player.getHeldItemMainhand();
         WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
         if (attributes == null || attributes.attacks() == null || attributes.attacks().length == 0) {
@@ -121,6 +131,12 @@ public class BetterCombatClient {
             return false; // let vanilla handle block mining
         }
         isHarvesting = false;
+
+        efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (localAp != null && localAp.isRollPlaying()) {
+            attackBufferTicks = 12;
+            return true;
+        }
 
         if (canStartAttack(player)) {
             startUpswing(attributes);
@@ -136,8 +152,41 @@ public class BetterCombatClient {
         return false;
     }
 
+    public static boolean isNonMiningWeapon(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        net.minecraft.item.Item item = stack.getItem();
+        if (item instanceof net.minecraft.item.ItemSword) {
+            return true;
+        }
+        if (item instanceof com.voltyx.mwccf.si.ItemSIFist) {
+            return true;
+        }
+        if (item instanceof net.minecraft.item.ItemTool) {
+            if (item instanceof net.minecraft.item.ItemAxe || item instanceof net.minecraft.item.ItemPickaxe || item instanceof net.minecraft.item.ItemSpade) {
+                return false;
+            }
+        }
+        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
+        if (attributes != null) {
+            String cat = attributes.category();
+            if (cat != null) {
+                String c = cat.toLowerCase();
+                if (c.contains("axe") || c.contains("pickaxe") || c.contains("shovel") || c.contains("hoe")) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     public static boolean isTargetingMineableBlock(Minecraft mc, EntityPlayerSP player) {
         if (!MwccfConfig.betterCombat.isMiningWithWeaponsEnabled) {
+            return false;
+        }
+
+        ItemStack stack = player.getHeldItemMainhand();
+        if (isNonMiningWeapon(stack)) {
             return false;
         }
 
@@ -152,7 +201,6 @@ public class BetterCombatClient {
             return false;
         }
 
-        ItemStack stack = player.getHeldItemMainhand();
         WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
         if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
             WeaponAttributes.Attack attack = attributes.attacks()[getComboCount() % attributes.attacks().length];
@@ -189,8 +237,13 @@ public class BetterCombatClient {
         }
 
         efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
-        if (localAp != null && localAp.isRollPlaying()) {
-            return;
+        if (localAp != null) {
+            if (localAp.isRollPlaying()) {
+                return;
+            }
+            if (localAp.isRollActive(0.0f)) {
+                localAp.snapRoll();
+            }
         }
 
         if (attackCooldown > 0 || upswingTicks > 0) {
@@ -245,17 +298,19 @@ public class BetterCombatClient {
         EnumHand swingHand = hand.isOffHand() ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
         player.swingArm(swingHand);
 
-        // Play third-person animation synchronized to visual swing timer and strike ticks
-        AttackAnimationHelper.playAttackAnimation(player, anim, animatedHand, cooldownTicks, upswingRate);
+        // Play third-person animation synchronized to visual swing timer and strike ticks (if not crawling)
+        if (!efw.AnimationTickHandler.isPlayerCrawling(player)) {
+            AttackAnimationHelper.playAttackAnimation(player, anim, animatedHand, cooldownTicks, upswingRate);
 
-        // Send animation packet to server
-        BetterCombatNetwork.NETWORK.sendToServer(new PacketAttackAnimation(
-                player.getEntityId(),
-                animatedHand.ordinal(),
-                anim,
-            cooldownTicks,
-            upswingRate,
-                pendingSwingSoundId));
+            // Send animation packet to server
+            BetterCombatNetwork.NETWORK.sendToServer(new PacketAttackAnimation(
+                    player.getEntityId(),
+                    animatedHand.ordinal(),
+                    anim,
+                    cooldownTicks,
+                    upswingRate,
+                    pendingSwingSoundId));
+        }
     }
 
     public static void onClientTick() {
@@ -322,11 +377,12 @@ public class BetterCombatClient {
         // Manage attack animation completion for the local player:
         // Fade out smoothly once the attack finishes and no further attack is queued or held
         efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        ItemStack heldMain = player.getHeldItemMainhand();
+        boolean isBCWeaponHeld = !heldMain.isEmpty() && WeaponRegistry.getAttributes(heldMain) != null;
+        boolean attackHeld = MwccfConfig.betterCombat.isHoldToAttackEnabled && isBCWeaponHeld && isAttackHeld(mc);
         if (localAp != null) {
             boolean hasQueuedAttack = (attackBufferTicks > 0);
-            boolean isHoldingAttack = MwccfConfig.betterCombat.isHoldToAttackEnabled
-                    && mc.gameSettings.keyBindAttack.isKeyDown()
-                    && !isHarvesting;
+            boolean isHoldingAttack = attackHeld && !isHarvesting;
             boolean isAttackActive = (attackCooldown > 0 || upswingTicks > 0);
 
             if (!hasQueuedAttack && !isHoldingAttack && !isAttackActive
@@ -338,12 +394,20 @@ public class BetterCombatClient {
         }
 
         // Continuous attack (hold to attack)
-        if (MwccfConfig.betterCombat.isHoldToAttackEnabled && mc.gameSettings.keyBindAttack.isKeyDown()) {
-            if (!isHarvesting && canStartAttack(player)) {
-                ItemStack held = player.getHeldItemMainhand();
-                WeaponAttributes attributes = WeaponRegistry.getAttributes(held);
-                if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
-                    if (!isTargetingMineableBlock(mc, player)) {
+        if (attackHeld) {
+            if (!mc.gameSettings.keyBindAttack.isKeyDown()) {
+                net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), true);
+            }
+            if (isTargetingMineableBlock(mc, player)) {
+                isHarvesting = true;
+            } else {
+                isHarvesting = false;
+                if (localAp != null && localAp.isRollPlaying()) {
+                    attackBufferTicks = 6;
+                } else if (canStartAttack(player)) {
+                    ItemStack held = player.getHeldItemMainhand();
+                    WeaponAttributes attributes = WeaponRegistry.getAttributes(held);
+                    if (attributes != null && attributes.attacks() != null && attributes.attacks().length > 0) {
                         startUpswing(attributes);
                     }
                 }
@@ -363,9 +427,16 @@ public class BetterCombatClient {
 
     private static void cancelSwingIfNeeded(EntityPlayerSP player) {
         efw.animation.AnimationPlayer localAp = efw.animation.AnimationRegistry.getPlayer(player);
+        if (player.getHeldItemMainhand().isEmpty()) {
+            if (swingTimer > 0 || attackCooldown > 0 || isUpswingActive()) {
+                cancelCurrentSwing(player);
+            }
+            return;
+        }
+
         if (localAp != null && localAp.isRollPlaying()) {
             if (swingTimer > 0 || upswingTicks > 0 || isUpswingActive() || (localAp.isActionAttack() && localAp.hasActionWeight())) {
-                cancelCurrentSwing(player);
+                cancelCurrentSwing(player, false);
             }
             return;
         }
@@ -379,11 +450,17 @@ public class BetterCombatClient {
     }
 
     public static void cancelCurrentSwing(EntityPlayer player) {
+        cancelCurrentSwing(player, true);
+    }
+
+    public static void cancelCurrentSwing(EntityPlayer player, boolean clearBuffer) {
         swingTimer = 0;
         swingTimerCap = 0;
         attackCooldown = 0;
         upswingTicks = 0;
-        attackBufferTicks = 0;
+        if (clearBuffer) {
+            attackBufferTicks = 0;
+        }
         upswingStack = ItemStack.EMPTY;
         currentAnimation = "";
         currentIsOffHand = false;
@@ -468,11 +545,58 @@ public class BetterCombatClient {
             isPerformingAttack = false;
         }
 
+        if (!targets.isEmpty() && ServerAttackHandler.isHorizontalOrSpinAttack(hand.attack())) {
+            spawnClientSweepParticles(player, hand.attack());
+        }
+
         setComboCount(combo + 1);
         player.resetCooldown();
 
         if (!hand.isOffHand()) {
             lastAttackedWithStack = hand.itemStack().copy();
+        }
+    }
+
+    public static void spawnClientSweepParticles(EntityPlayerSP player, WeaponAttributes.Attack attack) {
+        if (player == null || player.world == null || attack == null) return;
+        if (ServerAttackHandler.isSpinAttack(attack)) {
+            for (int i = 0; i < 8; i++) {
+                double rad = Math.toRadians(player.rotationYaw + (i * 45.0));
+                double px = -Math.sin(rad) * 1.35;
+                double pz = Math.cos(rad) * 1.35;
+                player.world.spawnParticle(
+                        EnumParticleTypes.SWEEP_ATTACK,
+                        player.posX + px,
+                        player.posY + player.height * 0.5,
+                        player.posZ + pz,
+                        0.0, 0.0, 0.0);
+            }
+        } else if (attack.angle() >= 150.0) {
+            double[] offsets = new double[] { -40.0, 0.0, 40.0 };
+            for (double off : offsets) {
+                double rad = Math.toRadians(player.rotationYaw + off);
+                double px = -Math.sin(rad) * 1.15;
+                double pz = Math.cos(rad) * 1.15;
+                player.world.spawnParticle(
+                        EnumParticleTypes.SWEEP_ATTACK,
+                        player.posX + px,
+                        player.posY + player.height * 0.5,
+                        player.posZ + pz,
+                        0.0, 0.0, 0.0);
+            }
+        } else {
+            ItemStack stack = player.getHeldItemMainhand();
+            if (!(stack.getItem() instanceof ItemSword)) {
+                double rad = Math.toRadians(player.rotationYaw);
+                double px = -Math.sin(rad) * 1.0;
+                double pz = Math.cos(rad) * 1.0;
+                player.world.spawnParticle(
+                        EnumParticleTypes.SWEEP_ATTACK,
+                        player.posX + px,
+                        player.posY + player.height * 0.5,
+                        player.posZ + pz,
+                        0.0, 0.0, 0.0);
+            }
         }
     }
 

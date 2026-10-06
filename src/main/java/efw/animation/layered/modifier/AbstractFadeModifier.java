@@ -65,14 +65,15 @@ public abstract class AbstractFadeModifier extends AbstractModifier {
     }
 
     private static float interpolateAngle(float start, float end, float alpha) {
+        float diff = end - start;
         float PI2 = (float) (2 * Math.PI);
-        float diff = (end - start) % PI2;
-        if (diff < -Math.PI) diff += PI2;
-        if (diff > Math.PI) diff -= PI2;
-        float res = (start + diff * alpha) % PI2;
-        if (res < -Math.PI) res += PI2;
-        if (res > Math.PI) res -= PI2;
-        return res;
+        // Only wrap across the circle if the angle difference is genuinely wrapping
+        // (i.e. > 270 degrees, such as +170 deg to -170 deg which is a 20 deg step).
+        // Standard limb motions (even large swings up to 270 degrees like -105 deg to +85 deg)
+        // must never be inverted into a backward shoulder flip!
+        while (diff > (float) Math.PI * 1.5f) diff -= PI2;
+        while (diff < -(float) Math.PI * 1.5f) diff += PI2;
+        return start + diff * alpha;
     }
 
     public float calculateProgress(float tickDelta) {

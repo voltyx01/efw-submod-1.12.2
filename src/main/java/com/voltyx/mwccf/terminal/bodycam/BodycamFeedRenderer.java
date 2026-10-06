@@ -38,6 +38,7 @@ public class BodycamFeedRenderer {
 
     private static BodycamCameraEntity dummyCamera = null;
 
+    private static final efw.util.SubpassRenderState subpassState = new efw.util.SubpassRenderState();
     private static java.lang.reflect.Method setupCameraTransformMethod = null;
     private static java.lang.reflect.Field lightmapUpdateNeededField = null;
     static {
@@ -97,25 +98,32 @@ public class BodycamFeedRenderer {
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onFogColors(EntityViewRenderEvent.FogColors event) {
-        if (!isRendering) return;
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.world == null) return;
-        Entity rve = mc.getRenderViewEntity();
-        if (rve == null) return;
 
-        // Compute the actual sky colour for the camera's biome/time-of-day.
-        // This is the same value EntityRenderer.updateFogColor() would use for a
-        // proper EntityPlayerSP, so it gives us the correct horizon colour.
-        // Use mc.player (the actual EntityPlayerSP) for the sky-colour lookup.
-        // World.getSkyColor may return Vec3d.ZERO for non-EntityPlayer entities
-        // (BodycamCameraEntity extends only EntityLivingBase), which leaves the
-        // fog black. mc.player is in the same biome as the carrier so its colour
-        // is identical to what the bodycam should show.
-        Entity lookupEntity = (currentCarrier != null) ? currentCarrier : rve;
+        boolean mirror = efw.util.SubpassRenderState.isMirrorRendering;
+        Entity rve = mc.getRenderViewEntity();
+        if (!mirror && rve != null && rve.getClass().getName().contains("EntityMirror")) {
+            mirror = true;
+        }
+
+        if (!isRendering && !mirror) return;
+
+        Entity lookupEntity = (isRendering && currentCarrier != null) ? currentCarrier : mc.player;
+        if (lookupEntity == null) lookupEntity = rve;
+        if (lookupEntity == null) return;
+
         Vec3d skyColor = mc.world.getSkyColor(lookupEntity, (float) event.getRenderPartialTicks());
-        event.setRed((float) skyColor.x);
-        event.setGreen((float) skyColor.y);
-        event.setBlue((float) skyColor.z);
+        if (skyColor.x > 0.001 || skyColor.y > 0.001 || skyColor.z > 0.001) {
+            event.setRed((float) skyColor.x);
+            event.setGreen((float) skyColor.y);
+            event.setBlue((float) skyColor.z);
+        } else if (mc.player != null) {
+            Vec3d playerSky = mc.world.getSkyColor(mc.player, (float) event.getRenderPartialTicks());
+            event.setRed((float) playerSky.x);
+            event.setGreen((float) playerSky.y);
+            event.setBlue((float) playerSky.z);
+        }
     }
 
     public static class TacticalRect {
@@ -157,6 +165,7 @@ public class BodycamFeedRenderer {
 
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.world == null || mc.player == null) return;
+        if (!mc.inGameHasFocus) return;
 
         TerminalSession session = TerminalSession.getInstance();
         if (session.getStage() != TerminalSession.Stage.BODYCAM_VIEW) {
@@ -347,17 +356,7 @@ public class BodycamFeedRenderer {
         boolean origIgnoreFrustum = carrier.ignoreFrustumCheck;
         float camFov = 85.0F; // Wide-angle bodycam lens
 
-        // ---- Save full OpenGL fog state before FBO render ----
-        // renderWorld() internally calls updateFog / sky rendering which permanently
-        // mutates fog color and mode in GL state, corrupting the main view sky and
-        // producing a black fog overlay on the bodycam feed.
-        boolean prevFogEnabled = GL11.glIsEnabled(GL11.GL_FOG);
-        int prevFogMode   = GL11.glGetInteger(GL11.GL_FOG_MODE);
-        float prevFogStart   = GL11.glGetFloat(GL11.GL_FOG_START);
-        float prevFogEnd     = GL11.glGetFloat(GL11.GL_FOG_END);
-        float prevFogDensity = GL11.glGetFloat(GL11.GL_FOG_DENSITY);
-        FloatBuffer prevFogColor = BufferUtils.createFloatBuffer(16); // LWJGL2 glGetFloat requires ≥16 elements
-        GL11.glGetFloat(GL11.GL_FOG_COLOR, prevFogColor);
+        subpassState.save(mc.entityRenderer);
 
         try {
             isRendering = true;
@@ -399,40 +398,13 @@ public class BodycamFeedRenderer {
                 GlStateManager.viewport(0, 0, origW, origH);
             }
 
-            // ---- Restore OpenGL fog state so main game sky/fog is unchanged ----
-            // We restore both the raw GL state AND the GlStateManager cache so that
-            // GlStateManager doesn't serve stale bodycam fog colour on the next frame.
-            prevFogColor.rewind();
-            GL11.glFog(GL11.GL_FOG_COLOR, prevFogColor); // restore fog colour in raw GL
-            GL11.glFogi(GL11.GL_FOG_MODE, prevFogMode);
-            GL11.glFogf(GL11.GL_FOG_START, prevFogStart);
-            GL11.glFogf(GL11.GL_FOG_END, prevFogEnd);
-            GL11.glFogf(GL11.GL_FOG_DENSITY, prevFogDensity);
-            if (prevFogEnabled) {
-                GlStateManager.enableFog();
-            } else {
-                GlStateManager.disableFog();
-            }
-            // Sync GlStateManager fog-mode / range caches so it does not re-apply stale values
-            GlStateManager.FogMode restoredFogMode = (prevFogMode == GL11.GL_EXP2)
-                    ? GlStateManager.FogMode.EXP2
-                    : (prevFogMode == GL11.GL_EXP ? GlStateManager.FogMode.EXP : GlStateManager.FogMode.LINEAR);
-            GlStateManager.setFog(restoredFogMode);
-            GlStateManager.setFogStart(prevFogStart);
-            GlStateManager.setFogEnd(prevFogEnd);
-
-
+            // Restore complete OpenGL fog, clear color, and EntityRenderer state
+            subpassState.restore(mc.entityRenderer);
 
             GlStateManager.matrixMode(GL11.GL_PROJECTION);
             GlStateManager.loadIdentity();
             GlStateManager.matrixMode(GL11.GL_MODELVIEW);
             GlStateManager.loadIdentity();
-            GlStateManager.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
-            if (mc.entityRenderer != null && lightmapUpdateNeededField != null) {
-                try {
-                    lightmapUpdateNeededField.setBoolean(mc.entityRenderer, true);
-                } catch (Throwable ignored) {}
-            }
             GlStateManager.enableDepth();
             GlStateManager.depthMask(true);
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
@@ -448,17 +420,6 @@ public class BodycamFeedRenderer {
             GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
             GlStateManager.enableTexture2D();
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-
-            if (mc.player != null && mc.entityRenderer != null) {
-                if (setupCameraTransformMethod != null) {
-                    try {
-                        setupCameraTransformMethod.invoke(mc.entityRenderer, event.renderTickTime, 0);
-                    } catch (Throwable ignored) {}
-                }
-                try {
-                    net.minecraft.client.renderer.ActiveRenderInfo.updateRenderInfo(mc.player, mc.gameSettings.thirdPersonView == 2);
-                } catch (Throwable ignored) {}
-            }
         }
 
         // Calculate accurate tactical entity detection rectangles on the camera screen

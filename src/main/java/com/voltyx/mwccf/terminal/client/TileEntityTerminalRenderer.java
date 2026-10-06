@@ -43,7 +43,7 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
 
     @Override
     public void render(TileEntityTerminal te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
-        if (te == null || !te.hasWorld()) return;
+        if (te == null) return;
 
         ensureLoaded();
 
@@ -51,7 +51,7 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
         GlStateManager.translate((float) x + 0.5F, (float) y, (float) z + 0.5F);
 
         EnumFacing facing = EnumFacing.NORTH;
-        if (te.getWorld() != null && te.getPos() != null) {
+        if (te.hasWorld() && te.getWorld() != null && te.getPos() != null) {
             try {
                 facing = te.getWorld().getBlockState(te.getPos()).getValue(BlockFurnitureHorizontal.FACING);
             } catch (Throwable ignored) {
@@ -66,7 +66,7 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
             default: break;
         }
 
-        this.bindTexture(TEXTURE);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(TEXTURE);
 
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -74,8 +74,9 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
         GlStateManager.disableCull();
-        // Apply keyboard animation
-        float animTime = te.getInterpolatedAnimTime(partialTicks);
+        // Reset and apply keyboard animation
+        MODEL.resetAnimations();
+        float animTime = te.hasWorld() ? te.getInterpolatedAnimTime(partialTicks) : 0.0F;
         MODEL.applyAnimation("keyboardopen", animTime);
 
         // Render Bedrock Model
@@ -83,19 +84,25 @@ public class TileEntityTerminalRenderer extends TileEntitySpecialRenderer<TileEn
         GlStateManager.enableCull();
 
         // Render dynamic glowing CRT screen with smooth fade-in
-        TerminalSession session = TerminalSession.getInstance();
-        boolean isSessionTerminal = (session.getTerminalPos() != null && session.getTerminalPos().equals(te.getPos()));
-        boolean isStreamingBodycam = (isSessionTerminal && session.getStage() == TerminalSession.Stage.BODYCAM_VIEW);
+        if (te.hasWorld() && te.getPos() != null) {
+            TerminalSession session = TerminalSession.getInstance();
+            boolean isSessionTerminal = (session.getTerminalPos() != null && session.getTerminalPos().equals(te.getPos()));
+            boolean isStreamingBodycam = (isSessionTerminal && session.getStage() == TerminalSession.Stage.BODYCAM_VIEW);
 
-        boolean isInteracting = (TerminalCameraController.getTerminalPos() != null
-                && TerminalCameraController.getTerminalPos().equals(te.getPos())
-                && session.getScreenFade() > 0.01F
-                && TerminalCameraController.getTransitionProgress() > 0.08F);
+            boolean isInteracting = (TerminalCameraController.getTerminalPos() != null
+                    && TerminalCameraController.getTerminalPos().equals(te.getPos())
+                    && session.getScreenFade() > 0.01F
+                    && TerminalCameraController.getTransitionProgress() > 0.08F);
 
-        if (isStreamingBodycam || isInteracting) {
-            renderMonitorScreen(te, partialTicks);
+            if (isStreamingBodycam || isInteracting) {
+                renderMonitorScreen(te, partialTicks);
+            }
         }
 
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableLighting();
+        GlStateManager.enableCull();
+        GlStateManager.depthMask(true);
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
     }

@@ -131,6 +131,10 @@ public class BlockPlacedItem extends BlockContainer {
                 }
                 world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F,
                         ((world.rand.nextFloat() - world.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+
+                if (player instanceof net.minecraft.entity.player.EntityPlayerMP && PlacedItemInspectConfig.isAutoInspect(toPickup)) {
+                    com.voltyx.mwccf.MwccfMod.PACKET_HANDLER.sendTo(new com.voltyx.mwccf.network.PacketOpenInspect(toPickup), (net.minecraft.entity.player.EntityPlayerMP) player);
+                }
             }
             world.setBlockToAir(pos);
         }

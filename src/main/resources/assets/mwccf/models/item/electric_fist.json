@@ -1,7 +1,7 @@
-﻿{
+{
   "parent": "mwccf:custom/electric_fist",
   "textures": {
     "0": "mwccf:block/electric_fist",
-    "particle": "mwccf:item/energy_storage_battery"
+    "particle": "mwccf:items/battery"
   }
 }

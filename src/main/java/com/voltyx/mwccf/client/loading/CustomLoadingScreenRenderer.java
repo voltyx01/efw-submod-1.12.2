@@ -60,18 +60,19 @@ public class CustomLoadingScreenRenderer extends LoadingScreenRenderer {
     public void resetProgressAndMessage(String message) {
         this.loadingSuccess = false;
         this.currentlyDisplayedText = message;
-        // Выбираем предмет сразу, чтобы не было "голого" фона перед появлением нашей менюшки
-        // Но только если игра не закрывается (чтобы при выходе из игры не мелькало)
-        if (isRunning()) {
+        this.message = "";
+        if (isRunning() && !ItemLoadingScreenRenderer.hasPicked()) {
             ItemLoadingScreenRenderer.pickRandom();
         }
+        this.setLoadingProgress(-1);
     }
 
     @Override
     public void displaySavingString(String message) {
         this.loadingSuccess = true;
         this.currentlyDisplayedText = message;
-        if (isRunning()) {
+        this.message = "";
+        if (isRunning() && !ItemLoadingScreenRenderer.hasPicked()) {
             ItemLoadingScreenRenderer.pickRandom();
         }
     }
@@ -85,7 +86,9 @@ public class CustomLoadingScreenRenderer extends LoadingScreenRenderer {
         }
         this.systemTime = 0L;
         this.message = message;
-        ItemLoadingScreenRenderer.pickRandom(); // На случай если это вызвали раньше остальных
+        if (!ItemLoadingScreenRenderer.hasPicked()) {
+            ItemLoadingScreenRenderer.pickRandom();
+        }
         this.setLoadingProgress(-1);
         this.systemTime = 0L;
     }
@@ -98,9 +101,80 @@ public class CustomLoadingScreenRenderer extends LoadingScreenRenderer {
             return;
         }
 
+        // Рендерить в OpenGL можно только из главного потока клиента
+        if (!this.mc.isCallingFromMinecraftThread()) {
+            return;
+        }
+
+        // Если активен экран подтверждения/уведомления (например, missing entries из Forge),
+        // запускаем интерактивный 60 FPS цикл отрисовки и обработки кликов прямо на клиентском потоке.
+        if (this.mc.currentScreen instanceof net.minecraftforge.fml.client.GuiNotification) {
+            while (this.mc.currentScreen instanceof net.minecraftforge.fml.client.GuiNotification && isRunning()) {
+                if (this.framebuffer.framebufferWidth != this.mc.displayWidth || this.framebuffer.framebufferHeight != this.mc.displayHeight) {
+                    this.framebuffer.createBindFramebuffer(this.mc.displayWidth, this.mc.displayHeight);
+                }
+
+                ScaledResolution res = new ScaledResolution(this.mc);
+                int scaleFactor = res.getScaleFactor();
+                int screenW = res.getScaledWidth();
+                int screenH = res.getScaledHeight();
+
+                if (this.mc.currentScreen.width != screenW || this.mc.currentScreen.height != screenH) {
+                    this.mc.currentScreen.setWorldAndResolution(this.mc, screenW, screenH);
+                }
+
+                int mouseX = org.lwjgl.input.Mouse.getX() * screenW / Math.max(1, this.mc.displayWidth);
+                int mouseY = screenH - org.lwjgl.input.Mouse.getY() * screenH / Math.max(1, this.mc.displayHeight) - 1;
+
+                if (OpenGlHelper.isFramebufferEnabled()) {
+                    this.framebuffer.framebufferClear();
+                } else {
+                    GlStateManager.clear(256);
+                }
+
+                this.framebuffer.bindFramebuffer(false);
+                GlStateManager.matrixMode(5889);
+                GlStateManager.loadIdentity();
+                GlStateManager.ortho(0.0D, res.getScaledWidth_double(), res.getScaledHeight_double(), 0.0D, 1000.0D, 3000.0D);
+                GlStateManager.matrixMode(5888);
+                GlStateManager.loadIdentity();
+                GlStateManager.translate(0.0F, 0.0F, -2000.0F);
+
+                if (!OpenGlHelper.isFramebufferEnabled()) {
+                    GlStateManager.clear(16640);
+                }
+
+                this.mc.currentScreen.drawScreen(mouseX, mouseY, 0.0F);
+
+                this.framebuffer.unbindFramebuffer();
+
+                if (OpenGlHelper.isFramebufferEnabled()) {
+                    this.framebuffer.framebufferRender(screenW * scaleFactor, screenH * scaleFactor);
+                }
+
+                org.lwjgl.opengl.GL11.glFlush();
+                this.mc.updateDisplay();
+
+                try {
+                    this.mc.currentScreen.handleInput();
+                } catch (Throwable ignored) {}
+
+                try {
+                    Thread.sleep(16L);
+                } catch (InterruptedException ignored) {
+                    break;
+                }
+            }
+            return;
+        }
+
         long now = Minecraft.getSystemTime();
         if (now - this.systemTime < 100L) return;
         this.systemTime = now;
+
+        if (this.framebuffer.framebufferWidth != this.mc.displayWidth || this.framebuffer.framebufferHeight != this.mc.displayHeight) {
+            this.framebuffer.createBindFramebuffer(this.mc.displayWidth, this.mc.displayHeight);
+        }
 
         ScaledResolution res = new ScaledResolution(this.mc);
         int scaleFactor = res.getScaleFactor();
@@ -127,13 +201,7 @@ public class CustomLoadingScreenRenderer extends LoadingScreenRenderer {
             GlStateManager.clear(16640);
         }
 
-        try {
-            if (!FMLClientHandler.instance().handleLoadingScreen(res)) {
-                ItemLoadingScreenRenderer.render(screenW, screenH, this.message, this.currentlyDisplayedText);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        ItemLoadingScreenRenderer.render(screenW, screenH, this.message, this.currentlyDisplayedText);
 
         this.framebuffer.unbindFramebuffer();
 

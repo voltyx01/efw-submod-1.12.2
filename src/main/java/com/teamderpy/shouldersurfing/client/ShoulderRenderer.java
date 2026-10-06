@@ -96,78 +96,85 @@ public class ShoulderRenderer
 			ShoulderInstance instance = ShoulderInstance.getInstance();
 			Entity cameraEntity = Minecraft.getMinecraft().getRenderViewEntity();
 			float partialTick = Minecraft.getMinecraft().getRenderPartialTicks();
-			double targetXOffset = Config.CLIENT.getOffsetX();
-			double targetYOffset = Config.CLIENT.getOffsetY();
-			double targetZOffset = Config.CLIENT.getOffsetZ();
-			
-			if(cameraEntity.isRiding())
+			double targetXOffset = 0.0;
+			double targetYOffset = 0.0;
+			double targetZOffset = 0.0;
+
+			if(!instance.isTransitioningToFirstPerson())
 			{
-				targetXOffset += Config.CLIENT.getOffsetX() * (Config.CLIENT.getPassengerOffsetXMultiplier() - 1);
-				targetYOffset += Config.CLIENT.getOffsetY() * (Config.CLIENT.getPassengerOffsetYMultiplier() - 1);
-				targetZOffset += Config.CLIENT.getOffsetZ() * (Config.CLIENT.getPassengerOffsetZMultiplier() - 1);
-			}
-			
-			if(cameraEntity.isSprinting())
-			{
-				targetXOffset += Config.CLIENT.getOffsetX() * (Config.CLIENT.getSprintOffsetXMultiplier() - 1);
-				targetYOffset += Config.CLIENT.getOffsetY() * (Config.CLIENT.getSprintOffsetYMultiplier() - 1);
-				targetZOffset += Config.CLIENT.getOffsetZ() * (Config.CLIENT.getSprintOffsetZMultiplier() - 1);
-			}
-			
-			if(Config.CLIENT.doCenterCameraWhenClimbing() && cameraEntity instanceof EntityLivingBase && ((EntityLivingBase) cameraEntity).isOnLadder())
-			{
-				targetXOffset = 0;
-			}
-			
-			if(ShoulderHelper.angle(cameraEntity.getLookVec(), VECTOR_NEGATIVE_Y) < Config.CLIENT.getCenterCameraWhenLookingDownAngle() * ShoulderHelper.DEG_TO_RAD)
-			{
-				targetXOffset = 0;
-				targetYOffset = 0;
-			}
-			
-			if(Config.CLIENT.doDynamicallyAdjustOffsets())
-			{
-				Vec3d localCameraOffset = new Vec3d(targetXOffset, targetYOffset, -targetZOffset);
-				Vec3d worldCameraOffset = localCameraOffset
-					.rotatePitch((float) Math.toRadians(-pitch))
-					.rotateYaw((float) Math.toRadians(-yaw));
-				Vec3d worldXYOffset = ShoulderHelper.calcRayTraceHeadOffset(worldCameraOffset);
-				Vec3d eyePosition = cameraEntity.getPositionEyes(partialTick);
-				double absOffsetX = Math.abs(targetXOffset);
-				double absOffsetY = Math.abs(targetYOffset);
-				double absOffsetZ = Math.abs(targetZOffset);
-				double targetX = absOffsetX;
-				double targetY = absOffsetY;
-				double clearance = Minecraft.getMinecraft().getRenderViewEntity().width / 3.0D;
+				targetXOffset = Config.CLIENT.getOffsetX();
+				targetYOffset = Config.CLIENT.getOffsetY();
+				targetZOffset = Config.CLIENT.getOffsetZ();
 				
-				for(double dz = 0; dz <= absOffsetZ; dz += 0.03125D)
+				if(cameraEntity.isRiding())
 				{
-					double scale = dz / absOffsetZ;
-					Vec3d from = eyePosition.add(worldCameraOffset.scale(scale));
-					Vec3d to = eyePosition.add(worldXYOffset).add(cameraEntity.getLookVec().scale(-dz));
-					RayTraceResult hitResult = world.rayTraceBlocks(from, to, false, true, false);
-					
-					if(hitResult != null)
-					{
-						double distance = hitResult.hitVec.distanceTo(from);
-						double newTargetX = Math.max(distance + absOffsetX * scale - clearance, 0);
-						
-						if(newTargetX < targetX)
-						{
-							targetX = newTargetX;
-						}
-						
-						double newTargetY = Math.max(distance + absOffsetY * scale - clearance, 0);
-						
-						if(newTargetY < targetY)
-						{
-							targetY = newTargetY;
-						}
-					}
+					targetXOffset += Config.CLIENT.getOffsetX() * (Config.CLIENT.getPassengerOffsetXMultiplier() - 1);
+					targetYOffset += Config.CLIENT.getOffsetY() * (Config.CLIENT.getPassengerOffsetYMultiplier() - 1);
+					targetZOffset += Config.CLIENT.getOffsetZ() * (Config.CLIENT.getPassengerOffsetZMultiplier() - 1);
 				}
 				
-				targetXOffset = Math.signum(Config.CLIENT.getOffsetX()) * targetX;
-				targetYOffset = Math.signum(Config.CLIENT.getOffsetY()) * targetY;
+				if(cameraEntity.isSprinting())
+				{
+					targetXOffset += Config.CLIENT.getOffsetX() * (Config.CLIENT.getSprintOffsetXMultiplier() - 1);
+					targetYOffset += Config.CLIENT.getOffsetY() * (Config.CLIENT.getSprintOffsetYMultiplier() - 1);
+					targetZOffset += Config.CLIENT.getOffsetZ() * (Config.CLIENT.getSprintOffsetZMultiplier() - 1);
+				}
+				
+				if(Config.CLIENT.doCenterCameraWhenClimbing() && cameraEntity instanceof EntityLivingBase && ((EntityLivingBase) cameraEntity).isOnLadder())
+				{
+					targetXOffset = 0;
+				}
+				
+				if(ShoulderHelper.angle(cameraEntity.getLookVec(), VECTOR_NEGATIVE_Y) < Config.CLIENT.getCenterCameraWhenLookingDownAngle() * ShoulderHelper.DEG_TO_RAD)
+				{
+					targetXOffset = 0;
+					targetYOffset = 0;
+				}
+				
+				if(Config.CLIENT.doDynamicallyAdjustOffsets())
+				{
+					Vec3d localCameraOffset = new Vec3d(targetXOffset, targetYOffset, -targetZOffset);
+					Vec3d worldCameraOffset = localCameraOffset
+						.rotatePitch((float) Math.toRadians(-pitch))
+						.rotateYaw((float) Math.toRadians(-yaw));
+					Vec3d worldXYOffset = ShoulderHelper.calcRayTraceHeadOffset(worldCameraOffset);
+					Vec3d eyePosition = cameraEntity.getPositionEyes(partialTick);
+					double absOffsetX = Math.abs(targetXOffset);
+					double absOffsetY = Math.abs(targetYOffset);
+					double absOffsetZ = Math.abs(targetZOffset);
+					double targetX = absOffsetX;
+					double targetY = absOffsetY;
+					double clearance = Minecraft.getMinecraft().getRenderViewEntity().width / 3.0D;
+					
+					for(double dz = 0; dz <= absOffsetZ; dz += 0.03125D)
+					{
+						double scale = dz / absOffsetZ;
+						Vec3d from = eyePosition.add(worldCameraOffset.scale(scale));
+						Vec3d to = eyePosition.add(worldXYOffset).add(cameraEntity.getLookVec().scale(-dz));
+						RayTraceResult hitResult = world.rayTraceBlocks(from, to, false, true, false);
+						
+						if(hitResult != null)
+						{
+							double distance = hitResult.hitVec.distanceTo(from);
+							double newTargetX = Math.max(distance + absOffsetX * scale - clearance, 0);
+							
+							if(newTargetX < targetX)
+							{
+								targetX = newTargetX;
+							}
+							
+							double newTargetY = Math.max(distance + absOffsetY * scale - clearance, 0);
+							
+							if(newTargetY < targetY)
+							{
+								targetY = newTargetY;
+							}
+						}
+					}
+					
+					targetXOffset = Math.signum(Config.CLIENT.getOffsetX()) * targetX;
+					targetYOffset = Math.signum(Config.CLIENT.getOffsetY()) * targetY;
+				}
 			}
 			
 			instance.setTargetOffsetX(targetXOffset);
@@ -178,8 +185,17 @@ public class ShoulderRenderer
 			double offsetY = ShoulderHelper.lerp(partialTick, instance.getOffsetYOld(), instance.getOffsetY());
 			double offsetZ = ShoulderHelper.lerp(partialTick, instance.getOffsetZOld(), instance.getOffsetZ());
 			Vec3d offset = new Vec3d(offsetX, offsetY, offsetZ);
-			this.cameraDistance = this.calcCameraDistance(world, offset.length(), yaw, pitch, partialTick);
-			Vec3d scaled = offset.normalize().scale(this.cameraDistance);
+			Vec3d scaled;
+			if(instance.isTransitioningToFirstPerson())
+			{
+				this.cameraDistance = offset.length();
+				scaled = offset;
+			}
+			else
+			{
+				this.cameraDistance = this.calcCameraDistance(world, offset.length(), yaw, pitch, partialTick);
+				scaled = offset.normalize().scale(this.cameraDistance);
+			}
 			this.cameraOffsetX = scaled.x;
 			this.cameraOffsetY = scaled.y;
 			this.cameraOffsetZ = scaled.z;

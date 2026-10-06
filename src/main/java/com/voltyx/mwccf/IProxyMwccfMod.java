@@ -13,4 +13,8 @@ public interface IProxyMwccfMod {
 	void postInit(FMLPostInitializationEvent event);
 
 	void serverLoad(FMLServerStartingEvent event);
+
+	default void updateGeneratorSound(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator generator) {}
+
+	default void stopGeneratorSound(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator generator) {}
 }

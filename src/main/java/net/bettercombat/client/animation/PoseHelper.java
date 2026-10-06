@@ -40,7 +40,8 @@ public class PoseHelper {
 
         // Determine if pose should be shown (pose layer is underneath action layer, so it stays active during attacks)
         String targetPose = null;
-        boolean isBusy = player.isRiding() || player.isHandActive() || player.isPlayerSleeping() || player.isInWater() || player.isInLava() || player.isElytraFlying();
+        boolean isCrawling = efw.AnimationTickHandler.isPlayerCrawling(player) || player.height < 1.0F;
+        boolean isBusy = player.isRiding() || player.isHandActive() || player.isPlayerSleeping() || player.isInWater() || player.isInLava() || player.isElytraFlying() || isCrawling;
         if (!isBusy) {
             WeaponAttributes attributes = WeaponRegistry.getAttributes(player.getHeldItemMainhand());
             if (attributes != null && attributes.pose() != null) {

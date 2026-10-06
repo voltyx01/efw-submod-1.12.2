@@ -1,4 +1,16 @@
 {
+    "item.doll.up": {
+        "category": "player",
+        "sounds": [
+            "mwccf:item/doll_up"
+        ]
+    },
+    "item.doll.down": {
+        "category": "player",
+        "sounds": [
+            "mwccf:item/doll_down"
+        ]
+    },
     "block.chair.slide": {
         "subtitle": "subtitle.refurbished_furniture.chair_slide",
         "sounds": [
@@ -400,7 +412,7 @@
         ]
     },
     "dash": {
-        "category": "master",
+        "category": "players",
         "sounds": [
             "mwccf:dash"
         ]
@@ -429,6 +441,18 @@
         "category": "master",
         "sounds": [
             "mwccf:bracelet/displayhbeat"
+        ]
+    },
+    "bracelet.heartbeatin": {
+        "category": "master",
+        "sounds": [
+            "mwccf:bracelet/heartbeatin"
+        ]
+    },
+    "bracelet.heartbeatout": {
+        "category": "master",
+        "sounds": [
+            "mwccf:bracelet/heartbeatout"
         ]
     },
     "ambient.soul_sand_valley.loop": {

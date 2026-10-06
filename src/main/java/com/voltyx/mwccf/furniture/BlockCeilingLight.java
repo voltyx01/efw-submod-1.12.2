@@ -27,12 +27,12 @@ public class BlockCeilingLight extends Block {
     public static final PropertyDirection FACING = PropertyDirection.create("facing");
     public static final PropertyBool LIT = PropertyBool.create("lit");
 
-    protected static final AxisAlignedBB AABB_CEILING = new AxisAlignedBB(0.3125D, 0.4375D, 0.3125D, 0.6875D, 1.0D, 0.6875D);
-    protected static final AxisAlignedBB AABB_FLOOR   = new AxisAlignedBB(0.3125D, 0.0D, 0.3125D, 0.6875D, 0.5625D, 0.6875D);
-    protected static final AxisAlignedBB AABB_NORTH   = new AxisAlignedBB(0.3125D, 0.3125D, 0.0D, 0.6875D, 0.6875D, 0.5625D);
-    protected static final AxisAlignedBB AABB_SOUTH   = new AxisAlignedBB(0.3125D, 0.3125D, 0.4375D, 0.6875D, 0.6875D, 1.0D);
-    protected static final AxisAlignedBB AABB_WEST    = new AxisAlignedBB(0.0D, 0.3125D, 0.3125D, 0.5625D, 0.6875D, 0.6875D);
-    protected static final AxisAlignedBB AABB_EAST    = new AxisAlignedBB(0.4375D, 0.3125D, 0.3125D, 1.0D, 0.6875D, 0.6875D);
+    protected static final AxisAlignedBB AABB_CEILING = new AxisAlignedBB(0.3125D, 0.8125D, 0.3125D, 0.6875D, 1.0D, 0.6875D);
+    protected static final AxisAlignedBB AABB_FLOOR   = new AxisAlignedBB(0.3125D, 0.0D, 0.3125D, 0.6875D, 0.1875D, 0.6875D);
+    protected static final AxisAlignedBB AABB_NORTH   = new AxisAlignedBB(0.3125D, 0.3125D, 0.0D, 0.6875D, 0.6875D, 0.1875D);
+    protected static final AxisAlignedBB AABB_SOUTH   = new AxisAlignedBB(0.3125D, 0.3125D, 0.8125D, 0.6875D, 0.6875D, 1.0D);
+    protected static final AxisAlignedBB AABB_WEST    = new AxisAlignedBB(0.0D, 0.3125D, 0.3125D, 0.1875D, 0.6875D, 0.6875D);
+    protected static final AxisAlignedBB AABB_EAST    = new AxisAlignedBB(0.8125D, 0.3125D, 0.3125D, 1.0D, 0.6875D, 0.6875D);
 
     public BlockCeilingLight(String name) {
         super(Material.GLASS);

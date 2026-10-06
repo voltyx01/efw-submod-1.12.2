@@ -22,14 +22,14 @@ public class CameraEntityRenderer {
     }
 
     public boolean preRenderCameraEntity(EntityPlayer player, float partialTick) {
-        if (this.isCameraEntityRenderingSkipped(player)) {
-            return true; // Skip rendering
-        }
-
-        if (ShoulderInstance.getInstance().doShoulderSurfing() && Config.CLIENT.isPlayerTransparencyEnabled()) {
+        if (ShoulderInstance.getInstance().doShoulderSurfing() && (Config.CLIENT.isPlayerTransparencyEnabled() || ShoulderInstance.getInstance().isTransitioningToFirstPerson())) {
             this.cameraEntityAlpha = this.calcCameraEntityAlpha(player, partialTick);
         } else {
             this.cameraEntityAlpha = 1.0F;
+        }
+
+        if (this.isCameraEntityRenderingSkipped(player)) {
+            return true; // Skip rendering
         }
 
         this.isRenderingCameraEntity = true;
@@ -44,10 +44,25 @@ public class CameraEntityRenderer {
         if (!ShoulderInstance.getInstance().doShoulderSurfing() || (cameraEntity instanceof EntityPlayer && ((EntityPlayer) cameraEntity).isSpectator())) {
             return false;
         }
+        if (ShoulderInstance.getInstance().isTransitioningToFirstPerson() && this.cameraEntityAlpha <= 0.01F) {
+            return true;
+        }
         return false;
     }
 
     private float calcCameraEntityAlpha(Entity cameraEntity, float partialTick) {
+        ShoulderInstance instance = ShoulderInstance.getInstance();
+        if (instance.isTransitioningToFirstPerson()) {
+            double curX = ShoulderHelper.lerp(partialTick, instance.getOffsetXOld(), instance.getOffsetX());
+            double curY = ShoulderHelper.lerp(partialTick, instance.getOffsetYOld(), instance.getOffsetY());
+            double curZ = ShoulderHelper.lerp(partialTick, instance.getOffsetZOld(), instance.getOffsetZ());
+            double curDist = Math.sqrt(curX * curX + curY * curY + curZ * curZ);
+            double maxDist = instance.getInitialExitDistance();
+            float fadeProgress = (float) MathHelper.clamp(curDist / maxDist, 0.0, 1.0);
+            float alpha = fadeProgress * fadeProgress;
+            return MathHelper.clamp(alpha, 0.0F, 1.0F);
+        }
+
         ShoulderRenderer renderer = ShoulderRenderer.getInstance();
         double cameraDistance = renderer.getCameraDistance();
         double offX = renderer.getCameraOffsetX();
@@ -83,5 +98,15 @@ public class CameraEntityRenderer {
 
     public boolean isRenderingCameraEntity() {
         return this.isRenderingCameraEntity;
+    }
+
+    public float getCurrentAlphaOverride() {
+        if (this.isRenderingCameraEntity) {
+            return this.cameraEntityAlpha;
+        }
+        if (FirstPersonFadeManager.getInstance().isRenderingFirstPersonHand()) {
+            return FirstPersonFadeManager.getInstance().getCurrentFadeAlpha();
+        }
+        return 1.0F;
     }
 }

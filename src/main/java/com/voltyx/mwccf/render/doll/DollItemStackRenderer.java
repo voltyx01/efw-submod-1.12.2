@@ -29,11 +29,15 @@ public class DollItemStackRenderer extends TileEntityItemStackRenderer {
         // Центрируем смещение ваниллы (-0.5, -0.5, -0.5 в RenderItem.renderItem)
         GlStateManager.translate(0.5F, 0.5F, 0.5F);
 
-        // ModelRenderer в Minecraft использует ось Y вниз. Инвертируем Y.
-        GlStateManager.scale(1.0F, -1.0F, 1.0F);
+        float guiScale = (float) efw.biomeinfo.MwccfConfig.doll.guiScale;
+        if (guiScale <= 0.001F) guiScale = 1.0F;
+
+        // ModelRenderer в Minecraft использует ось Y вниз. Инвертируем Y и применяем масштаб.
+        GlStateManager.scale(guiScale, -guiScale, guiScale);
 
         // Центрирование пивота модели куклы
-        GlStateManager.translate(0.0F, -0.65F, 0.0F);
+        float guiOffsetY = (float) efw.biomeinfo.MwccfConfig.doll.guiOffsetY;
+        GlStateManager.translate(0.0F, guiOffsetY, 0.0F);
 
         mc.getTextureManager().bindTexture(TEX_LOC);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -52,12 +56,17 @@ public class DollItemStackRenderer extends TileEntityItemStackRenderer {
         model.applyAnimation("animation", 0.625F);
         model.render(0.0625F);
 
-        // Восстанавливаем стандартный обход и состояние OpenGL без рассинхронизации GlStateManager
+        // Восстанавливаем стандартный обход и состояние OpenGL для GUI и рендера мира
         org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CCW);
+        GlStateManager.cullFace(GlStateManager.CullFace.BACK);
         GlStateManager.enableCull();
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.disableBlend();
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager.enableAlpha();
+        GlStateManager.alphaFunc(516, 0.1F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        mc.getTextureManager().bindTexture(net.minecraft.client.renderer.texture.TextureMap.LOCATION_BLOCKS_TEXTURE);
 
         GlStateManager.popMatrix();
     }

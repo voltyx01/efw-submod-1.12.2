@@ -78,7 +78,7 @@ public class TerminalCameraController {
         // In Minecraft Forge CameraSetup, camera yaw in OpenGL is (playerYaw + 180.0F).
         // Therefore targetCameraYaw must be targetPlayerYaw + 180.0F to look directly at the terminal:
         targetCameraYaw = MathHelper.wrapDegrees(targetPlayerYaw + 180.0F);
-        targetPitch = 3.0f; // Eye level towards monitor and keyboard
+        targetPitch = 0.0f; // Eye level centered directly at monitor screen
 
         prevThirdPerson = mc.gameSettings.thirdPersonView;
         mc.gameSettings.thirdPersonView = 0; // Force first person
@@ -310,11 +310,50 @@ public class TerminalCameraController {
         event.setYaw(newYaw);
         event.setPitch(newPitch);
 
+        Minecraft mc = Minecraft.getMinecraft();
+        net.minecraft.entity.Entity entity = mc.getRenderViewEntity();
+        if (entity != null && terminalPos != null && terminalFacing != null) {
+            float partialTicks = (float) event.getRenderPartialTicks();
+            double camX = entity.prevPosX + (entity.posX - entity.prevPosX) * partialTicks;
+            double camY = entity.prevPosY + (entity.posY - entity.prevPosY) * partialTicks + entity.getEyeHeight();
+            double camZ = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * partialTicks;
+
+            double cx = terminalPos.getX() + 0.5;
+            double cy = terminalPos.getY();
+            double cz = terminalPos.getZ() + 0.5;
+            double nx = terminalFacing.getXOffset();
+            double nz = terminalFacing.getZOffset();
+
+            // Center of screen monitor (at Y = 9.5 / 16.0, Z = 7 / 16.0)
+            double screenTargetX = cx + nx * (7.0 / 16.0);
+            double screenTargetY = cy + (9.5 / 16.0);
+            double screenTargetZ = cz + nz * (7.0 / 16.0);
+
+            // Exact safe-like camera approach distance directly in front of screen
+            double curDist = 0.40;
+            double desiredCamX = screenTargetX + nx * curDist;
+            double desiredCamY = screenTargetY;
+            double desiredCamZ = screenTargetZ + nz * curDist;
+
+            double deltaX = desiredCamX - camX;
+            double deltaY = desiredCamY - camY;
+            double deltaZ = desiredCamZ - camZ;
+
+            double rad = Math.toRadians(newYaw);
+            double cos = Math.cos(rad);
+            double sin = Math.sin(rad);
+
+            float eyeX = (float) -(deltaX * cos + deltaZ * sin);
+            float eyeY = (float) -deltaY;
+            float eyeZ = (float) -(-deltaX * sin + deltaZ * cos);
+
+            GlStateManager.translate(eyeX * t, eyeY * t, eyeZ * t);
+        }
+
         // Keep camera completely static once fully transitioned into terminal
         if (active && transitionProgress >= 1.0f) {
             event.setYaw(targetCameraYaw);
             event.setPitch(targetPitch);
-            Minecraft mc = Minecraft.getMinecraft();
             if (mc.player != null) {
                 mc.player.rotationYaw = targetPlayerYaw;
                 mc.player.prevRotationYaw = targetPlayerYaw;

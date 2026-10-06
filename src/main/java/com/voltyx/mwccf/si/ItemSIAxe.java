@@ -52,11 +52,29 @@ public class ItemSIAxe extends ItemAxe {
     }
 
     @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public void addInformation(ItemStack stack, net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        if (this.bleedingTicks > 0) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.hit_effect"));
+            tooltip.add(" \u00a79" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.effect_bleeding"));
+        }
+    }
+
+    @Override
     public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
         if (this.repairItemSupplier != null && this.repairItemSupplier.get() != null) {
             return repair.getItem() == this.repairItemSupplier.get();
         }
         return super.getIsRepairable(toRepair, repair);
+    }
+
+    @Override
+    public boolean canApplyAtEnchantingTable(ItemStack stack, net.minecraft.enchantment.Enchantment enchantment) {
+        if (enchantment == net.minecraft.init.Enchantments.SWEEPING) {
+            return true;
+        }
+        return super.canApplyAtEnchantingTable(stack, enchantment);
     }
 
     @Override

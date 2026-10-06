@@ -68,6 +68,7 @@ public class MwccfMod {
 		MinecraftForge.EVENT_BUS.register(new ConfigEventHandler());
 		// Принудительно читаем конфиг один раз при запуске игры
 		AdvancedHeadshotManager.reloadConfig();
+		com.voltyx.mwccf.furniture.PlacedItemInspectConfig.init(event.getModConfigurationDirectory());
 		MinecraftForge.EVENT_BUS.register(this);
 		if (event.getSide() == Side.CLIENT) {
 			MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.geo.HeadlampLightManager());
@@ -119,6 +120,7 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketInstallBodycamDriver.Handler.class, com.voltyx.mwccf.terminal.network.PacketInstallBodycamDriver.class, 30, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketRequestBodycamList.Handler.class, com.voltyx.mwccf.terminal.network.PacketRequestBodycamList.class, 31, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketResponseBodycamList.Handler.class, com.voltyx.mwccf.terminal.network.PacketResponseBodycamList.class, 32, Side.CLIENT);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketOpenInspect.Handler.class, com.voltyx.mwccf.network.PacketOpenInspect.class, 33, Side.CLIENT);
 
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.QuestZoneEventHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler());

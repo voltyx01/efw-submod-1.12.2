@@ -37,4 +37,18 @@ public abstract class MixinQuarkChestSearchBar {
             ci.cancel();
         }
     }
+
+    @Inject(method = "namesMatch", at = @At("HEAD"), cancellable = true, remap = false)
+    private static void onNamesMatch(net.minecraft.item.ItemStack stack, String search, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+        try {
+            if (stack != null && !stack.isEmpty() && search != null && !search.isEmpty()) {
+                String english = com.voltyx.mwccf.search.EnglishLanguageMap.getEnglishName(stack);
+                if (english != null && !english.isEmpty()) {
+                    if (english.toLowerCase(java.util.Locale.ENGLISH).contains(search.toLowerCase(java.util.Locale.ENGLISH))) {
+                        cir.setReturnValue(true);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
 }

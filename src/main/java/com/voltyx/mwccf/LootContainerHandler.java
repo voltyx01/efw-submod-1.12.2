@@ -59,17 +59,23 @@ public class LootContainerHandler {
         if (tile == null)
             return false;
 
-        // 1. Получаем регистрационное имя блока (например, "cfm:fridge")
-        ResourceLocation regName = tile.getBlockType().getRegistryName();
-
-        // 2. Превращаем в строку (будет формат "cfm:fridge") и проверяем домен
-        if (regName != null && regName.toString().startsWith("cfm:")) {
-
-            // 3. Если это блок из Furniture Mod, убеждаемся, что в нем можно хранить вещи
-            // (чтобы система не пыталась "лутать" стулья или столы без инвентаря)
-            return tile instanceof IInventory
-                    || tile.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+        // 1. Получаем регистрационное имя блока
+        net.minecraft.block.Block block = tile.getBlockType();
+        if (block == null && tile.getWorld() != null) {
+            block = tile.getWorld().getBlockState(tile.getPos()).getBlock();
         }
-        return false; // Это либо стул из cfm, либо сундук/блок из другого мода
+        if (block == null) return false;
+
+        ResourceLocation regName = block.getRegistryName();
+        if (regName != null) {
+            String domain = regName.getNamespace();
+            // Поддерживаем cfm (MrCrayfish Furniture), refurbished_furniture и mwccf
+            if ("cfm".equals(domain) || "refurbished_furniture".equals(domain) || "mwccf".equals(domain)) {
+                // Убеждаемся, что в нем можно хранить вещи (инвентарь / контейнер)
+                return tile instanceof IInventory
+                        || tile.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+            }
+        }
+        return false;
     }
 }

@@ -42,6 +42,11 @@ public class MixinWeaponRenderer {
         com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
     }
 
+    @Inject(method = "applyVisualRecoil", at = @At("RETURN"), remap = false, require = 0)
+    private void onApplyVisualRecoil(com.paneedah.weaponlib.RenderContext<?> renderContext, CallbackInfo ci) {
+        com.voltyx.mwccf.geo.HeartbeatTremorHelper.applyTremor(renderContext);
+    }
+
     @Unique
     private void processSound(EntityLivingBase entity, List<Transition<?>> transitions) {
         if (transitions == null || transitions.isEmpty() || entity == null) return;
@@ -78,12 +83,13 @@ public class MixinWeaponRenderer {
                     net.minecraft.client.renderer.GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.defaultTexUnit);
                     org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
                     org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_ALPHA_TEST);
-                    org.lwjgl.opengl.GL11.glAlphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
+                    float minAlpha = com.teamderpy.shouldersurfing.client.FirstPersonFadeManager.getInstance().isRenderingFirstPersonHand() ? 0.001F : 0.1F;
+                    org.lwjgl.opengl.GL11.glAlphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, minAlpha);
                     org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_BLEND);
                     org.lwjgl.opengl.GL11.glBlendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA);
                     org.lwjgl.opengl.GL11.glDepthMask(true);
                     net.minecraft.client.Minecraft.getMinecraft().getTextureManager().bindTexture(com.voltyx.mwccf.geo.BraceletInspectHandler.getBraceletTexture());
-                    org.lwjgl.opengl.GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+                    net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
                     bracelet.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, clientPlayer);
 
@@ -125,12 +131,13 @@ public class MixinWeaponRenderer {
                 net.minecraft.client.renderer.GlStateManager.setActiveTexture(net.minecraft.client.renderer.OpenGlHelper.defaultTexUnit);
                 org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
                 org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_ALPHA_TEST);
-                org.lwjgl.opengl.GL11.glAlphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
+                float minAlpha = com.teamderpy.shouldersurfing.client.FirstPersonFadeManager.getInstance().isRenderingFirstPersonHand() ? 0.001F : 0.1F;
+                org.lwjgl.opengl.GL11.glAlphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, minAlpha);
                 org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_BLEND);
                 org.lwjgl.opengl.GL11.glBlendFunc(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA);
                 org.lwjgl.opengl.GL11.glDepthMask(true);
                 net.minecraft.client.Minecraft.getMinecraft().getTextureManager().bindTexture(com.voltyx.mwccf.geo.BraceletInspectHandler.getBraceletTexture());
-                org.lwjgl.opengl.GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+                net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
                 bracelet.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, clientPlayer);
 

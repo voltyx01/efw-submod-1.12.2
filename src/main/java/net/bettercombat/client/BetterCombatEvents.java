@@ -83,4 +83,18 @@ public class BetterCombatEvents {
             event.setCanceled(true);
         }
     }
+
+    @SubscribeEvent
+    public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        if (!MwccfConfig.betterCombat.enabled) {
+            return;
+        }
+        EntityPlayer player = event.getEntityPlayer();
+        if (player == null) return;
+        ItemStack stack = player.getHeldItemMainhand();
+        if (BetterCombatClient.isNonMiningWeapon(stack)) {
+            event.setCanceled(true);
+        }
+    }
 }
+

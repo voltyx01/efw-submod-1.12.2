@@ -45,7 +45,6 @@ public class DashKeyHandler {
             player.swingProgressInt = 0;
             player.swingProgress = 0.0f;
             player.prevSwingProgress = 0.0f;
-            KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
             if (mc.playerController != null) {
                 mc.playerController.resetBlockRemoving();
             }

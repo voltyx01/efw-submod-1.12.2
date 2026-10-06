@@ -13,10 +13,52 @@ public class FloatModelBox extends ModelBox {
 
     private TexturedQuad makeQuad(PositionTextureVertex[] vertices, float u1, float v1, float u2, float v2, float tw, float th) {
         PositionTextureVertex[] v = new PositionTextureVertex[vertices.length];
-        v[0] = vertices[0].setTexturePosition(u1 / tw, v1 / th);
-        v[1] = vertices[1].setTexturePosition(u2 / tw, v1 / th);
-        v[2] = vertices[2].setTexturePosition(u2 / tw, v2 / th);
-        v[3] = vertices[3].setTexturePosition(u1 / tw, v2 / th);
+        v[0] = vertices[0].setTexturePosition(u2 / tw, v1 / th);
+        v[1] = vertices[1].setTexturePosition(u1 / tw, v1 / th);
+        v[2] = vertices[2].setTexturePosition(u1 / tw, v2 / th);
+        v[3] = vertices[3].setTexturePosition(u2 / tw, v2 / th);
+        return new TexturedQuad(v);
+    }
+
+    /**
+     * Build a quad with support for UV rotation (0/90/180/270 degrees CW).
+     * Bedrock uv_rotation rotates the texture sample on the face clockwise.
+     * We implement this by rotating which UV corner maps to which vertex.
+     *
+     * The base (0 deg) vertex-to-UV mapping (matching makeQuad):
+     *   verts[0] -> (u1,v0)  top-right
+     *   verts[1] -> (u0,v0)  top-left
+     *   verts[2] -> (u0,v1)  bot-left
+     *   verts[3] -> (u1,v1)  bot-right
+     *
+     * 90 CW: rotate corners so top-left becomes top-right, etc.
+     */
+    private TexturedQuad makeQuadRot(PositionTextureVertex[] vertices, float u0, float v0, float u1, float v1, float tw, float th, int rot) {
+        float[] us, vs;
+        switch (((rot % 360) + 360) % 360) {
+            case 90:
+                // 90 CW
+                us = new float[]{u0, u0, u1, u1};
+                vs = new float[]{v1, v0, v0, v1};
+                break;
+            case 180:
+                us = new float[]{u0, u1, u1, u0};
+                vs = new float[]{v1, v1, v0, v0};
+                break;
+            case 270:
+                // 270 CW (= 90 CCW)
+                us = new float[]{u1, u1, u0, u0};
+                vs = new float[]{v0, v1, v1, v0};
+                break;
+            default: // 0
+                us = new float[]{u1, u0, u0, u1};
+                vs = new float[]{v0, v0, v1, v1};
+                break;
+        }
+        PositionTextureVertex[] v = new PositionTextureVertex[vertices.length];
+        for (int i = 0; i < 4; i++) {
+            v[i] = vertices[i].setTexturePosition(us[i] / tw, vs[i] / th);
+        }
         return new TexturedQuad(v);
     }
 
@@ -98,91 +140,79 @@ public class FloatModelBox extends ModelBox {
         // East (+X)
         if (faceUvs.containsKey("east")) {
             float[] uv = faceUvs.get("east");
-            float u0 = uv[0];
-            float v0 = uv[1];
-            float u1 = uv[0] + uv[2];
-            float v1 = uv[1] + uv[3];
-            quads.add(makeQuad(new PositionTextureVertex[] {
+            float u0 = uv[0], v0 = uv[1], u1 = uv[0] + uv[2], v1 = uv[1] + uv[3];
+            int rot = (uv.length > 4) ? (int) uv[4] : 0;
+            quads.add(makeQuadRot(new PositionTextureVertex[] {
                 new PositionTextureVertex(f, y, f2, 0, 0),
                 new PositionTextureVertex(f, y, z, 0, 0),
                 new PositionTextureVertex(f, f1, z, 0, 0),
                 new PositionTextureVertex(f, f1, f2, 0, 0)
-            }, u0, v0, u1, v1, tw, th));
+            }, u0, v0, u1, v1, tw, th, rot));
         }
 
         // West (-X)
         if (faceUvs.containsKey("west")) {
             float[] uv = faceUvs.get("west");
-            float u0 = uv[0];
-            float v0 = uv[1];
-            float u1 = uv[0] + uv[2];
-            float v1 = uv[1] + uv[3];
-            quads.add(makeQuad(new PositionTextureVertex[] {
+            float u0 = uv[0], v0 = uv[1], u1 = uv[0] + uv[2], v1 = uv[1] + uv[3];
+            int rot = (uv.length > 4) ? (int) uv[4] : 0;
+            quads.add(makeQuadRot(new PositionTextureVertex[] {
                 new PositionTextureVertex(x, y, z, 0, 0),
                 new PositionTextureVertex(x, y, f2, 0, 0),
                 new PositionTextureVertex(x, f1, f2, 0, 0),
                 new PositionTextureVertex(x, f1, z, 0, 0)
-            }, u0, v0, u1, v1, tw, th));
+            }, u0, v0, u1, v1, tw, th, rot));
         }
 
         // Up (-Y)
         if (faceUvs.containsKey("up")) {
             float[] uv = faceUvs.get("up");
-            float u0 = uv[0];
-            float v0 = uv[1];
-            float u1 = uv[0] + uv[2];
-            float v1 = uv[1] + uv[3];
-            quads.add(makeQuad(new PositionTextureVertex[] {
+            float u0 = uv[0], v0 = uv[1], u1 = uv[0] + uv[2], v1 = uv[1] + uv[3];
+            int rot = (uv.length > 4) ? (int) uv[4] : 0;
+            quads.add(makeQuadRot(new PositionTextureVertex[] {
                 new PositionTextureVertex(f, y, f2, 0, 0),
                 new PositionTextureVertex(x, y, f2, 0, 0),
                 new PositionTextureVertex(x, y, z, 0, 0),
                 new PositionTextureVertex(f, y, z, 0, 0)
-            }, u0, v0, u1, v1, tw, th));
+            }, u0, v0, u1, v1, tw, th, rot));
         }
 
         // Down (+Y)
         if (faceUvs.containsKey("down")) {
             float[] uv = faceUvs.get("down");
-            float u0 = uv[0];
-            float v0 = uv[1];
-            float u1 = uv[0] + uv[2];
-            float v1 = uv[1] + uv[3];
-            quads.add(makeQuad(new PositionTextureVertex[] {
+            float u0 = uv[0], v0 = uv[1], u1 = uv[0] + uv[2], v1 = uv[1] + uv[3];
+            int rot = (uv.length > 4) ? (int) uv[4] : 0;
+            quads.add(makeQuadRot(new PositionTextureVertex[] {
                 new PositionTextureVertex(f, f1, z, 0, 0),
                 new PositionTextureVertex(x, f1, z, 0, 0),
                 new PositionTextureVertex(x, f1, f2, 0, 0),
                 new PositionTextureVertex(f, f1, f2, 0, 0)
-            }, u0, v0, u1, v1, tw, th));
+            }, u0, v0, u1, v1, tw, th, rot));
         }
 
         // North (-Z)
         if (faceUvs.containsKey("north")) {
             float[] uv = faceUvs.get("north");
-            float u0 = uv[0];
-            float v0 = uv[1];
-            float u1 = uv[0] + uv[2];
-            float v1 = uv[1] + uv[3];
-            quads.add(makeQuad(new PositionTextureVertex[] {
+            float u0 = uv[0], v0 = uv[1], u1 = uv[0] + uv[2], v1 = uv[1] + uv[3];
+            int rot = (uv.length > 4) ? (int) uv[4] : 0;
+            quads.add(makeQuadRot(new PositionTextureVertex[] {
                 new PositionTextureVertex(f, y, z, 0, 0),
                 new PositionTextureVertex(x, y, z, 0, 0),
                 new PositionTextureVertex(x, f1, z, 0, 0),
                 new PositionTextureVertex(f, f1, z, 0, 0)
-            }, u0, v0, u1, v1, tw, th));
+            }, u0, v0, u1, v1, tw, th, rot));
         }
 
         // South (+Z)
         if (faceUvs.containsKey("south")) {
             float[] uv = faceUvs.get("south");
-            float u0 = uv[0];
-            float v0 = uv[1];
-            float u1 = uv[0] + uv[2];
-            float v1 = uv[1] + uv[3];
-            quads.add(makeQuad(new PositionTextureVertex[] {
+            float u0 = uv[0], v0 = uv[1], u1 = uv[0] + uv[2], v1 = uv[1] + uv[3];
+            int rot = (uv.length > 4) ? (int) uv[4] : 0;
+            quads.add(makeQuadRot(new PositionTextureVertex[] {
                 new PositionTextureVertex(x, y, f2, 0, 0),
                 new PositionTextureVertex(f, y, f2, 0, 0),
                 new PositionTextureVertex(f, f1, f2, 0, 0),
                 new PositionTextureVertex(x, f1, f2, 0, 0)
-            }, u0, v0, u1, v1, tw, th));
+            }, u0, v0, u1, v1, tw, th, rot));
         }
 
         this.quadList = quads.toArray(new TexturedQuad[0]);

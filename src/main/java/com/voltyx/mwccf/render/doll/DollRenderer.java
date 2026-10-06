@@ -75,6 +75,10 @@ public class DollRenderer {
     private static float swayYVel      = 0f;
     private static float walkBob       = 0f;
 
+    // === Покачивание в конце доставания (settling sway) ===
+    private static float settleTime     = 0f;
+    private static float prevSettleTime = 0f;
+
     // === Модель ===
     private static BedrockDollModel model = null;
 
@@ -100,10 +104,17 @@ public class DollRenderer {
         prevShowProgress  = showProgress;
         prevAnimTime      = animTime;
         prevHideAnimTime  = hideAnimTime;
+        prevSettleTime    = settleTime;
 
         BedrockDollModel m = getModel();
 
         if (holdingDoll) {
+            if (!isDollHeld) {
+                if (efw.init.EfwModSounds.DOLL_UP != null) {
+                    mc.player.playSound(efw.init.EfwModSounds.DOLL_UP, 0.9F, 1.0F);
+                }
+            }
+
             if (!hintShown) {
                 hintShown = true;
                 mc.player.sendStatusMessage(new TextComponentString(
@@ -122,10 +133,26 @@ public class DollRenderer {
             float len = m.getAnimationLength("animation");
             if (len <= 0f) len = 0.625f;
             animTime += (1f / 20f) * DollSettings.animSpeed;
-            if (animTime > len) animTime = len;
+            if (animTime > len) {
+                animTime = len;
+            }
+            // Запуск покачивания головы на треть секунды (~0.33с) раньше конца анимации доставания
+            float settleThreshold = Math.max(0f, len - 0.33f);
+            if (animTime >= settleThreshold) {
+                settleTime += (1f / 20f);
+                if (settleTime > 2.0f) settleTime = 2.0f;
+            } else {
+                settleTime = 0f;
+            }
 
         } else {
+            settleTime = 0f;
             if (isDollHeld || showProgress > 0f) {
+                if (isDollHeld) {
+                    if (efw.init.EfwModSounds.DOLL_DOWN != null) {
+                        mc.player.playSound(efw.init.EfwModSounds.DOLL_DOWN, 0.9F, 1.0F);
+                    }
+                }
                 isDollHeld = false;
                 isHiding   = true;
 
@@ -367,6 +394,20 @@ public class DollRenderer {
             float lHandYRad = (float) Math.toRadians(curSYaw * 1.2f * inert);
             float lHandZRad = (float) Math.toRadians((curSYaw * 0.5f + curSY * 10f) * inert);
             m.addBoneRotation("LHand", lHandXRad, lHandYRad, lHandZRad);
+        }
+
+        // Покачивание головы куклы в конце анимации доставания (settling sway - только голова)
+        float curSettle = prevSettleTime + (settleTime - prevSettleTime) * pt;
+        float settleDuration = 0.55f; // ~11 тиков приятного затухающего кивка
+        if (curSettle > 0f && curSettle < settleDuration && !isHiding) {
+            float t = curSettle / settleDuration;
+            // Затухающая синусоида (мягкий кивок головы вперед и откат назад)
+            float env = (1.0f - t) * (1.0f - t);
+            float wave = (float) Math.sin(t * Math.PI * 2.5) * env;
+            float headPitch = wave * 9.0f; // градусы (чуть сильнее)
+
+            // Только голова!
+            m.addBoneRotation("Head", (float) Math.toRadians(headPitch), 0f, 0f);
         }
 
         // Плавный выезд (smoothstep) без резких рывков на границах

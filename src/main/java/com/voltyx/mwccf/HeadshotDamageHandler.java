@@ -1,17 +1,52 @@
 package com.voltyx.mwccf;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class HeadshotDamageHandler {
 
-    @SubscribeEvent
+    private static final Set<DamageSource> HEADSHOT_SOURCES = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+    private static final Map<DamageSource, EntityEquipmentSlot> HIT_SLOTS = Collections.synchronizedMap(new WeakHashMap<>());
+
+    public static void markHeadshot(DamageSource source) {
+        if (source != null) {
+            HEADSHOT_SOURCES.add(source);
+            HIT_SLOTS.put(source, EntityEquipmentSlot.HEAD);
+        }
+    }
+
+    public static boolean isHeadshot(DamageSource source) {
+        return source != null && HEADSHOT_SOURCES.contains(source);
+    }
+
+    public static EntityEquipmentSlot getHitSlot(DamageSource source) {
+        if (source == null) return null;
+        if (isHeadshot(source)) return EntityEquipmentSlot.HEAD;
+        return HIT_SLOTS.get(source);
+    }
+
+    public static void clearDamageSource(DamageSource source) {
+        if (source != null) {
+            HEADSHOT_SOURCES.remove(source);
+            HIT_SLOTS.remove(source);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onEntityHurt(LivingHurtEvent event) {
         EntityLivingBase target = event.getEntityLiving();
         DamageSource source = event.getSource();
@@ -40,24 +75,23 @@ public class HeadshotDamageHandler {
             // 4. ПРОВЕРКА ЛУЧОМ: Пересекает ли линия полета пули куб головы?
             RayTraceResult headHit = headBox.calculateIntercept(startVec, endVec);
 
-            if (headHit != null) {
-                // ПУЛЯ ПРОБИЛА КУБ!
+            boolean isHead = headHit != null
+                    || headBox.intersects(projectile.getEntityBoundingBox())
+                    || headBox.contains(new Vec3d(projectile.posX, projectile.posY, projectile.posZ));
+
+            if (isHead) {
+                // ПУЛЯ ПРОБИЛА КУБ ГОЛОВЫ!
                 float baseDamage = event.getAmount();
                 event.setAmount(baseDamage * 2.5F); // Множитель урона
-
-                // System.out.println("!!! ХЭДШОТ (Луч пробил голову) !!! Урон: " +
-                // event.getAmount());
-            } else {
-                // Если пуля очень медленная (как шипы паразитов) или уже застряла,
-                // проверяем обычным пересечением коробок
-                if (headBox.intersects(projectile.getEntityBoundingBox())) {
-                    float baseDamage = event.getAmount();
-                    event.setAmount(baseDamage * 2.5F);
-
-                    // System.out.println("!!! ХЭДШОТ (Физическое касание) !!! Урон: " +
-                    // event.getAmount());
-                }
+                markHeadshot(source);
+            } else if (target instanceof EntityPlayer && Loader.isModLoaded("firstaid")) {
+                try {
+                    EntityEquipmentSlot slot = ichttt.mods.firstaid.common.util.PlayerSizeHelper.getSlotTypeForProjectileHit(projectile, (EntityPlayer) target);
+                    if (slot != null) {
+                        HIT_SLOTS.put(source, slot);
+                    }
+                } catch (Throwable ignored) {}
             }
         }
     }
-}
+}

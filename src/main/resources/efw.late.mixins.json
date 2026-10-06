@@ -13,7 +13,8 @@
     "XaeroMinimapSyncedPlayerTrackerMixin",
     "MixinEntityParasiteBase",
     "MixinEntityAIAttackMeleeStatus",
-    "MixinEntityAIAttackMeleeStatusAOE"
+    "MixinEntityAIAttackMeleeStatusAOE",
+    "FirstAidEventHandlerMixin"
   ],
   "client": [
     "BackpackClientMixin",
@@ -40,7 +41,13 @@
     "CameraOverhaulClientHandlerMixin",
     "MixinQuarkChestSearchBar",
     "MixinARLRenderHelper",
-    "MixinGuiBaublesButton"
+    "MixinGuiBaublesButton",
+    "MixinJEIIngredientFilter",
+    "SoundFiltersTickHandlerMixin",
+    "MixinWailaRayTracing",
+    "MixinSRPEventHandlerBus",
+    "RandomPatchesEntityRendererHookMixin",
+    "MixinMirrorRenderer"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -20,6 +20,13 @@ public class ItemSINailgun extends Item {
         this.setCreativeTab(net.minecraft.creativetab.CreativeTabs.COMBAT);
     }
 
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public void addInformation(ItemStack stack, net.minecraft.world.World worldIn, java.util.List<String> tooltip, net.minecraft.client.util.ITooltipFlag flagIn) {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.nailgun_ammo"));
+    }
+
     private ItemStack findAmmo(EntityPlayer player) {
         if (player.getHeldItem(EnumHand.OFF_HAND).getItem() == SIItems.NAIL) {
             return player.getHeldItem(EnumHand.OFF_HAND);

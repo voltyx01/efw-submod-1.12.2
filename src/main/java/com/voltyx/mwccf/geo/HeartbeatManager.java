@@ -29,7 +29,9 @@ public class HeartbeatManager {
 
     // === Внутренние переменные ===
     private static long lastUpdateTime = 0;
-    private static long lastBeatTime   = 0;
+    public static long lastBeatTime    = 0;
+    private static long lastLubTime    = 0;
+    private static boolean beatHalfStepDone = true;
 
     // Задержка между обновлениями BPM (0.4–0.6 сек)
     private static final float UPDATE_INTERVAL_BASE = 0.5f;
@@ -183,6 +185,23 @@ public class HeartbeatManager {
         damageImpulse = Math.max(damageImpulse, spike);
     }
 
+    private static boolean wasDead = false;
+
+    public static void reset() {
+        currentBPM = 65.0f;
+        displayBPM = 65;
+        explosionImpulse = 0.0f;
+        damageImpulse = 0.0f;
+        shootingHeat = 0.0f;
+        decayDelayUpdates = 0;
+        spikes.clear();
+        beatHalfStepDone = true;
+        shortAdaptLow = 0f;
+        shortAdaptMid = 0f;
+        shortAdaptHigh = 0f;
+        VisualEffectsHandler.reset();
+    }
+
     // =====================================================================
     //  MAIN UPDATE — вызывается каждый тик из BraceletInspectHandler
     // =====================================================================
@@ -212,12 +231,16 @@ public class HeartbeatManager {
         }
 
         if (player.getHealth() <= 0 || player.isDead) {
+            wasDead = true;
+            reset();
             currentBPM = 0;
             displayBPM = 0;
-            shortAdaptLow = 0f;
-            shortAdaptMid = 0f;
-            shortAdaptHigh = 0f;
             return;
+        }
+
+        if (wasDead) {
+            wasDead = false;
+            reset();
         }
 
         // ── Оружие ──────────────────────────────────────────────────────
@@ -283,10 +306,15 @@ public class HeartbeatManager {
 
         // ── Сердцебиение ─────────────────────────────────────────────────
         long beatInterval = (long)(60000L / currentBPM);
+        long lubDelay = (long)Math.max(120L, Math.min(260L, beatInterval * 0.35f)); // Смещение между систолой и диастолой
+
         if (now - lastBeatTime >= beatInterval) {
             lastBeatTime = now;
+            lastLubTime = now;
+            beatHalfStepDone = false;
             spikes.add(now);
 
+            // 1) Звук браслета (пищалка/индикатор пульса)
             if (uiVisible || isBackgroundRunning || isMWCWeapon) {
                 float volume = isMWCWeapon ? BraceletSettings.mwcWeaponVolume
                              : uiVisible   ? BraceletSettings.inspectVolume
@@ -302,6 +330,45 @@ public class HeartbeatManager {
                         )
                     );
                 }
+            }
+
+            // 2) Звук удара сердца в теле (Enhanced Visuals: heartbeatout — первый глухой толчок "Тук")
+            float bpmThreshold = BraceletSettings.bodyHeartbeatBpmThreshold;
+            if (currentBPM >= bpmThreshold && BraceletSettings.bodyHeartbeatVolume > 0f) {
+                float range = Math.max(10f, 175f - bpmThreshold);
+                float progress = Math.min(1.0f, (currentBPM - bpmThreshold) / range);
+                float minVol = 0.30f;
+                float tVol = (minVol + (1.0f - minVol) * progress) * BraceletSettings.bodyHeartbeatVolume;
+                mc.getSoundHandler().playSound(
+                    new PositionedSoundRecord(
+                        new ResourceLocation("mwccf", "bracelet.heartbeatout"),
+                        net.minecraft.util.SoundCategory.PLAYERS, tVol, 1.0F,
+                        false, 0,
+                        net.minecraft.client.audio.ISound.AttenuationType.NONE,
+                        0f, 0f, 0f
+                    )
+                );
+            }
+        }
+
+        // Второй полуудар сердца (Enhanced Visuals: heartbeatin — отдача "Дук")
+        if (!beatHalfStepDone && (now - lastLubTime >= lubDelay)) {
+            beatHalfStepDone = true;
+            float bpmThreshold = BraceletSettings.bodyHeartbeatBpmThreshold;
+            if (currentBPM >= bpmThreshold && BraceletSettings.bodyHeartbeatVolume > 0f) {
+                float range = Math.max(10f, 175f - bpmThreshold);
+                float progress = Math.min(1.0f, (currentBPM - bpmThreshold) / range);
+                float minVol = 0.30f;
+                float tVol = (minVol + (1.0f - minVol) * progress) * BraceletSettings.bodyHeartbeatVolume * 0.85f;
+                mc.getSoundHandler().playSound(
+                    new PositionedSoundRecord(
+                        new ResourceLocation("mwccf", "bracelet.heartbeatin"),
+                        net.minecraft.util.SoundCategory.PLAYERS, tVol, 1.0F,
+                        false, 0,
+                        net.minecraft.client.audio.ISound.AttenuationType.NONE,
+                        0f, 0f, 0f
+                    )
+                );
             }
         }
         spikes.removeIf(t -> now - t > 3000);

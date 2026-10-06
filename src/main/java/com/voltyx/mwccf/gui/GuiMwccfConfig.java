@@ -94,6 +94,20 @@ public class GuiMwccfConfig extends GuiConfig {
             ));
         }
 
+        // 6. Отдельная вкладка Heartbeat & Bracelet
+        if (com.voltyx.mwccf.geo.BraceletSettings.getConfig() != null) {
+            Configuration bConfig = com.voltyx.mwccf.geo.BraceletSettings.getConfig();
+            List<IConfigElement> bElements = new ArrayList<>();
+            for (String catName : bConfig.getCategoryNames()) {
+                bElements.addAll(new ConfigElement(bConfig.getCategory(catName)).getChildElements());
+            }
+            list.add(new DummyConfigElement.DummyCategoryElement(
+                "Heartbeat & Bracelet",
+                "mwccf.config.bracelet",
+                bElements
+            ));
+        }
+
         return list;
     }
 
@@ -110,6 +124,10 @@ public class GuiMwccfConfig extends GuiConfig {
             }
             if (com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.config != null) {
                 com.voltyx.mwccf.immersiveui.ImmersiveUIConfig.syncConfig();
+            }
+            if (com.voltyx.mwccf.geo.BraceletSettings.getConfig() != null && com.voltyx.mwccf.geo.BraceletSettings.getConfig().hasChanged()) {
+                com.voltyx.mwccf.geo.BraceletSettings.getConfig().save();
+                com.voltyx.mwccf.geo.BraceletSettings.load();
             }
         } catch (Throwable t) {
             t.printStackTrace();

@@ -72,6 +72,9 @@ public class ItemLoadingScreenRenderer {
         texturePreloaded = false; // Позволяем preloadTexture отработать при первом рендере
     }
 
+    private static String lastStatusTitle = "Загрузка";
+    private static String lastStatusSubtitle = "";
+
     /**
      * Сбросить после входа в мир — готовимся к следующей загрузке.
      */
@@ -80,6 +83,8 @@ public class ItemLoadingScreenRenderer {
         texturePreloaded = false;
         currentEntry = null;
         currentStack = null;
+        lastStatusTitle = "Загрузка";
+        lastStatusSubtitle = "";
     }
 
     public static boolean hasPicked() {
@@ -117,24 +122,105 @@ public class ItemLoadingScreenRenderer {
     private static int bgImageHeight = 1080;
     private static boolean bgDimensionsLoaded = false;
 
+    public static void layoutLoadingButtons(List<net.minecraft.client.gui.GuiButton> buttonList, int screenWidth, int screenHeight) {
+        if (buttonList == null || buttonList.isEmpty()) return;
+        int btnX = 20;
+        int btnWidth = 100;
+        int btnHeight = 20;
+        int btnY = screenHeight - 40;
+
+        for (int i = 0; i < buttonList.size(); i++) {
+            net.minecraft.client.gui.GuiButton btn = buttonList.get(i);
+            btn.width = btnWidth;
+            btn.height = btnHeight;
+            btn.x = btnX + i * (btnWidth + 8);
+            btn.y = btnY;
+        }
+    }
+
+    public static void drawLoadingStatusText(Minecraft mc, int screenWidth, int screenHeight, String title, String subtitle) {
+        if (mc.fontRenderer == null) return;
+        FontRenderer font = mc.fontRenderer;
+
+        List<String> lines = new java.util.ArrayList<>();
+        if (title != null && !title.trim().isEmpty()) {
+            for (String part : title.split("\n")) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) lines.add(trimmed);
+            }
+        }
+        if (subtitle != null && !subtitle.trim().isEmpty()) {
+            for (String part : subtitle.split("\n")) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty() && !lines.contains(trimmed)) {
+                    lines.add(trimmed);
+                }
+            }
+        }
+
+        if (lines.isEmpty()) return;
+
+        int maxTextWidth = 0;
+        for (String line : lines) {
+            int w = font.getStringWidth(line);
+            if (w > maxTextWidth) maxTextWidth = w;
+        }
+
+        int cx = screenWidth - 30;
+        int cy = screenHeight - 30;
+        int size = 10;
+        int margin = 12;
+
+        int textX = (cx - size - margin) - maxTextWidth;
+        if (textX < 130) {
+            textX = 130;
+        }
+
+        int lineHeight = font.FONT_HEIGHT + 2;
+        int totalHeight = lines.size() * lineHeight - 2;
+        int startY = cy - totalHeight / 2;
+
+        GlStateManager.enableBlend();
+        for (int i = 0; i < lines.size(); i++) {
+            font.drawStringWithShadow(lines.get(i), textX, startY + i * lineHeight, 0xFFFFFF);
+        }
+    }
+
+    public static void updateStatusText(String title, String subtitle) {
+        boolean hasTitle = title != null && !title.trim().isEmpty();
+        boolean hasSubtitle = subtitle != null && !subtitle.trim().isEmpty();
+
+        if (hasTitle || hasSubtitle) {
+            lastStatusTitle = hasTitle ? title.trim() : "";
+            lastStatusSubtitle = hasSubtitle ? subtitle.trim() : "";
+        }
+
+        if ((lastStatusTitle == null || lastStatusTitle.isEmpty())
+                && (lastStatusSubtitle == null || lastStatusSubtitle.isEmpty())) {
+            lastStatusTitle = "Загрузка";
+        }
+    }
+
     public static void render(int screenWidth, int screenHeight, String title, String subtitle) {
         Minecraft mc = Minecraft.getMinecraft();
 
         // Кастомный фон с правильным кадрированием (cover)
         drawCustomBackground(screenWidth, screenHeight);
 
+        // Обновляем статус или удерживаем предыдущий
+        updateStatusText(title, subtitle);
+
+        // Ванильный текст загрузки слева от змейки (слева направо от змейки)
+        drawLoadingStatusText(mc, screenWidth, screenHeight, lastStatusTitle, lastStatusSubtitle);
+
+        // Колесо загрузки (квадратная змейка) в правом нижнем углу
+        drawSquareSnake(screenWidth, screenHeight);
+
+        if (!picked && CustomLoadingScreenRenderer.isRunning()) {
+            pickRandom();
+        }
+
         if (currentEntry == null || currentStack == null) {
-            // Если предмет не выбран (например, при выходе из игры или мира), 
-            // рисуем стандартный текст загрузки и возвращаемся.
-            FontRenderer font = mc.fontRenderer;
-            if (font != null) {
-                if (title != null && !title.isEmpty()) {
-                    font.drawStringWithShadow(title, (screenWidth - font.getStringWidth(title)) / 2, screenHeight / 2 - 20, 0xFFFFFF);
-                }
-                if (subtitle != null && !subtitle.isEmpty()) {
-                    font.drawStringWithShadow(subtitle, (screenWidth - font.getStringWidth(subtitle)) / 2, screenHeight / 2 - 5, 0xFFFFFF);
-                }
-            }
             return;
         }
 
@@ -223,9 +309,6 @@ public class ItemLoadingScreenRenderer {
         }
 
         GlStateManager.popMatrix(); // Выходим из локальных координат рамки
-        
-        // Колесо загрузки (квадратная змейка) в правом нижнем углу
-        drawSquareSnake(screenWidth, screenHeight);
     }
 
     private static ItemStack buildStack(LoadingScreenEntry entry) {

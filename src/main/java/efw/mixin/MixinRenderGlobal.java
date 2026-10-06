@@ -1,6 +1,7 @@
 package efw.mixin;
 
 import com.voltyx.mwccf.sunmoon.RealisticSunMoon;
+import efw.util.SubpassRenderState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -9,6 +10,8 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -121,9 +124,41 @@ public abstract class MixinRenderGlobal {
         return RealisticSunMoon.moonSize;
     }
 
+    private static boolean efw$isMirrorRendering() {
+        if (efw.util.SubpassRenderState.isMirrorRendering) return true;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null) return false;
+        Entity rve = mc.getRenderViewEntity();
+        return rve != null && rve.getClass().getName().contains("EntityMirror");
+    }
+
+
+
     /**
-     * Redirects player.getPositionEyes in RenderGlobal.renderSky so that when bodycam is rendering,
-     * the dummy camera's eye position is used instead of the player standing at the terminal.
+     * Ensures OpenGL GL_FOG_COLOR always matches EntityRenderer's current pass fog color
+     * before renderSky draws the sky dome. In vanilla, setupFog(-1) does not call setupFogColor,
+     * so without this hook, any subpass (bodycam or mirror) leaves a dark GL_FOG_COLOR in OpenGL,
+     * causing the main pass sky dome to be fogged with dark black fog.
+     */
+    @Inject(
+        method = "renderSky(FI)V",
+        at = @At("HEAD")
+    )
+    private void efw$prepareSkyFog(float partialTicks, int pass, CallbackInfo ci) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc != null && mc.entityRenderer != null) {
+            float r = SubpassRenderState.getFogColorRed(mc.entityRenderer);
+            float g = SubpassRenderState.getFogColorGreen(mc.entityRenderer);
+            float b = SubpassRenderState.getFogColorBlue(mc.entityRenderer);
+            java.nio.FloatBuffer buf = BufferUtils.createFloatBuffer(4);
+            buf.put(r).put(g).put(b).put(1.0F).flip();
+            GL11.glFog(GL11.GL_FOG_COLOR, buf);
+        }
+    }
+
+    /**
+     * Redirects player.getPositionEyes in RenderGlobal.renderSky so that when bodycam or mirror is rendering,
+     * the subpass camera's eye position is used instead of the player standing at the terminal or mirror.
      */
     @Redirect(
         method = "renderSky(FI)V",
@@ -133,7 +168,7 @@ public abstract class MixinRenderGlobal {
         )
     )
     private net.minecraft.util.math.Vec3d efw$renderSkyEyePos(net.minecraft.client.entity.EntityPlayerSP player, float partialTicks) {
-        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering() || efw$isMirrorRendering()) {
             net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
             if (rve != null) {
                 return rve.getPositionEyes(partialTicks);
@@ -144,9 +179,9 @@ public abstract class MixinRenderGlobal {
 
     /**
      * Redirects the World.getSkyColor call inside RenderGlobal.renderSky so that
-     * during bodycam FBO rendering the sky dome uses mc.player's sky colour instead
-     * of BodycamCameraEntity's. World.getSkyColor returns Vec3d.ZERO for non-Player
-     * entities, causing the sky dome (and thus the horizon) to render black.
+     * during bodycam and mirror rendering the sky dome uses a valid, natural sky colour.
+     * World.getSkyColor returns Vec3d.ZERO for non-Player entities or entities inside solid wall blocks,
+     * which would otherwise cause the sky dome (and horizon) to render black.
      */
     @Redirect(
         method = "renderSky(FI)V",
@@ -159,11 +194,23 @@ public abstract class MixinRenderGlobal {
         if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
             Entity carrier = com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier();
             if (carrier != null) {
-                return world.getSkyColor(carrier, partialTicks);
+                Vec3d carrierSky = world.getSkyColor(carrier, partialTicks);
+                if (carrierSky.x > 0.001 || carrierSky.y > 0.001 || carrierSky.z > 0.001) {
+                    return carrierSky;
+                }
             }
-            net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
+            Minecraft mc = Minecraft.getMinecraft();
+            if (mc.player != null) {
+                return world.getSkyColor(mc.player, partialTicks);
+            }
+            Entity rve = Minecraft.getMinecraft().getRenderViewEntity();
             if (rve != null) {
                 return world.getSkyColor(rve, partialTicks);
+            }
+        } else if (efw$isMirrorRendering()) {
+            Minecraft mc = Minecraft.getMinecraft();
+            if (mc.player != null) {
+                return world.getSkyColor(mc.player, partialTicks);
             }
         }
         return world.getSkyColor(entity, partialTicks);
@@ -171,11 +218,11 @@ public abstract class MixinRenderGlobal {
 
     /**
      * Prevents vanilla RenderGlobal from drawing the underground black void box over the horizon
-     * during bodycam rendering by setting horizon 64 blocks below camera eye height.
+     * during bodycam and mirror rendering by setting horizon 64 blocks below camera eye height.
      * This keeps d3 >= 64.0D > 0 so:
-     * 1. The black void box is never drawn.
+     * 1. The black void box is never drawn in subpasses.
      * 2. The dark bottom dome glSkyList2 is pushed 48 blocks below the camera, never obscuring horizon.
-     * 3. Unaffected in the main game pass!
+     * 3. Completely untouched in the main world pass!
      */
     @Redirect(
         method = "renderSky(FI)V",
@@ -185,7 +232,7 @@ public abstract class MixinRenderGlobal {
         )
     )
     private double efw$adjustHorizon(WorldClient world) {
-        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering() || efw$isMirrorRendering()) {
             net.minecraft.entity.Entity rve = net.minecraft.client.Minecraft.getMinecraft().getRenderViewEntity();
             if (rve != null) {
                 double eyeY = rve.posY + (double) rve.getEyeHeight();

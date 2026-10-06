@@ -40,6 +40,46 @@ public class CommandDoll extends CommandBase {
 
         String sub = args[0].toLowerCase();
 
+        if (sub.equals("gui")) {
+            if (args.length >= 2) {
+                String guiSub = args[1].toLowerCase();
+                if (guiSub.equals("y") && args.length >= 3) {
+                    try {
+                        double val = Double.parseDouble(args[2]);
+                        efw.biomeinfo.MwccfConfig.doll.guiOffsetY = val;
+                        net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                        sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "[Doll GUI] guiOffsetY установлен в " + val));
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(new TextComponentString(TextFormatting.RED + "Неверное число: " + args[2]));
+                    }
+                    return;
+                }
+                if ((guiSub.equals("scale") || guiSub.equals("s")) && args.length >= 3) {
+                    try {
+                        double val = Double.parseDouble(args[2]);
+                        efw.biomeinfo.MwccfConfig.doll.guiScale = val;
+                        net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                        sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "[Doll GUI] guiScale установлен в " + val));
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(new TextComponentString(TextFormatting.RED + "Неверное число: " + args[2]));
+                    }
+                    return;
+                }
+                if (guiSub.equals("reset")) {
+                    efw.biomeinfo.MwccfConfig.doll.guiOffsetY = -0.65;
+                    efw.biomeinfo.MwccfConfig.doll.guiScale = 1.0;
+                    net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "[Doll GUI] Настройки сброшены: Y = -0.65, Scale = 1.0"));
+                    return;
+                }
+            }
+            sender.sendMessage(new TextComponentString(TextFormatting.GOLD + "[Doll GUI] Текущие настройки: "
+                    + "Y = " + TextFormatting.AQUA + efw.biomeinfo.MwccfConfig.doll.guiOffsetY
+                    + TextFormatting.GOLD + ", Scale = " + TextFormatting.AQUA + efw.biomeinfo.MwccfConfig.doll.guiScale));
+            sender.sendMessage(new TextComponentString(TextFormatting.GRAY + "Использование: /doll gui y <значение> | /doll gui scale <значение> | /doll gui reset"));
+            return;
+        }
+
         if (sub.equals("body") || sub.equals("armor") || sub.equals("layer")) {
             if (args.length >= 2) {
                 String bodyAction = args[1].toLowerCase();

@@ -71,7 +71,7 @@ public class BraceletInspectHandler {
     public static float uiOffsetX = -95.0f;
     public static float uiOffsetY = 0.0f;
     public static float uiScale = 0.50f;
-    public static float uiRotZ = 90.0f;
+    public static float uiRotZ = -90.0f;
 
     public static void init() {
         ClientRegistry.registerKeyBinding(INSPECT_KEY);

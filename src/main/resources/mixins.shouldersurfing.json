@@ -8,7 +8,9 @@
   "client": [
     "MixinActiveRenderInfo",
     "MixinWorld",
-    "MixinRenderPlayer"
+    "MixinRenderPlayer",
+    "MixinRenderManager",
+    "MixinSoundHandler"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -104,8 +104,9 @@ public class BodycamLayer implements LayerRenderer<AbstractClientPlayer> {
             return;
         }
 
-        // Don't render for self in first-person mode
-        if (player == Minecraft.getMinecraft().player &&
+        // Don't render for self in first-person mode (unless viewing in GUI)
+        if (!efw.util.RenderContext.isRenderingPlayerInGui &&
+                player == Minecraft.getMinecraft().player &&
                 Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
             return;
         }

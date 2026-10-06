@@ -71,8 +71,13 @@ public class ItemSIPickaxe extends ItemPickaxe {
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         if (this.showScrapTooltip) {
-            tooltip.add("\u00a77Tool Utility:");
-            tooltip.add(" \u00a79You can break tools and items to obtain useful scrap");
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.tool_scrap_title"));
+            tooltip.add(" \u00a79" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.tool_scrap_desc"));
+        }
+        String name = this.getRegistryName() != null ? this.getRegistryName().getPath() : "";
+        if (name.contains("wrench") || name.contains("screwdriver") || name.contains("lever")) {
+            tooltip.add(net.minecraft.client.resources.I18n.format("tooltip.mwccf.tool_disassemble_title"));
+            tooltip.add(" \u00a79" + net.minecraft.client.resources.I18n.format("tooltip.mwccf.tool_disassemble_desc"));
         }
     }
 

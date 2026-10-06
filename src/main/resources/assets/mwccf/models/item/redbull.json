@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "mwccf:custom/soda_energetic",
   "textures": {
-    "layer0": "mwccf:items/redbull"
+    "3": "mwccf:block/soda_energetic",
+    "particle": "mwccf:item/energy_can"
   }
 }

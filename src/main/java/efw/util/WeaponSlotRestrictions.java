@@ -26,6 +26,8 @@ public final class WeaponSlotRestrictions {
                 group == BalancePackManager.GunConfigurationGroup.SIDEARM ||
                 group == BalancePackManager.GunConfigurationGroup.REVOLVER) {
                 return true;
+            } else if (group != null && group != BalancePackManager.GunConfigurationGroup.NONE) {
+                return false;
             }
         } catch (Throwable ignored) {}
 

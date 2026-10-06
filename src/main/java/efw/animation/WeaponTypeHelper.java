@@ -20,14 +20,14 @@ public class WeaponTypeHelper {
     private static final Set<String> PISTOL_KEYWORDS = new HashSet<>(Arrays.asList(
             "glock", "glock_18c", "glock_19", "glock_21", "glock_22",
             "python", "taurus", "raging_hunter", "taurus_raging_hunter", "sw_500", "sw_500_magnum", "500_magnum",
-            "chiappa", "rhino", "chiappa_rhino", "aps", "makarov", "makarov_pm", "pm",
+            "chiappa", "rhino", "chiappa_rhino", "aps", "makarov", "makarov_pm",
             "desert_eagle", "deagle", "fiveseven", "five_seven", "m9a1", "m9", "beretta",
-            "p226", "mp443", "grach", "vp70", "m17", "sig", "sccy", "sccy_cpx_2", "cpx",
-            "hk_p12", "p12", "usp", "usp45", "usp_45", "mas_21", "g2_contender", "contender",
-            "m712", "mauser", "m1911", "1911", "colt", "browning", "browning_hi_power", "hi_power",
+            "p226", "mp443", "grach", "vp70", "m17", "sccy", "sccy_cpx_2",
+            "hk_p12", "usp", "usp45", "usp_45", "mas_21", "g2_contender", "contender",
+            "m712", "m1911", "1911", "browning_hi_power", "hi_power",
             "pistol", "revolver", "handgun", "magnum", "walther", "ppk", "p99", "p320", "p250",
-            "tt", "tt33", "tokarev", "luger", "p08", "webley", "nagant", "ots", "mp412", "rex",
-            "cz75", "cz", "fnx", "fnx45", "p88", "derringer"
+            "tt33", "tokarev", "luger", "p08", "webley", "nagant", "mp412",
+            "cz75", "cz_75", "fnx", "fnx45", "p88", "derringer"
     ));
 
     public static WeaponType getWeaponType(ItemStack stack) {
@@ -35,6 +35,21 @@ public class WeaponTypeHelper {
             return WeaponType.NONE;
 
         Item item = stack.getItem();
+
+        // 1. Direct check using MWC GunConfigurationGroup if available
+        if (item instanceof com.paneedah.weaponlib.Weapon) {
+            com.paneedah.weaponlib.Weapon weapon = (com.paneedah.weaponlib.Weapon) item;
+            try {
+                com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup group = weapon.getConfigurationGroup();
+                if (group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.HANDGUN ||
+                    group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.SIDEARM ||
+                    group == com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.REVOLVER) {
+                    return WeaponType.PISTOL;
+                } else if (group != null && group != com.paneedah.weaponlib.config.BalancePackManager.GunConfigurationGroup.NONE) {
+                    return WeaponType.RIFLE;
+                }
+            } catch (Throwable ignored) {}
+        }
 
         // Проверяем, из мода ли предмет (Modern Warfare Cubed)
         boolean isMWCWeapon = false;

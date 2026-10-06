@@ -32,7 +32,9 @@ public class MixinRenderPlayer {
             float alpha = CameraEntityRenderer.getInstance().getCameraEntityAlpha();
             if (alpha < 1.0F) {
                 GlStateManager.enableBlend();
-                GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
+                GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+                GlStateManager.alphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.001F);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             }
         }
     }
@@ -46,6 +48,7 @@ public class MixinRenderPlayer {
             CameraEntityRenderer.getInstance().postRenderCameraEntity(entity, partialTicks);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.disableBlend();
+            GlStateManager.alphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
             GlStateManager.depthMask(true);
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
         }

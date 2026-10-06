@@ -30,8 +30,9 @@ public class BraceletLayer implements LayerRenderer<AbstractClientPlayer> {
             return;
         }
 
-        // Не рисуем слой 3-го лица для себя в 1-м лице
-        if (player == net.minecraft.client.Minecraft.getMinecraft().player && 
+        // Не рисуем слой 3-го лица для себя в 1-м лице (в GUI показываем)
+        if (!efw.util.RenderContext.isRenderingPlayerInGui &&
+            player == net.minecraft.client.Minecraft.getMinecraft().player && 
             net.minecraft.client.Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
             return;
         }

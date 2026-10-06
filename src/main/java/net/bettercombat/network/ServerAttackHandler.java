@@ -80,6 +80,7 @@ public class ServerAttackHandler {
             }
 
             int hitCount = 0;
+            java.util.List<Entity> hitEntities = new java.util.ArrayList<>();
             for (int entityId : message.getTargetEntityIds()) {
                 Entity target = player.world.getEntityByID(entityId);
                 if (target == null || target == player || target.isDead) {
@@ -98,24 +99,94 @@ public class ServerAttackHandler {
 
                 player.attackTargetEntityWithCurrentItem(target);
                 hitCount++;
+                hitEntities.add(target);
             }
 
             player.resetCooldown();
 
-            if (hitCount > 1 && MwccfConfig.betterCombat.allowReworkedSweeping) {
+            boolean isSweep = isHorizontalOrSpinAttack(attack);
+            boolean isSpin = isSpinAttack(attack);
+
+            if (hitCount > 0 && (isSweep || (hitCount > 1 && MwccfConfig.betterCombat.allowReworkedSweeping))) {
                 if (MwccfConfig.betterCombat.reworkedSweepingPlaysSound) {
                     player.world.playSound(null, player.posX, player.posY, player.posZ,
                             SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1.0F, 1.0F);
                 }
                 if (MwccfConfig.betterCombat.reworkedSweepingEmitsParticles) {
-                    double px = -Math.sin(player.rotationYaw * 0.017453292F);
-                    double pz = Math.cos(player.rotationYaw * 0.017453292F);
-                    player.getServerWorld().spawnParticle(
-                            EnumParticleTypes.SWEEP_ATTACK,
-                            player.posX + px,
-                            player.posY + player.height * 0.5,
-                            player.posZ + pz,
-                            1, 0, 0, 0, 0.0);
+                    if (isSpin) {
+                        for (int i = 0; i < 8; i++) {
+                            double rad = Math.toRadians(player.rotationYaw + (i * 45.0));
+                            double px = -Math.sin(rad) * 1.35;
+                            double pz = Math.cos(rad) * 1.35;
+                            player.getServerWorld().spawnParticle(
+                                    EnumParticleTypes.SWEEP_ATTACK,
+                                    player.posX + px,
+                                    player.posY + player.height * 0.5,
+                                    player.posZ + pz,
+                                    1, 0, 0, 0, 0.0);
+                        }
+                    } else if (attack != null && attack.angle() >= 150.0) {
+                        double[] offsets = new double[] { -40.0, 0.0, 40.0 };
+                        for (double off : offsets) {
+                            double rad = Math.toRadians(player.rotationYaw + off);
+                            double px = -Math.sin(rad) * 1.15;
+                            double pz = Math.cos(rad) * 1.15;
+                            player.getServerWorld().spawnParticle(
+                                    EnumParticleTypes.SWEEP_ATTACK,
+                                    player.posX + px,
+                                    player.posY + player.height * 0.5,
+                                    player.posZ + pz,
+                                    1, 0, 0, 0, 0.0);
+                        }
+                    } else {
+                        double rad = Math.toRadians(player.rotationYaw);
+                        double px = -Math.sin(rad) * 1.0;
+                        double pz = Math.cos(rad) * 1.0;
+                        player.getServerWorld().spawnParticle(
+                                EnumParticleTypes.SWEEP_ATTACK,
+                                player.posX + px,
+                                player.posY + player.height * 0.5,
+                                player.posZ + pz,
+                                1, 0, 0, 0, 0.0);
+                    }
+                }
+
+                // Sweeping cleave damage for surrounding enemies not directly hit
+                if (isSweep) {
+                    float baseDamage = (float) player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
+                    float sweepingRatio = EnchantmentHelper.getSweepingDamageRatio(player);
+                    float sweepDamage = 1.0F + sweepingRatio * baseDamage;
+
+                    if (isSpin) {
+                        double cleaveRange = (attributes != null ? attributes.attackRange() : 2.5) + 0.5;
+                        net.minecraft.util.math.AxisAlignedBB spinBox = player.getEntityBoundingBox().grow(cleaveRange, 1.0D, cleaveRange);
+                        for (EntityLivingBase living : player.world.getEntitiesWithinAABB(EntityLivingBase.class, spinBox)) {
+                            if (living != player && !hitEntities.contains(living) && !player.isOnSameTeam(living)
+                                    && living.isEntityAlive() && player.getDistanceSq(living) <= cleaveRange * cleaveRange) {
+                                double dx = living.posX - player.posX;
+                                double dz = living.posZ - player.posZ;
+                                double dist = Math.sqrt(dx * dx + dz * dz);
+                                if (dist > 0.001) {
+                                    living.knockBack(player, 0.4F, -dx / dist, -dz / dist);
+                                } else {
+                                    living.knockBack(player, 0.4F, (double) net.minecraft.util.math.MathHelper.sin(player.rotationYaw * 0.017453292F), (double) (-net.minecraft.util.math.MathHelper.cos(player.rotationYaw * 0.017453292F)));
+                                }
+                                living.attackEntityFrom(net.minecraft.util.DamageSource.causePlayerDamage(player), sweepDamage);
+                            }
+                        }
+                    } else if (hitCount == 1 && !hitEntities.isEmpty()) {
+                        Entity primary = hitEntities.get(0);
+                        net.minecraft.util.math.AxisAlignedBB cleaveBox = primary.getEntityBoundingBox().grow(1.25D, 0.5D, 1.25D);
+                        for (EntityLivingBase living : player.world.getEntitiesWithinAABB(EntityLivingBase.class, cleaveBox)) {
+                            if (living != player && !hitEntities.contains(living) && !player.isOnSameTeam(living)
+                                    && living.isEntityAlive() && player.getDistanceSq(living) <= maxAllowedDistSq) {
+                                living.knockBack(player, 0.4F,
+                                        (double) net.minecraft.util.math.MathHelper.sin(player.rotationYaw * 0.017453292F),
+                                        (double) (-net.minecraft.util.math.MathHelper.cos(player.rotationYaw * 0.017453292F)));
+                                living.attackEntityFrom(net.minecraft.util.DamageSource.causePlayerDamage(player), sweepDamage);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -128,5 +199,24 @@ public class ServerAttackHandler {
                 if (sweepingMod != null) damageAttr.removeModifier(sweepingMod);
             }
         }
+    }
+
+    public static boolean isHorizontalOrSpinAttack(WeaponAttributes.Attack attack) {
+        if (attack == null) return false;
+        if (attack.angle() >= 180.0) return true;
+        if (attack.hitbox() == WeaponAttributes.HitBoxShape.HORIZONTAL_PLANE) return true;
+        String anim = attack.animation();
+        if (anim != null) {
+            String lower = anim.toLowerCase(java.util.Locale.ROOT);
+            return lower.contains("spin") || lower.contains("horizontal") || lower.contains("sweep") || lower.contains("swipe");
+        }
+        return false;
+    }
+
+    public static boolean isSpinAttack(WeaponAttributes.Attack attack) {
+        if (attack == null) return false;
+        if (attack.angle() >= 300.0) return true;
+        String anim = attack.animation();
+        return anim != null && anim.toLowerCase(java.util.Locale.ROOT).contains("spin");
     }
 }

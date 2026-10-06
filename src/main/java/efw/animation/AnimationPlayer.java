@@ -136,6 +136,9 @@ public class AnimationPlayer {
 
         KeyframeAnimationPlayer playerAnim = new KeyframeAnimationPlayer(clip);
         playerAnim.setSpeed(speed);
+        if (clip.name != null && clip.name.contains("reload")) {
+            playerAnim.setHoldLastFrame(true);
+        }
 
         int blendTicks = getActionBlendTicks(clip.name);
         if (clip.isEmotecraft && clip.beginTick > 0) {
@@ -269,7 +272,7 @@ public class AnimationPlayer {
     }
 
     public boolean isActionAttack() {
-        return isAttackClip(actionClip);
+        return isAttackClip(actionClip) || (actionFadingOut && isAttackClip(previousActionClip));
     }
 
     public AnimationClip getActionClip() {
@@ -284,7 +287,7 @@ public class AnimationPlayer {
         if (this.actionFadingOut) {
             return;
         }
-        if (this.actionLayer.isActive()) {
+        if (this.actionLayer.isActive() || this.actionLayer.getAnimation() != null || !this.actionLayer.getModifiers().isEmpty()) {
             if (this.actionClip != null) {
                 this.previousActionClip = this.actionClip;
             }
@@ -342,8 +345,15 @@ public class AnimationPlayer {
         }
     }
 
+    public void snapRoll() {
+        this.rollClip = null;
+        this.rollLayer.clearModifiers();
+        this.rollLayer.setAnimation(null);
+        this.rollFadingOut = false;
+    }
+
     public boolean isRollPlaying() {
-        return this.rollLayer.isActive();
+        return this.rollLayer.isActive() && !this.rollFadingOut;
     }
 
     public boolean isRollFadingOut() {
@@ -606,11 +616,7 @@ public class AnimationPlayer {
             return java.util.Optional.empty();
         } else {
             boolean isSneak = this.player != null && this.player.isSneaking() && !efw.AnimationTickHandler.isBetterCombatAttackActive(this.player);
-            if ("body".equals(partName) || "torso".equals(partName)) {
-                if (!isSneak) {
-                    rotationX -= pitch * 0.75F;
-                }
-            } else if ("rightArm".equals(partName) || "leftArm".equals(partName)) {
+            if ("rightArm".equals(partName) || "leftArm".equals(partName)) {
                 rotationX += pitch * (isSneak ? 0.85F : 0.25F);
             } else {
                 return java.util.Optional.empty();

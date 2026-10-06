@@ -84,6 +84,15 @@ public class ClientEventHandler
 		float forward = event.getMovementInput().moveForward;
 		float strafe  = event.getMovementInput().moveStrafe;
 
+		if (instance.isTransitioningToFirstPerson()) {
+			float yawDiff = MathHelper.wrapDegrees(camYaw - mc.player.rotationYaw);
+			float pitchDiff = MathHelper.wrapDegrees(renderer.cameraPitch - mc.player.rotationPitch);
+			mc.player.rotationYaw += yawDiff * 0.4F;
+			mc.player.rotationPitch += pitchDiff * 0.4F;
+			mc.player.rotationYawHead = mc.player.rotationYaw;
+			mc.player.renderYawOffset = mc.player.rotationYaw;
+		}
+
 		// ── Если активен LockOn — управляем только телом при движении ──────────
 		if (LockOnHandler.lockedOn && LockOnHandler.target != null) {
 			if (forward != 0.0F || strafe != 0.0F) {

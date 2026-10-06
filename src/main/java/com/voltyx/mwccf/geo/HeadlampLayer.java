@@ -24,7 +24,8 @@ public class HeadlampLayer implements LayerRenderer<AbstractClientPlayer> {
             return;
         }
 
-        if (player == net.minecraft.client.Minecraft.getMinecraft().player && 
+        if (!efw.util.RenderContext.isRenderingPlayerInGui &&
+            player == net.minecraft.client.Minecraft.getMinecraft().player && 
             net.minecraft.client.Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
             return;
         }
@@ -50,8 +51,10 @@ public class HeadlampLayer implements LayerRenderer<AbstractClientPlayer> {
         model.syncedModel = this.renderer.getMainModel();
         model.render(player, limbSwing, limbSwingAmount, age, yaw, pitch, scale);
         
-        // Draw the cone and the decal from the exact model's head bone!
-        HeadlampRenderer.renderConeAndDecalFromModel(player, model, scale, delta);
+        // Draw the cone and the decal from the exact model's head bone (skip in GUI)!
+        if (!efw.util.RenderContext.isRenderingPlayerInGui) {
+            HeadlampRenderer.renderConeAndDecalFromModel(player, model, scale, delta);
+        }
         
         model.syncedModel = null;
     }

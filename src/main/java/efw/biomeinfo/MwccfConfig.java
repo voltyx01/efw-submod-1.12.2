@@ -584,6 +584,14 @@ public class MwccfConfig {
         @Config.Name("enable_debug_tweaker")
         @Config.Comment("Enable in-game doll position tweaker HUD (F7 or /doll body). Off by default.")
         public boolean enableDebugTweaker = false;
+
+        @Config.Name("gui_offset_y")
+        @Config.Comment("Y offset of the doll model when rendered in GUI slots/containers. Default is -0.65.")
+        public double guiOffsetY = -0.65;
+
+        @Config.Name("gui_scale")
+        @Config.Comment("Scale multiplier of the doll model when rendered in GUI slots/containers. Default is 1.0.")
+        public double guiScale = 1.0;
     }
 }
 

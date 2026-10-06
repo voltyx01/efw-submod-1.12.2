@@ -60,4 +60,22 @@ public class HeartbeatEventHandler {
             }
         }
     }
+
+    @SubscribeEvent
+    public void onLivingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && event.getEntityLiving() == mc.player) {
+            HeartbeatManager.reset();
+            HeartbeatManager.currentBPM = 0;
+            HeartbeatManager.displayBPM = 0;
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerRespawn(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && event.player == mc.player) {
+            HeartbeatManager.reset();
+        }
+    }
 }

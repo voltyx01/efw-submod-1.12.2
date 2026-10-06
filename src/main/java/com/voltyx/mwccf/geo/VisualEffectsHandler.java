@@ -39,6 +39,12 @@ public class VisualEffectsHandler {
     private static float smoothVignette   = 0f; // 0..1
     private static float smoothBlackout   = 0f; // 0..1
 
+    public static void reset() {
+        smoothShake = 0f;
+        smoothVignette = 0f;
+        smoothBlackout = 0f;
+    }
+
     public static void updateCameraOverhaul(float bpm) {
         // Ничего (legacy hook, оставлен для совместимости)
     }

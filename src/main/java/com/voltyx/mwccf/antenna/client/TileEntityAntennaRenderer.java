@@ -87,7 +87,7 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
             default: break;
         }
 
-        this.bindTexture(TEXTURE);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(TEXTURE);
 
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -139,9 +139,12 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
 
         GlStateManager.pushMatrix();
         GlStateManager.disableLighting();
-        int prevLightX = (int) OpenGlHelper.lastBrightnessX;
-        int prevLightY = (int) OpenGlHelper.lastBrightnessY;
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
+        int prevLightX = 0, prevLightY = 0;
+        if (te.hasWorld()) {
+            prevLightX = (int) OpenGlHelper.lastBrightnessX;
+            prevLightY = (int) OpenGlHelper.lastBrightnessY;
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
+        }
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GlStateManager.enableDepth();
@@ -213,7 +216,9 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
         }
 
         GlStateManager.depthMask(true);
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevLightX, prevLightY);
+        if (te.hasWorld()) {
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevLightX, prevLightY);
+        }
         GlStateManager.enableLighting();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.popMatrix();
@@ -260,9 +265,12 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
     private void renderDisplayAndIndicators(TileEntityAntenna te, float partialTicks) {
         GlStateManager.pushMatrix();
         GlStateManager.disableLighting();
-        int prevLightX = (int) OpenGlHelper.lastBrightnessX;
-        int prevLightY = (int) OpenGlHelper.lastBrightnessY;
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
+        int prevLightX = 0, prevLightY = 0;
+        if (te.hasWorld()) {
+            prevLightX = (int) OpenGlHelper.lastBrightnessX;
+            prevLightY = (int) OpenGlHelper.lastBrightnessY;
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
+        }
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buf = tessellator.getBuffer();
@@ -379,7 +387,9 @@ public class TileEntityAntennaRenderer extends TileEntitySpecialRenderer<TileEnt
         // Cleanly restore GL state
         GlStateManager.enableTexture2D();
         GlStateManager.enableCull();
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevLightX, prevLightY);
+        if (te.hasWorld()) {
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevLightX, prevLightY);
+        }
         GlStateManager.enableLighting();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.popMatrix();

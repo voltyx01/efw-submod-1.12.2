@@ -15,6 +15,8 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BlockTGCamoNetTop extends GenericBlockMetaEnumCamoChangeable<EnumCamoNetType> {
 
@@ -112,7 +114,9 @@ public class BlockTGCamoNetTop extends GenericBlockMetaEnumCamoChangeable<EnumCa
     }
 
 	
-	public BlockRenderLayer getBlockLayer() {
+	@Override
+	@SideOnly(Side.CLIENT)
+	public BlockRenderLayer getRenderLayer() {
 		return BlockRenderLayer.CUTOUT;
 	}
 
