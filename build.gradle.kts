@@ -14,7 +14,8 @@ minecraft {
     mcVersion = "1.12.2"
     username = "Voltyx_"
     extraRunJvmArguments.addAll(listOf(
-        "-Dfml.coreMods.load=efw.core.EFWCorePlugin,com.paneedah.mwc.asm.MWCPlugin"
+        "-Dfml.coreMods.load=efw.core.EFWCorePlugin,com.paneedah.mwc.asm.MWCPlugin",
+        "-Dbettercombat.fpTrace=true"
     ))
 }
 
@@ -55,23 +56,24 @@ dependencies {
     implementation(fileTree(mapOf(
         "dir" to "libs", 
         "include" to listOf("*.jar"), 
-        "exclude" to listOf("Simplest.jar", "Simplest-noshade.jar", "Simplest2.jar", "SRParasites-1.10.7.jar", "aquaacrobatics.jar", "xaerominimap-forge-1.12.2-26.4.2.jar", "xaeroworldmap-forge-1.12.2-1.45.0.jar")
+        "exclude" to listOf("Simplest.jar", "Simplest-noshade.jar", "Simplest2.jar", "SRParasites-1.10.7.jar", "SRParasites-1.10.9.jar", "aquaacrobatics.jar", "xaerominimap-forge-1.12.2-26.4.2.jar", "xaeroworldmap-forge-1.12.2-1.45.0.jar")
     )))
 
     // --- ПРАВИЛЬНАЯ ЗАГРУЗКА ЛОКАЛЬНЫХ МОДОВ ЧЕРЕЗ RFG ---
     // Используем rfg.deobf(files(...)), чтобы RFG расшифровал мод!
     // Я ставлю implementation, чтобы паразиты загружались у тебя в Dev-клиенте для тестов. 
     // Если они нужны ТОЛЬКО для компиляции миксина, замени implementation на compileOnly
-    implementation(rfg.deobf(files("libs/SRParasites-1.10.7.jar")))
+    implementation(rfg.deobf(files("libs/SRParasites-1.10.9.jar")))
     implementation(rfg.deobf(files("libs/xaerominimap-forge-1.12.2-26.4.2.jar")))
     implementation(rfg.deobf(files("libs/xaeroworldmap-forge-1.12.2-1.45.0.jar")))
     
     // Остальные локальные моды (если для них тоже нужны миксины/деобфускация, оберни в rfg.deobf)
-    // compileOnly(files("libs/aquaacrobatics.jar"))
-    //compileOnly(files("libs/Simplest-noshade.jar"))
+    // Simple Voice Chat API & Mod for compilation
+    compileOnly(files("modpack/mods/voicechat-forge-1.12.2-2.6.20.jar"))
+    compileOnly(files("modpack/mods/Locks-1.12.2-3.0.0.jar"))
 
     // --- MIXIN BOOTER ---
-    val mixinBooter = modUtils.enableMixins("zone.rong:mixinbooter:8.6", "efw.mixins.refmap.json")
+    val mixinBooter = modUtils.enableMixins("zone.rong:mixinbooter:10.7", "efw.mixins.refmap.json")
     implementation(mixinBooter)
     
     compileOnly("org.spongepowered:mixin:0.8.5:processor")
