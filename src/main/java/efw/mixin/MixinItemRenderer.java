@@ -105,12 +105,10 @@ public class MixinItemRenderer {
 
     @Inject(method = "updateEquippedItem", at = @At("RETURN"))
     private void onUpdateEquippedItemReturn(CallbackInfo ci) {
-        if (com.voltyx.mwccf.render.doll.DollRenderer.isDollActive()) {
-            this.equippedProgressMainHand = 0.0F;
-            this.prevEquippedProgressMainHand = 0.0F;
-            this.equippedProgressOffHand = 0.0F;
-            this.prevEquippedProgressOffHand = 0.0F;
-        }
+        if (Float.isNaN(this.equippedProgressMainHand)) this.equippedProgressMainHand = 0.0F;
+        if (Float.isNaN(this.prevEquippedProgressMainHand)) this.prevEquippedProgressMainHand = 0.0F;
+        if (Float.isNaN(this.equippedProgressOffHand)) this.equippedProgressOffHand = 0.0F;
+        if (Float.isNaN(this.prevEquippedProgressOffHand)) this.prevEquippedProgressOffHand = 0.0F;
     }
 
     private static boolean isSameFireWeapon(ItemStack oldStack, ItemStack newStack) {

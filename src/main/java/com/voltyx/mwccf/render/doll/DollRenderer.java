@@ -60,6 +60,9 @@ public class DollRenderer {
     private static boolean isHiding   = false;
     private static boolean hintShown  = false;
 
+    /** Tracks the last known player entity ID so we detect respawns (entity changes) reliably. */
+    private static int lastKnownEntityId = -1;
+
     // === Физика инерции (sway / inertia) ===
     private static float lastYaw       = 0f;
     private static float lastPitch     = 0f;
@@ -98,7 +101,23 @@ public class DollRenderer {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.world == null) {
+            lastKnownEntityId = -1;
+            return;
+        }
+
+        // Detect player entity change (respawn creates a new entity with a new ID)
+        int currentEntityId = mc.player.getEntityId();
+        if (lastKnownEntityId != -1 && lastKnownEntityId != currentEntityId) {
+            resetClientState();
+        }
+        lastKnownEntityId = currentEntityId;
+
+        // Reset all doll state immediately on player death
+        if (mc.player.isDead || mc.player.getHealth() <= 0.0f) {
+            resetClientState();
+            return;
+        }
 
         boolean holdingDoll = isDollHeldByPlayer(mc.player) && !isLyingOrCrawling(mc.player);
         prevShowProgress  = showProgress;
@@ -218,11 +237,7 @@ public class DollRenderer {
             walkBob = 0f; // В idle дыхание полностью выключено — кукла спокойна и не дергается
         }
 
-        // Пока кукла активна, сбрасываем прогресс рук ваниллы на ноль,
-        // чтобы при окончании убирания рука плавно поднялась снизу
-        if (isDollActive()) {
-            resetItemRendererProgress(mc);
-        }
+
     }
 
     public static boolean isLyingOrCrawling(EntityPlayer player) {
@@ -248,38 +263,83 @@ public class DollRenderer {
         return isDollHeld || showProgress > 0f;
     }
 
+    /** True only while the doll is actively held (not during the fade-out/hide phase). */
+    public static boolean isDollHeld() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && isLyingOrCrawling(mc.player)) {
+            return false;
+        }
+        return isDollHeld;
+    }
+
     public static boolean isHiding() {
         return isHiding;
     }
 
-    private static java.lang.reflect.Field fieldEquippedProgressMain = null;
-    private static java.lang.reflect.Field fieldPrevEquippedProgressMain = null;
-    private static java.lang.reflect.Field fieldEquippedProgressOff = null;
-    private static java.lang.reflect.Field fieldPrevEquippedProgressOff = null;
-    private static boolean reflectionInitDone = false;
+    public static void resetSway() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null) {
+            lastYaw = mc.player.rotationYaw;
+            lastPitch = mc.player.rotationPitch;
+        }
+        swayYaw = 0f;
+        prevSwayYaw = 0f;
+        swayPitch = 0f;
+        prevSwayPitch = 0f;
+        swayY = 0f;
+        prevSwayY = 0f;
+        swayYawVel = 0f;
+        swayPitchVel = 0f;
+        swayYVel = 0f;
+    }
 
-    private static void resetItemRendererProgress(Minecraft mc) {
+    /** Resets all client-side doll render state (call on death, respawn, or world change). */
+    public static void resetClientState() {
+        isDollHeld    = false;
+        isHiding      = false;
+        showProgress  = 0f;
+        prevShowProgress = 0f;
+        animTime      = 0f;
+        prevAnimTime  = 0f;
+        hideAnimTime  = 0f;
+        prevHideAnimTime = 0f;
+        settleTime    = 0f;
+        prevSettleTime = 0f;
+        swayYaw = 0f; prevSwayYaw = 0f;
+        swayPitch = 0f; prevSwayPitch = 0f;
+        swayY = 0f; prevSwayY = 0f;
+        swayYawVel = 0f; swayPitchVel = 0f; swayYVel = 0f;
+        walkBob = 0f;
+
+        // Reset camera and renderer singletons so nothing lingers across worlds or death
         try {
-            net.minecraft.client.renderer.ItemRenderer ir = mc.getItemRenderer();
-            if (ir == null) return;
-            if (!reflectionInitDone) {
-                reflectionInitDone = true;
-                String[] mainNames = {"equippedProgressMainHand", "field_187469_f", "f"};
-                String[] prevMainNames = {"prevEquippedProgressMainHand", "field_187470_g", "g"};
-                String[] offNames = {"equippedProgressOffHand", "field_187471_h", "h"};
-                String[] prevOffNames = {"prevEquippedProgressOffHand", "field_187472_i", "i"};
-                for (java.lang.reflect.Field f : net.minecraft.client.renderer.ItemRenderer.class.getDeclaredFields()) {
-                    for (String name : mainNames) if (f.getName().equals(name)) { f.setAccessible(true); fieldEquippedProgressMain = f; break; }
-                    for (String name : prevMainNames) if (f.getName().equals(name)) { f.setAccessible(true); fieldPrevEquippedProgressMain = f; break; }
-                    for (String name : offNames) if (f.getName().equals(name)) { f.setAccessible(true); fieldEquippedProgressOff = f; break; }
-                    for (String name : prevOffNames) if (f.getName().equals(name)) { f.setAccessible(true); fieldPrevEquippedProgressOff = f; break; }
-                }
-            }
-            if (fieldEquippedProgressMain != null) fieldEquippedProgressMain.setFloat(ir, 0.0f);
-            if (fieldPrevEquippedProgressMain != null) fieldPrevEquippedProgressMain.setFloat(ir, 0.0f);
-            if (fieldEquippedProgressOff != null) fieldEquippedProgressOff.setFloat(ir, 0.0f);
-            if (fieldPrevEquippedProgressOff != null) fieldPrevEquippedProgressOff.setFloat(ir, 0.0f);
+            com.teamderpy.shouldersurfing.client.CameraEntityRenderer.getInstance().reset();
+            com.teamderpy.shouldersurfing.client.FirstPersonFadeManager.getInstance().reset();
+            efw.util.ShoulderSurfingCompat.resetDollCamera();
+            efw.util.MWCLoweringResetHelper.resetLoweringState();
         } catch (Throwable ignored) {}
+    }
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent event) {
+        // Fires on client side too in single player — reset so static state never lingers
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && event.player != null
+                && event.player.getUniqueID().equals(mc.player.getUniqueID())) {
+            resetClientState();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onClientDisconnect(net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+        resetClientState();
+    }
+
+    @SubscribeEvent
+    public static void onWorldUnload(net.minecraftforge.event.world.WorldEvent.Unload event) {
+        if (event.getWorld() != null && event.getWorld().isRemote) {
+            resetClientState();
+        }
     }
 
     public static boolean isDoll(ItemStack stack) {
@@ -337,15 +397,16 @@ public class DollRenderer {
         // отменяем стандартную руку и дорисовываем плавный уход куклы до самого конца!
         if (progress > 0f) {
             event.setCanceled(true);
-            float darkAlpha = com.voltyx.mwccf.doll.SayaDollManager.getDarknessAlpha();
-            if (darkAlpha > 0.001f) {
-                com.voltyx.mwccf.geo.VisualEffectsHandler.renderDollActivationDarkness(darkAlpha);
-            }
-            com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(mc.player);
             try {
-                renderDoll(mc, progress);
-            } finally {
-                com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
+                com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(mc.player);
+                try {
+                    renderDoll(mc, progress);
+                } finally {
+                    com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
+                }
+            } catch (Throwable t) {
+                event.setCanceled(false);
+                resetClientState();
             }
         }
     }
@@ -425,66 +486,68 @@ public class DollRenderer {
         float slideY = -(1f - p) * DollSettings.slideDist;
 
         GlStateManager.pushMatrix();
-
-        // Позиция в camera-space
-        GlStateManager.translate(DollSettings.posX, slideY + DollSettings.posY, DollSettings.posZ);
-
-        // Вращение
-        GlStateManager.rotate(DollSettings.rotY, 0f, 1f, 0f);
-        GlStateManager.rotate(DollSettings.rotX, 1f, 0f, 0f);
-        GlStateManager.rotate(DollSettings.rotZ, 0f, 0f, 1f);
-
-        // Инвертируем Y для camera-space
-        GlStateManager.scale(DollSettings.scale, -DollSettings.scale, DollSettings.scale);
-
-        // Текстура
-        mc.getTextureManager().bindTexture(TEX_LOC);
-        GlStateManager.color(1f, 1f, 1f, DollSettings.alpha);
-
-        DollSettings.applyGLBlend();
-        GlStateManager.disableCull();
-        org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CW);
-
-        // Сохраняем исходные координаты лайтмапы
         float prevBrightnessX = OpenGlHelper.lastBrightnessX;
         float prevBrightnessY = OpenGlHelper.lastBrightnessY;
+        boolean worldLighting = DollSettings.worldLighting;
 
-        // Освещение (настоящее динамическое освещение мира или full-bright)
-        if (DollSettings.worldLighting) {
-            BlockPos eyePos = new BlockPos(mc.player.posX, mc.player.posY + mc.player.getEyeHeight(), mc.player.posZ);
-            int light = mc.world.getCombinedLight(eyePos, 0);
-            int lx = light % 65536;
-            int ly = light / 65536;
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) lx, (float) ly);
+        try {
+            // Позиция в camera-space
+            GlStateManager.translate(DollSettings.posX, slideY + DollSettings.posY, DollSettings.posZ);
 
-            RenderHelper.enableStandardItemLighting();
-            GlStateManager.enableLighting();
-            GlStateManager.enableRescaleNormal();
-        } else {
+            // Вращение
+            GlStateManager.rotate(DollSettings.rotY, 0f, 1f, 0f);
+            GlStateManager.rotate(DollSettings.rotX, 1f, 0f, 0f);
+            GlStateManager.rotate(DollSettings.rotZ, 0f, 0f, 1f);
+
+            // Инвертируем Y для camera-space
+            GlStateManager.scale(DollSettings.scale, -DollSettings.scale, DollSettings.scale);
+
+            // Текстура
+            mc.getTextureManager().bindTexture(TEX_LOC);
+            GlStateManager.color(1f, 1f, 1f, DollSettings.alpha);
+
+            DollSettings.applyGLBlend();
+            GlStateManager.disableCull();
+            org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CW);
+
+            // Освещение (настоящее динамическое освещение мира или full-bright)
+            if (worldLighting) {
+                BlockPos eyePos = new BlockPos(mc.player.posX, mc.player.posY + mc.player.getEyeHeight(), mc.player.posZ);
+                int light = mc.world.getCombinedLight(eyePos, 0);
+                int lx = light % 65536;
+                int ly = light / 65536;
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) lx, (float) ly);
+
+                RenderHelper.enableStandardItemLighting();
+                GlStateManager.enableLighting();
+                GlStateManager.enableRescaleNormal();
+            } else {
+                GlStateManager.disableLighting();
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+            }
+
+            // Рендер
+            m.render(RENDER_SCALE);
+        } catch (Throwable t) {
+            // Suppress rendering exception so GL state cleanup runs
+        } finally {
+            if (worldLighting) {
+                RenderHelper.disableStandardItemLighting();
+                GlStateManager.disableRescaleNormal();
+            }
             GlStateManager.disableLighting();
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+
+            // Восстанавливаем лайтмап координаты
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightnessX, prevBrightnessY);
+
+            org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CCW);
+            GlStateManager.enableCull();
+            GlStateManager.popMatrix();
+
+            // Восстанавливаем нейтральные параметры для последующих элементов рендера
+            GlStateManager.color(1f, 1f, 1f, 1f);
+            GlStateManager.disableBlend();
         }
-
-        // Рендер
-        m.render(RENDER_SCALE);
-
-        // Гарантированно выключаем standard item lighting, иначе весь мир и экран чернеют
-        if (DollSettings.worldLighting) {
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableRescaleNormal();
-        }
-        GlStateManager.disableLighting();
-
-        // Восстанавливаем лайтмап координаты
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightnessX, prevBrightnessY);
-
-        org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CCW);
-        GlStateManager.enableCull();
-        GlStateManager.popMatrix();
-
-        // Восстанавливаем нейтральные параметры для последующих элементов рендера
-        GlStateManager.color(1f, 1f, 1f, 1f);
-        GlStateManager.disableBlend();
     }
 
     // =========================================================

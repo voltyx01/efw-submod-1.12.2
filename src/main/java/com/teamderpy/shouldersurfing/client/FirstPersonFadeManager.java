@@ -77,12 +77,16 @@ public class FirstPersonFadeManager {
     }
 
     public void postRenderHand() {
-        if (this.isRenderingFirstPersonHand) {
-            this.isRenderingFirstPersonHand = false;
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            GlStateManager.disableBlend();
-            GlStateManager.alphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
-            GlStateManager.depthMask(true);
-        }
+        this.isRenderingFirstPersonHand = false;
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.disableBlend();
+        GlStateManager.alphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
+        GlStateManager.depthMask(true);
+    }
+
+    public void reset() {
+        this.isRenderingFirstPersonHand = false;
+        this.fadeStartTime = -1L;
+        this.currentFadeAlpha = 1.0F;
     }
 }

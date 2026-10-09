@@ -25,6 +25,14 @@ public class MixinWeaponRenderer {
     @Unique
     private static final Map<EntityLivingBase, Transition<?>> lastPlayed = new WeakHashMap<>();
 
+    @Inject(method = "updateLoweringProgress", at = @At("HEAD"), remap = false, require = 0)
+    private static void onUpdateLoweringProgress(CallbackInfo ci) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+        if (mc == null || mc.player == null || mc.player.isDead || mc.player.getHealth() <= 0.0f) {
+            efw.util.MWCLoweringResetHelper.resetLoweringState();
+        }
+    }
+
     @Inject(method = {"renderPositioning"}, at = {@At("HEAD")}, remap = false, require = 0)
     private void onRenderPositioning(long transitionStart, long duration, long pause, List<Transition<?>> transitions, Object part, EntityLivingBase entity, ItemStack itemStack, CallbackInfo ci) {
         processSound(entity, transitions);

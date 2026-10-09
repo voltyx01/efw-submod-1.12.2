@@ -316,7 +316,7 @@ public final class SpeechClientManager {
     }
 
     public static void startPersonalFadeOut() {
-        if (activePersonal != null) {
+        if (activePersonal != null && !personalFadingOut) {
             personalFadingOut = true;
             activePersonal.revealedCodePoints = activePersonal.codePoints.length;
             long now = System.currentTimeMillis();

@@ -238,6 +238,9 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 	@SubscribeEvent
 	public void onTextureStitch(net.minecraftforge.client.event.TextureStitchEvent.Post event) {
 		ItemLoadingScreenRenderer.warmupAll();
+		try {
+			com.voltyx.mwccf.render.doll.DollRenderer.getModel();
+		} catch (Throwable ignored) {}
 		enableStencilEarly();
 	}
 

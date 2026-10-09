@@ -44,13 +44,15 @@ public class MixinRenderPlayer {
         if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) {
             return;
         }
-        if (entity == Minecraft.getMinecraft().player && ShoulderInstance.getInstance().doShoulderSurfing()) {
+        if (entity == Minecraft.getMinecraft().player) {
             CameraEntityRenderer.getInstance().postRenderCameraEntity(entity, partialTicks);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            GlStateManager.disableBlend();
-            GlStateManager.alphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
-            GlStateManager.depthMask(true);
-            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+            if (ShoulderInstance.getInstance().doShoulderSurfing()) {
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                GlStateManager.disableBlend();
+                GlStateManager.alphaFunc(org.lwjgl.opengl.GL11.GL_GREATER, 0.1F);
+                GlStateManager.depthMask(true);
+                GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+            }
         }
     }
 

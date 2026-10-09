@@ -101,6 +101,10 @@ public class SayaDollManager {
     // Client-side debounce to prevent re-triggering activation while already starting
     private static long clientLastActivateAttempt = 0L;
 
+    /** Tracks player entity ID to detect respawns on the client side. */
+    @SideOnly(Side.CLIENT)
+    private static int lastKnownClientEntityId = -1;
+
     public static boolean isReady(EntityPlayer player) {
         if (player == null) return false;
         if (isActivating(player) || isBuffActive(player)) return false;
@@ -183,12 +187,16 @@ public class SayaDollManager {
         if (!player.world.isRemote) {
             // Lock hotbar slot on server during activation to prevent item switching
             if (isActivating(player)) {
-                Integer locked = activationDollSlots.computeIfAbsent(id, k -> player.inventory.currentItem);
-                if (locked != null && locked >= 0 && locked < 9) {
-                    if (player.inventory.currentItem != locked) {
-                        player.inventory.currentItem = locked;
-                        if (player instanceof EntityPlayerMP) {
-                            ((EntityPlayerMP) player).connection.sendPacket(new SPacketHeldItemChange(locked));
+                Integer act = activationTicks.get(id);
+                // Do not lock slot during the last 4 ticks to prevent packet bouncing when client puts doll away
+                if (act != null && act > 4) {
+                    Integer locked = activationDollSlots.computeIfAbsent(id, k -> player.inventory.currentItem);
+                    if (locked != null && locked >= 0 && locked < 9) {
+                        if (player.inventory.currentItem != locked) {
+                            player.inventory.currentItem = locked;
+                            if (player instanceof EntityPlayerMP) {
+                                ((EntityPlayerMP) player).connection.sendPacket(new SPacketHeldItemChange(locked));
+                            }
                         }
                     }
                 }
@@ -244,7 +252,10 @@ public class SayaDollManager {
     @SideOnly(Side.CLIENT)
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player == null) return;
+        if (mc.player == null) {
+            lastKnownClientEntityId = -1;
+            return;
+        }
 
         // In START phase, consume hotbar inputs to prevent switching during activation
         if (event.phase == TickEvent.Phase.START) {
@@ -259,6 +270,26 @@ public class SayaDollManager {
             return;
         }
 
+        // END phase: update timers and visuals
+
+        // Detect player entity change (respawn) — clear all state immediately
+        int currentEntityId = mc.player.getEntityId();
+        if (lastKnownClientEntityId != -1 && lastKnownClientEntityId != currentEntityId) {
+            clientActivationRemainingTicks = 0;
+            clientLockedDollSlot = -1;
+            clientBuffRemainingTicks = 0;
+            clientSpeechTriggered = false;
+            targetDarknessAlpha = 0.0f;
+            darknessAlpha = 0.0f;
+            targetHudFadeAlpha = 1.0f;
+            hudFadeAlpha = 1.0f;
+            efw.util.ShoulderSurfingCompat.resetDollCamera();
+            com.voltyx.mwccf.speech.client.SpeechClientManager.clearPersonal();
+            com.voltyx.mwccf.render.doll.DollRenderer.resetClientState();
+            efw.util.MWCLoweringResetHelper.resetLoweringState();
+        }
+        lastKnownClientEntityId = currentEntityId;
+
         // Reset immediately if player died
         if (mc.player.isDead || mc.player.getHealth() <= 0.0f) {
             clientActivationRemainingTicks = 0;
@@ -269,7 +300,10 @@ public class SayaDollManager {
             darknessAlpha = 0.0f;
             targetHudFadeAlpha = 1.0f;
             hudFadeAlpha = 1.0f;
+            efw.util.ShoulderSurfingCompat.resetDollCamera();
             com.voltyx.mwccf.speech.client.SpeechClientManager.clearPersonal();
+            com.voltyx.mwccf.render.doll.DollRenderer.resetClientState();
+            efw.util.MWCLoweringResetHelper.resetLoweringState();
             return;
         }
 
@@ -431,6 +465,9 @@ public class SayaDollManager {
             // Spike BPM immediately
             HeartbeatManager.currentBPM = 180f;
             HeartbeatManager.displayBPM = 180;
+
+            // Switch to first-person cleanly if ShoulderSurfing is active
+            efw.util.ShoulderSurfingCompat.switchForDoll();
 
             // Play activate sound locally with maximum volume and no distance attenuation
             if (EfwModSounds.DOLL_ACTIVATE != null) {
@@ -600,6 +637,8 @@ public class SayaDollManager {
         if (player.world.isRemote) {
             clientLockedDollSlot = -1;
             com.voltyx.mwccf.speech.client.SpeechClientManager.startPersonalFadeOut();
+            // Restore shoulder-surfing perspective that was saved when doll activated
+            efw.util.ShoulderSurfingCompat.resetDollCamera();
             Minecraft mc = Minecraft.getMinecraft();
             if (player == mc.player && mc.player.connection != null) {
                 mc.player.connection.sendPacket(new CPacketHeldItemChange(targetSlot));
@@ -694,6 +733,11 @@ public class SayaDollManager {
             if (!dead.world.isRemote && dead instanceof EntityPlayerMP) {
                 MwccfMod.PACKET_HANDLER.sendTo(new PacketDollBuffSync(dead.getEntityId(), 0), (EntityPlayerMP) dead);
             }
+            if (dead.world.isRemote || (Minecraft.getMinecraft().player != null && dead.getUniqueID().equals(Minecraft.getMinecraft().player.getUniqueID()))) {
+                efw.util.MWCLoweringResetHelper.resetLoweringState();
+                efw.util.ShoulderSurfingCompat.resetDollCamera();
+                com.voltyx.mwccf.render.doll.DollRenderer.resetClientState();
+            }
         }
 
         // 2. Kill extensions for attacker
@@ -729,6 +773,18 @@ public class SayaDollManager {
         }
     }
 
+    @SubscribeEvent
+    public static void onClientDisconnect(net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+        clear(null);
+    }
+
+    @SubscribeEvent
+    public static void onWorldUnload(net.minecraftforge.event.world.WorldEvent.Unload event) {
+        if (event.getWorld() != null && event.getWorld().isRemote) {
+            clear(null);
+        }
+    }
+
     /**
      * Clears all state on player death / respawn / disconnect.
      */
@@ -758,6 +814,10 @@ public class SayaDollManager {
             targetHudFadeAlpha = 1.0f;
             hudFadeAlpha = 1.0f;
             com.voltyx.mwccf.speech.client.SpeechClientManager.clearPersonal();
+            // Also reset doll renderer so isDollHeld doesn't linger after death
+            efw.util.ShoulderSurfingCompat.resetDollCamera();
+            com.voltyx.mwccf.render.doll.DollRenderer.resetClientState();
+            efw.util.MWCLoweringResetHelper.resetLoweringState();
         }
     }
 }

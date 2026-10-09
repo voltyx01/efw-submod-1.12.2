@@ -178,20 +178,32 @@ public class VisualEffectsHandler {
 
         // Рендер потемнения куклы и скрытие интерфейса
         float dollDarkAlpha = com.voltyx.mwccf.doll.SayaDollManager.getDarknessAlpha();
-        if (dollDarkAlpha > 0.001f) {
-            boolean thirdPerson = mc.gameSettings.thirdPersonView != 0;
-            boolean dollFinished = !com.voltyx.mwccf.render.doll.DollRenderer.isDollActive();
-            if (thirdPerson || dollFinished) {
+        boolean isActivating = mc.player != null && com.voltyx.mwccf.doll.SayaDollManager.isActivating(mc.player);
+        boolean isDollActive = com.voltyx.mwccf.render.doll.DollRenderer.isDollActive();
+        boolean inDollSequence = isActivating || isDollActive || dollDarkAlpha > 0.01f;
+
+        if (inDollSequence) {
+            if (dollDarkAlpha > 0.001f) {
                 renderDollActivationDarkness(dollDarkAlpha);
             }
 
-            if (com.voltyx.mwccf.doll.SayaDollManager.isActivating(mc.player)) {
-                // Полностью отменяем весь игровой интерфейс во время фазы удержания куклы
-                event.setCanceled(true);
+            // Полностью скрываем весь игровой интерфейс на протяжении ВСЕЙ фазы куклы и затухания темноты
+            event.setCanceled(true);
 
-                // И отображаем только персональную реплику куклы ("Прости.")
-                com.voltyx.mwccf.speech.client.SpeechClientEvents.renderPersonalReplica(res, mc);
-            }
+            // И отображаем только персональную реплику куклы ("Прости.")
+            com.voltyx.mwccf.speech.client.SpeechClientEvents.renderPersonalReplica(res, mc);
+        }
+    }
+
+    /**
+     * Предотвращает резкий зум FOV при замедлении (slowness IV) во время активации куклы.
+     */
+    @SubscribeEvent
+    public void onFOVUpdate(net.minecraftforge.client.event.FOVUpdateEvent event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && (com.voltyx.mwccf.doll.SayaDollManager.isActivating(mc.player)
+                || com.voltyx.mwccf.render.doll.DollRenderer.isDollActive())) {
+            event.setNewfov(1.0F);
         }
     }
 
@@ -217,14 +229,17 @@ public class VisualEffectsHandler {
         GlStateManager.loadIdentity();
         GlStateManager.translate(0.0F, 0.0F, -2000.0F);
 
-        renderVignette(res, Math.min(1.0f, alpha * 1.15f));
-        renderBlackout(res, Math.min(0.92f, alpha * 0.92f));
-
-        GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_PROJECTION);
-        GlStateManager.popMatrix();
-        GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_MODELVIEW);
-        GlStateManager.popMatrix();
-        GlStateManager.popMatrix();
+        try {
+            renderVignette(res, Math.min(1.0f, alpha * 1.15f));
+            renderBlackout(res, Math.min(0.92f, alpha * 0.92f));
+        } catch (Throwable ignored) {
+        } finally {
+            GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_PROJECTION);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_MODELVIEW);
+            GlStateManager.popMatrix();
+            GlStateManager.popMatrix();
+        }
     }
 
     /**

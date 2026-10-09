@@ -42,6 +42,8 @@ public class BloodTextureManager {
 
     // Cache: "resource_string#stage" -> DynamicTexture ResourceLocation
     private static final Map<String, ResourceLocation> CACHE = new ConcurrentHashMap<>();
+    // In-memory cache for base textures so ImageIO / GL11.glGetTexImage only run once
+    private static final Map<ResourceLocation, BufferedImage> BASE_IMAGE_CACHE = new ConcurrentHashMap<>();
 
     public static void setRenderingPlayer(EntityPlayer player) {
         currentRenderingPlayer = player;
@@ -61,6 +63,7 @@ public class BloodTextureManager {
 
     public static void clearCache() {
         CACHE.clear();
+        BASE_IMAGE_CACHE.clear();
     }
 
     /**
@@ -122,10 +125,10 @@ public class BloodTextureManager {
         // Vanilla armor: textures/models/armor/...
         if (path.startsWith("textures/models/armor/")) return true;
 
-        // Modded player armor & clothing textures (Survival Instinct, GeoArmor, Geckolib, sleeves, vests, backpacks, doll)
+        // Modded player armor & clothing textures (Survival Instinct, GeoArmor, Geckolib, sleeves, vests, backpacks)
         if (path.contains("armor") || path.contains("vest") || path.contains("helmet")
                 || path.contains("suit") || path.contains("cloth") || path.contains("sleeve")
-                || path.contains("geo/") || path.contains("backpack") || path.contains("doll")) {
+                || path.contains("geo/") || path.contains("backpack")) {
             return true;
         }
 
@@ -160,6 +163,11 @@ public class BloodTextureManager {
     }
 
     private static BufferedImage loadBaseImage(ResourceLocation res) {
+        BufferedImage cached = BASE_IMAGE_CACHE.get(res);
+        if (cached != null) {
+            return toArgb(cached);
+        }
+
         // 1. Try reading via Minecraft ResourceManager
         try {
             IResource resource = Minecraft.getMinecraft().getResourceManager().getResource(res);
@@ -167,7 +175,9 @@ public class BloodTextureManager {
                 try (InputStream in = resource.getInputStream()) {
                     BufferedImage img = ImageIO.read(in);
                     if (img != null) {
-                        return toArgb(img);
+                        BufferedImage argb = toArgb(img);
+                        BASE_IMAGE_CACHE.put(res, argb);
+                        return argb;
                     }
                 }
             }
@@ -186,7 +196,9 @@ public class BloodTextureManager {
                 if (glId > 0) {
                     BufferedImage img = readImageFromGl(glId);
                     if (img != null) {
-                        return toArgb(img);
+                        BufferedImage argb = toArgb(img);
+                        BASE_IMAGE_CACHE.put(res, argb);
+                        return argb;
                     }
                 }
             }

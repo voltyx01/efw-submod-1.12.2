@@ -29,6 +29,7 @@ public class CameraEntityRenderer {
         }
 
         if (this.isCameraEntityRenderingSkipped(player)) {
+            this.isRenderingCameraEntity = false;
             return true; // Skip rendering
         }
 
@@ -97,16 +98,31 @@ public class CameraEntityRenderer {
     }
 
     public boolean isRenderingCameraEntity() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.gameSettings == null || mc.gameSettings.thirdPersonView == 0) {
+            this.isRenderingCameraEntity = false;
+            return false;
+        }
+        if (!ShoulderInstance.getInstance().doShoulderSurfing()) {
+            this.isRenderingCameraEntity = false;
+            return false;
+        }
         return this.isRenderingCameraEntity;
     }
 
     public float getCurrentAlphaOverride() {
-        if (this.isRenderingCameraEntity) {
-            return this.cameraEntityAlpha;
+        if (this.isRenderingCameraEntity()) {
+            return Math.max(0.001F, this.cameraEntityAlpha);
         }
-        if (FirstPersonFadeManager.getInstance().isRenderingFirstPersonHand()) {
-            return FirstPersonFadeManager.getInstance().getCurrentFadeAlpha();
+        FirstPersonFadeManager fade = FirstPersonFadeManager.getInstance();
+        if (fade.isRenderingFirstPersonHand() && fade.isFadingIn()) {
+            return Math.max(0.001F, fade.getCurrentFadeAlpha());
         }
         return 1.0F;
+    }
+
+    public void reset() {
+        this.isRenderingCameraEntity = false;
+        this.cameraEntityAlpha = 1.0F;
     }
 }

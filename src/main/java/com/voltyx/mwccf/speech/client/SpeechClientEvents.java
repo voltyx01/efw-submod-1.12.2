@@ -94,23 +94,27 @@ public class SpeechClientEvents {
     public void onRenderHotbar(RenderGameOverlayEvent.Post event) {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player != null && com.voltyx.mwccf.doll.SayaDollManager.isActivating(mc.player)) return;
+        if (mc.player != null && (com.voltyx.mwccf.doll.SayaDollManager.isActivating(mc.player)
+                || com.voltyx.mwccf.render.doll.DollRenderer.isDollActive()
+                || com.voltyx.mwccf.doll.SayaDollManager.getDarknessAlpha() > 0.01f)) return;
         renderPersonalReplica(new ScaledResolution(mc), mc);
     }
 
     public static void renderPersonalReplica(ScaledResolution resolution, Minecraft mc) {
         float replicaAlpha = SpeechClientManager.getPersonalAlpha();
+        if (replicaAlpha < 0.04F) return;
+
         boolean isProcedural = SpeechClientManager.isPersonalProcedural();
 
         // Gradient is ONLY displayed for procedural calls (like Saya's doll replica), never for normal chat
         float gradientAlpha = isProcedural ? replicaAlpha : 0.0F;
 
-        if (gradientAlpha > 0.005F && SpeechConfig.personalBottomGradient) {
+        if (gradientAlpha > 0.04F && SpeechConfig.personalBottomGradient) {
             renderBottomGradient(resolution, gradientAlpha);
         }
 
         SpeechClientManager.TypedLine line = SpeechClientManager.getPersonalLine();
-        if (line == null || line.getVisibleText().isEmpty() || replicaAlpha < 0.005F) return;
+        if (line == null || line.getVisibleText().isEmpty() || replicaAlpha < 0.04F) return;
 
         String visible = line.getVisibleText();
         String toRender = SpeechConfig.personalShowBrackets ? "[ " + visible + " ]" : visible;
@@ -118,7 +122,7 @@ public class SpeechClientEvents {
         int centerX = resolution.getScaledWidth() / 2 + Math.round(SpeechConfig.personalXOffset);
         int y = resolution.getScaledHeight() - 50 + Math.round(SpeechConfig.personalYOffset);
 
-        int a = Math.max(4, Math.min(255, (int) (replicaAlpha * 255.0F)));
+        int a = Math.max(8, Math.min(255, (int) (replicaAlpha * 255.0F)));
         int rgb = SpeechConfig.getPersonalTextColorRgb() & 0x00FFFFFF;
         int color = (a << 24) | rgb;
         int textX = centerX - textWidth / 2;
@@ -143,7 +147,7 @@ public class SpeechClientEvents {
     }
 
     public static void renderBottomGradient(ScaledResolution resolution, float alpha) {
-        if (alpha <= 0.001F) return;
+        if (alpha <= 0.04F) return;
         int width = resolution.getScaledWidth();
         int height = resolution.getScaledHeight();
         float topY = height * (2.0F / 3.0F); // 1/3 высоты экрана от нижнего края
