@@ -581,6 +581,10 @@ public class MwccfConfig {
     public static final DollSettings doll = new DollSettings();
 
     public static class DollSettings {
+        @Config.Name("enable_first_person_debug")
+        @Config.Comment("Enable in-game first person doll tweaker HUD (F8/INSERT or /doll hud). Off by default.")
+        public boolean enableFirstPersonDebug = false;
+
         @Config.Name("enable_debug_tweaker")
         @Config.Comment("Enable in-game doll position tweaker HUD (F7 or /doll body). Off by default.")
         public boolean enableDebugTweaker = false;

@@ -30,12 +30,36 @@ public class CommandDoll extends CommandBase {
         Minecraft mc = Minecraft.getMinecraft();
 
         if (args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("hud"))) {
+            if (!efw.biomeinfo.MwccfConfig.doll.enableFirstPersonDebug) {
+                DollSettings.debugHudEnabled = false;
+                sender.sendMessage(new TextComponentString(
+                    TextFormatting.RED + "[Doll] Дебаг-настройка от первого лица отключена в конфиге! Для включения: /doll hud on"));
+                return;
+            }
             DollSettings.debugHudEnabled = !DollSettings.debugHudEnabled;
             sender.sendMessage(new TextComponentString(
                 TextFormatting.GOLD + "[Doll] " +
                 (DollSettings.debugHudEnabled ? TextFormatting.GREEN + "HUD отладки ВКЛЮЧЕН (Навигация: стрелки, P для копирования)"
                                              : TextFormatting.RED + "HUD отладки ОТКЛЮЧЕН")));
             return;
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("hud")) {
+            String act = args[1].toLowerCase();
+            if (act.equals("on") || act.equals("enable")) {
+                efw.biomeinfo.MwccfConfig.doll.enableFirstPersonDebug = true;
+                DollSettings.debugHudEnabled = true;
+                net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "[Doll] Дебаг-настройка от первого лица ВКЛЮЧЕНА (F8/INSERT)."));
+                return;
+            }
+            if (act.equals("off") || act.equals("disable")) {
+                efw.biomeinfo.MwccfConfig.doll.enableFirstPersonDebug = false;
+                DollSettings.debugHudEnabled = false;
+                net.minecraftforge.common.config.ConfigManager.sync("mwccf", net.minecraftforge.common.config.Config.Type.INSTANCE);
+                sender.sendMessage(new TextComponentString(TextFormatting.RED + "[Doll] Дебаг-настройка от первого лица ВЫКЛЮЧЕНА."));
+                return;
+            }
         }
 
         String sub = args[0].toLowerCase();

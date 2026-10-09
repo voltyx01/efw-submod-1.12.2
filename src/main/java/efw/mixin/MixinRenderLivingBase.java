@@ -64,4 +64,9 @@ public abstract class MixinRenderLivingBase {
         }
         return this.layerRenderers;
     }
+
+    @Inject(method = "renderLayers(Lnet/minecraft/entity/EntityLivingBase;FFFFFFF)V", at = @At("RETURN"))
+    private void fireweapon$renderSmolderBurn(EntityLivingBase entity, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale, CallbackInfo ci) {
+        com.voltyx.mwccf.fireweapon.client.LayerSmolderingBurn.renderSmolder((RenderLivingBase<?>) (Object) this, entity, limbSwing, limbSwingAmount, partialTicks, ageInTicks, netHeadYaw, headPitch, scale);
+    }
 }

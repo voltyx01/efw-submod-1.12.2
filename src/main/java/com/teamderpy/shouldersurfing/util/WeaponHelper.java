@@ -12,18 +12,27 @@ import net.minecraft.item.ItemPotion;
 
 public class WeaponHelper {
 
+    /**
+     * Checks if the item stack is a Modern Warfare Cubed (MWC) firearm or grenade.
+     */
+    public static boolean isMwcWeapon(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        Object item = stack.getItem();
+        return item instanceof Weapon || item instanceof ItemGrenade;
+    }
+
     public static boolean isPlayerHoldingWeaponOrGrenade(EntityPlayer player) {
         if (player == null) return false;
 
         ItemStack heldStack = player.getHeldItemMainhand();
         if (heldStack.isEmpty()) return false;
 
-        Object item = heldStack.getItem();
-
         // 1. Проверка оружия и гранат из MWC (WeaponLib)
-        if (item instanceof Weapon || item instanceof ItemGrenade) {
+        if (isMwcWeapon(heldStack)) {
             return true;
         }
+
+        Object item = heldStack.getItem();
 
         // 2. Проверка ванильных дальнобойных предметов
         if (item instanceof ItemBow ||

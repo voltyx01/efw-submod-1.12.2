@@ -1,0 +1,13 @@
+{
+  "group": "mwccf",
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "mwccf:cloth" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "mwccf:tequila" }
+  ],
+  "result": {
+    "item": "mwccf:flaming_cloth",
+    "count": 1
+  }
+}

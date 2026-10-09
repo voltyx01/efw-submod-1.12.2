@@ -1,6 +1,7 @@
 package com.voltyx.mwccf.item;
 
 import com.voltyx.mwccf.potion.PotionAdrenalineEffect;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
@@ -74,7 +75,7 @@ public class ItemAdrenaline extends Item {
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-        tooltip.add(TextFormatting.GREEN + "Hold RMB for 1 second to use");
-        tooltip.add(TextFormatting.GRAY + "Grants immunity to some negative effects and boosts physical stats.");
+        tooltip.add(TextFormatting.GREEN + I18n.format("tooltip.mwccf.medical.hold_rmb", 1));
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.mwccf.medical.adrenaline_effect"));
     }
 }

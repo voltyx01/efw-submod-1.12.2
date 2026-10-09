@@ -86,6 +86,13 @@ public class SIItems {
     // --- 10. Ranged ---
     public static final Item NAILGUN = register(new ItemSINailgun("nailgun"));
 
+    // --- 11. Alcohol & Bottles ---
+    public static final Item EMPTY_BOTTLE = register(new Item().setRegistryName("mwccf", "empty_bottle").setTranslationKey("mwccf.empty_bottle").setMaxStackSize(64).setCreativeTab(CreativeTabs.MISC));
+    public static final Item BEER = register(new ItemSIAlcohol("beer", 0.3F, "tooltip.mwccf.beer_effect"));
+    public static final Item WINE = register(new ItemSIAlcohol("wine", 0.4F, "tooltip.mwccf.wine_effect"));
+    public static final Item WHISKEY = register(new ItemSIAlcohol("whiskey", 0.4F, "tooltip.mwccf.whiskey_effect"));
+    public static final Item TEQUILA = register(new ItemSIAlcohol("tequila", 0.4F, "tooltip.mwccf.tequila_effect"));
+
     private static Item createMaterial(String name, CreativeTabs tab) {
         Item item = new Item().setRegistryName("mwccf", name)
                 .setTranslationKey("mwccf." + name)

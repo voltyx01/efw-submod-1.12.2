@@ -59,6 +59,8 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 		MinecraftForge.EVENT_BUS.register(new efw.biomeinfo.BiomeInfoRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.dash.OverlayStamina());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.inspect.InspectTransitionHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.speech.client.SpeechClientEvents());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.speech.client.SpeechWorldRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.geo.XaeroGuiBlockerHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.client.ClientZoneRenderer());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.client.gui.GuiWeaponSlotOverlay());
@@ -68,6 +70,9 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new CommandDumpChests());
 		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new com.voltyx.mwccf.render.doll.CommandDoll());
+		net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new com.voltyx.mwccf.blood.CommandBloodMax());
+
+		MinecraftForge.EVENT_BUS.register(this);
 
 		registerBlinkingLayer();
 	}
@@ -276,6 +281,7 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 			entry.getValue().addLayer(new com.voltyx.mwccf.geo.DollBaubleLayer(entry.getValue(), entry.getKey()));
 		}
 		ItemLoadingScreenRenderer.warmupAll();
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.fireweapon.client.FireWeaponSparkManager());
 		if (net.minecraftforge.fml.common.Loader.isModLoaded("optifine")) {
 			ShoulderRenderer.getInstance().setShaderType(EnumShaderCompatibility.NEW);
 		}
@@ -293,6 +299,23 @@ public class ClientProxyMwccfMod implements IProxyMwccfMod {
 	@Override
 	public void stopGeneratorSound(com.voltyx.mwccf.furniture.tileentity.TileEntityElectricityGenerator generator) {
 		com.voltyx.mwccf.furniture.client.audio.GeneratorSoundManager.stopGenerator(generator);
+	}
+
+	@SubscribeEvent
+	public void onPlaySound(net.minecraftforge.client.event.sound.PlaySoundEvent event) {
+		if (Minecraft.getMinecraft().player != null && com.dhanantry.scapeandrunparasites.util.config.SRPConfig.musicTrue) {
+			net.minecraft.client.audio.ISound sound = event.getSound();
+			if (sound != null && sound.getCategory() == net.minecraft.util.SoundCategory.MUSIC) {
+				net.minecraft.util.ResourceLocation loc = sound.getSoundLocation();
+				if (loc != null) {
+					if (!"srparasites".equals(loc.getNamespace())) {
+						event.setResultSound(null);
+					} else {
+						com.voltyx.mwccf.srp.SRPMusicTracker.setPlayingSrpMusic(sound);
+					}
+				}
+			}
+		}
 	}
 
 }

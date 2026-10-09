@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "  #",
+    " /o",
+    "/  "
+  ],
+  "key": {
+    "#": {
+      "item": "mwccf:broken_bottle_sword"
+    },
+    "/": {
+      "item": "minecraft:stick"
+    },
+    "o": {
+      "item": "mwccf:piece_of_cloth"
+    }
+  },
+  "result": {
+    "item": "mwccf:lance_with_broken_bottle",
+    "count": 1
+  }
+}

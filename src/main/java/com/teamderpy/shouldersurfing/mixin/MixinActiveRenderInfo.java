@@ -25,6 +25,7 @@ public class MixinActiveRenderInfo {
 
     @Inject(method = "updateRenderInfo(Lnet/minecraft/entity/Entity;Z)V", at = @At("RETURN"), remap = false)
     private static void onUpdateRenderInfo(Entity entity, boolean p_74583_1_, CallbackInfo ci) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering() || efw.util.SubpassRenderState.isMirrorRendering) return;
         if (ShoulderInstance.getInstance().doShoulderSurfing()) {
             ShoulderRenderer renderer = ShoulderRenderer.getInstance();
 

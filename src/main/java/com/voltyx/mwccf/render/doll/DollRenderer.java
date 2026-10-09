@@ -152,6 +152,7 @@ public class DollRenderer {
                     if (efw.init.EfwModSounds.DOLL_DOWN != null) {
                         mc.player.playSound(efw.init.EfwModSounds.DOLL_DOWN, 0.9F, 1.0F);
                     }
+                    com.voltyx.mwccf.speech.client.SpeechClientManager.startPersonalFadeOut();
                 }
                 isDollHeld = false;
                 isHiding   = true;
@@ -247,6 +248,10 @@ public class DollRenderer {
         return isDollHeld || showProgress > 0f;
     }
 
+    public static boolean isHiding() {
+        return isHiding;
+    }
+
     private static java.lang.reflect.Field fieldEquippedProgressMain = null;
     private static java.lang.reflect.Field fieldPrevEquippedProgressMain = null;
     private static java.lang.reflect.Field fieldEquippedProgressOff = null;
@@ -332,6 +337,10 @@ public class DollRenderer {
         // отменяем стандартную руку и дорисовываем плавный уход куклы до самого конца!
         if (progress > 0f) {
             event.setCanceled(true);
+            float darkAlpha = com.voltyx.mwccf.doll.SayaDollManager.getDarknessAlpha();
+            if (darkAlpha > 0.001f) {
+                com.voltyx.mwccf.geo.VisualEffectsHandler.renderDollActivationDarkness(darkAlpha);
+            }
             com.voltyx.mwccf.blood.BloodTextureManager.setRenderingPlayer(mc.player);
             try {
                 renderDoll(mc, progress);
@@ -493,6 +502,12 @@ public class DollRenderer {
 
         // F8 или INSERT - переключение HUD отладки
         if (key == Keyboard.KEY_F8 || key == Keyboard.KEY_INSERT) {
+            if (!efw.biomeinfo.MwccfConfig.doll.enableFirstPersonDebug) {
+                DollSettings.debugHudEnabled = false;
+                mc.player.sendStatusMessage(new TextComponentString(
+                    TextFormatting.RED + "[Doll Debug] Дебаг-настройка от первого лица отключена в конфиге!"), true);
+                return;
+            }
             DollSettings.debugHudEnabled = !DollSettings.debugHudEnabled;
             mc.player.sendStatusMessage(new TextComponentString(
                 TextFormatting.GOLD + "[Doll Debug] " +
@@ -501,7 +516,7 @@ public class DollRenderer {
             return;
         }
 
-        if (!DollSettings.debugHudEnabled) return;
+        if (!DollSettings.debugHudEnabled || !efw.biomeinfo.MwccfConfig.doll.enableFirstPersonDebug) return;
 
         boolean isShift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
         boolean isCtrlOrAlt = Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)
@@ -566,7 +581,7 @@ public class DollRenderer {
     @SubscribeEvent
     public static void onRenderOverlay(RenderGameOverlayEvent.Post event) {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
-        if (!DollSettings.debugHudEnabled) return;
+        if (!DollSettings.debugHudEnabled || !efw.biomeinfo.MwccfConfig.doll.enableFirstPersonDebug) return;
 
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.player == null || mc.world == null) return;

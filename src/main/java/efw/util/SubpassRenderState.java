@@ -19,6 +19,8 @@ public class SubpassRenderState {
     private static Field fogColorRedField = null;
     private static Field fogColorGreenField = null;
     private static Field fogColorBlueField = null;
+    private static Field fogColor1Field = null;
+    private static Field fogColor2Field = null;
     private static Field lightmapUpdateNeededField = null;
 
     private static Field positionField = null;
@@ -56,6 +58,26 @@ public class SubpassRenderState {
             try {
                 fogColorBlueField = EntityRenderer.class.getDeclaredField("fogColorBlue");
                 fogColorBlueField.setAccessible(true);
+            } catch (Throwable ignored) {}
+        }
+
+        try {
+            fogColor1Field = EntityRenderer.class.getDeclaredField("field_78539_ae");
+            fogColor1Field.setAccessible(true);
+        } catch (Throwable e) {
+            try {
+                fogColor1Field = EntityRenderer.class.getDeclaredField("fogColor1");
+                fogColor1Field.setAccessible(true);
+            } catch (Throwable ignored) {}
+        }
+
+        try {
+            fogColor2Field = EntityRenderer.class.getDeclaredField("field_78535_ad");
+            fogColor2Field.setAccessible(true);
+        } catch (Throwable e) {
+            try {
+                fogColor2Field = EntityRenderer.class.getDeclaredField("fogColor2");
+                fogColor2Field.setAccessible(true);
             } catch (Throwable ignored) {}
         }
 
@@ -133,6 +155,8 @@ public class SubpassRenderState {
     private float savedFogRed;
     private float savedFogGreen;
     private float savedFogBlue;
+    private float savedFog1;
+    private float savedFog2;
     private boolean prevFogEnabled;
     private int prevFogMode;
     private float prevFogStart;
@@ -155,6 +179,8 @@ public class SubpassRenderState {
                 if (fogColorRedField != null) savedFogRed = fogColorRedField.getFloat(renderer);
                 if (fogColorGreenField != null) savedFogGreen = fogColorGreenField.getFloat(renderer);
                 if (fogColorBlueField != null) savedFogBlue = fogColorBlueField.getFloat(renderer);
+                if (fogColor1Field != null) savedFog1 = fogColor1Field.getFloat(renderer);
+                if (fogColor2Field != null) savedFog2 = fogColor2Field.getFloat(renderer);
             } catch (Throwable ignored) {}
         }
 
@@ -196,6 +222,8 @@ public class SubpassRenderState {
                 if (fogColorRedField != null) fogColorRedField.setFloat(renderer, savedFogRed);
                 if (fogColorGreenField != null) fogColorGreenField.setFloat(renderer, savedFogGreen);
                 if (fogColorBlueField != null) fogColorBlueField.setFloat(renderer, savedFogBlue);
+                if (fogColor1Field != null) fogColor1Field.setFloat(renderer, savedFog1);
+                if (fogColor2Field != null) fogColor2Field.setFloat(renderer, savedFog2);
             } catch (Throwable ignored) {}
 
             try {
@@ -217,10 +245,13 @@ public class SubpassRenderState {
         // 3. Restore complete OpenGL fog state (prevent subpass dark fog from leaking into main pass sky)
         prevFogColor.rewind();
         GL11.glFog(GL11.GL_FOG_COLOR, prevFogColor);
-        GL11.glFogi(GL11.GL_FOG_MODE, prevFogMode);
-        GL11.glFogf(GL11.GL_FOG_START, prevFogStart);
-        GL11.glFogf(GL11.GL_FOG_END, prevFogEnd);
-        GL11.glFogf(GL11.GL_FOG_DENSITY, prevFogDensity);
+        GlStateManager.FogMode restoredFogMode = (prevFogMode == GL11.GL_EXP2)
+                ? GlStateManager.FogMode.EXP2
+                : (prevFogMode == GL11.GL_EXP ? GlStateManager.FogMode.EXP : GlStateManager.FogMode.LINEAR);
+        GlStateManager.setFog(restoredFogMode);
+        GlStateManager.setFogStart(prevFogStart);
+        GlStateManager.setFogEnd(prevFogEnd);
+        GlStateManager.setFogDensity(prevFogDensity);
         if (prevFogEnabled) {
             GlStateManager.enableFog();
         } else {
@@ -279,5 +310,24 @@ public class SubpassRenderState {
             } catch (Throwable ignored) {}
         }
         return 1.0F;
+    }
+
+    public static void setFogColors(EntityRenderer renderer, float r, float g, float b) {
+        if (renderer != null) {
+            try {
+                if (fogColorRedField != null) fogColorRedField.setFloat(renderer, r);
+                if (fogColorGreenField != null) fogColorGreenField.setFloat(renderer, g);
+                if (fogColorBlueField != null) fogColorBlueField.setFloat(renderer, b);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public static void setFogScales(EntityRenderer renderer, float f1, float f2) {
+        if (renderer != null) {
+            try {
+                if (fogColor1Field != null) fogColor1Field.setFloat(renderer, f1);
+                if (fogColor2Field != null) fogColor2Field.setFloat(renderer, f2);
+            } catch (Throwable ignored) {}
+        }
     }
 }

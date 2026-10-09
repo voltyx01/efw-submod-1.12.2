@@ -46,6 +46,7 @@
     "MixinItemRenderer",
     "MixinGuiIngame",
     "MixinGuiIngameForge",
+    "MixinSpeechTabComplete",
     "MixinGuiInventory",
     "MixinGuiContainerCreative",
     "MixinMinecraftSplash",
@@ -66,7 +67,9 @@
     "MixinTextureManager",
     "MixinFontRenderer",
     "MixinGuiChest",
-    "MixinGlStateManager"
+    "MixinGlStateManager",
+    "MixinRenderItem",
+    "MixinInventoryEffectRenderer"
   ],
   "server": [],
   "injectors": {

@@ -19,6 +19,7 @@ public class ModSounds {
     public static SoundEvent NVG_TOGGLE;
     public static SoundEvent FLOWER_MENU;
     public static SoundEvent FLOWER_MENU_0;
+    public static SoundEvent SPEECH_LETTER;
 
     // Регистрация звуков
     @SubscribeEvent
@@ -32,7 +33,9 @@ public class ModSounds {
         NVG_TOGGLE = createSound("nvg_toggle");
         FLOWER_MENU = createSound("flowermenu");
         FLOWER_MENU_0 = createSound("flowermenu0");
-        event.getRegistry().registerAll(HEAD_HIT, FLESH_HIT, KILL, LOOTPROG, DASH, EXO_DASH, NVG_TOGGLE, FLOWER_MENU, FLOWER_MENU_0);
+        SPEECH_LETTER = createSound("speech.letter");
+        event.getRegistry().registerAll(HEAD_HIT, FLESH_HIT, KILL, LOOTPROG, DASH, EXO_DASH, NVG_TOGGLE,
+            FLOWER_MENU, FLOWER_MENU_0, SPEECH_LETTER);
     }
 
     // Вспомогательный метод для удобного создания звуков

@@ -14,7 +14,8 @@
     "MixinEntityParasiteBase",
     "MixinEntityAIAttackMeleeStatus",
     "MixinEntityAIAttackMeleeStatusAOE",
-    "FirstAidEventHandlerMixin"
+    "FirstAidEventHandlerMixin",
+    "MixinAttachmentStatsManager"
   ],
   "client": [
     "BackpackClientMixin",
@@ -46,6 +47,7 @@
     "SoundFiltersTickHandlerMixin",
     "MixinWailaRayTracing",
     "MixinSRPEventHandlerBus",
+    "MixinMusicTicker",
     "RandomPatchesEntityRendererHookMixin",
     "MixinMirrorRenderer"
   ],

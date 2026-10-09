@@ -12,6 +12,9 @@ import com.voltyx.mwccf.immersiveui.nea.animations.ItemMoveAnimation;
 import com.voltyx.mwccf.immersiveui.nea.animations.ItemPickupThrowAnimation;
 import com.voltyx.mwccf.immersiveui.nea.api.IAnimatedScreen;
 import com.voltyx.mwccf.immersiveui.nea.api.IItemLocation;
+import com.voltyx.mwccf.speech.client.SpeechPanelController;
+import com.voltyx.mwccf.speech.client.SpeechPanelHost;
+import com.voltyx.mwccf.speech.client.SpeechPanelUi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
@@ -33,7 +36,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.*;
 
 @Mixin(GuiContainer.class)
-public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedScreen {
+public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedScreen, SpeechPanelHost {
 
     @Shadow
     protected int guiLeft;
@@ -55,6 +58,77 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
 
     @Shadow
     protected abstract boolean isPointInRegion(int rectX, int rectY, int rectWidth, int rectHeight, int pointX, int pointY);
+
+    @Shadow
+    public net.minecraft.inventory.Container inventorySlots;
+
+    @Inject(method = "handleMouseClick", at = @At("HEAD"), cancellable = true)
+    private void fireweapon$onHandleMouseClick(Slot slotIn, int slotId, int mouseButton, net.minecraft.inventory.ClickType type, CallbackInfo ci) {
+        if (mouseButton == 1 && type == net.minecraft.inventory.ClickType.PICKUP && slotIn != null && slotIn.getHasStack()) {
+            if (com.voltyx.mwccf.fireweapon.FireWeaponActionHandler.handleGuiSlotClick(this.inventorySlots, slotIn, slotId)) {
+                ci.cancel();
+            }
+        }
+    }
+
+    @Inject(method = "drawScreen", at = @At("RETURN"))
+    private void speech$drawInventoryPanel(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        if (!((Object) this instanceof net.minecraft.client.gui.inventory.GuiInventory)) return;
+        SpeechPanelUi.drawInventoryPanel(mouseX, mouseY, this.width, this.guiLeft, this.guiTop, this.ySize);
+    }
+
+    @Inject(method = "mouseClicked(III)V", at = @At("HEAD"), cancellable = true)
+    private void speech$handlePanelClick(int mouseX, int mouseY, int mouseButton, CallbackInfo ci) {
+        if (!((Object) this instanceof net.minecraft.client.gui.inventory.GuiInventory)) return;
+        if (SpeechPanelController.handleInventoryMouseClick(mouseX, mouseY, mouseButton,
+                this.width, this.guiLeft, this.guiTop, this.ySize)) ci.cancel();
+    }
+
+    @Inject(method = "mouseClickMove(IIIJ)V", at = @At("HEAD"))
+    private void speech$dragPanelScrollbar(int mouseX, int mouseY, int clickedMouseButton,
+                                             long timeSinceLastClick, CallbackInfo ci) {
+        if (!((Object) this instanceof net.minecraft.client.gui.inventory.GuiInventory)) return;
+        SpeechPanelController.handleInventoryMouseDrag(mouseX, mouseY, this.width,
+                this.guiLeft, this.guiTop, this.ySize);
+    }
+
+    @Inject(method = "mouseReleased(III)V", at = @At("HEAD"))
+    private void speech$stopPanelScrollbarDrag(int mouseX, int mouseY, int state, CallbackInfo ci) {
+        SpeechPanelController.stopDraggingScrollbar();
+    }
+
+    @Inject(method = "keyTyped(CI)V", at = @At("HEAD"), cancellable = true)
+    private void speech$handleContainerTyping(char typedChar, int keyCode, CallbackInfo ci) {
+        if (!((Object) this instanceof net.minecraft.client.gui.inventory.GuiInventory)) return;
+        if (keyCode == org.lwjgl.input.Keyboard.KEY_T
+            && (!SpeechPanelController.isInventoryPanelActive() || !SpeechPanelController.isInputFocused())) {
+            SpeechPanelController.openOrFocusInventoryPanel();
+            ci.cancel();
+            return;
+        }
+        if (keyCode == org.lwjgl.input.Keyboard.KEY_SLASH
+            && (!SpeechPanelController.isInventoryPanelActive() || !SpeechPanelController.isInputFocused())) {
+            SpeechPanelController.openOrFocusInventoryPanel("/");
+            ci.cancel();
+            return;
+        }
+        if (SpeechPanelController.isInventoryPanelActive()
+                && SpeechPanelController.handleKey(typedChar, keyCode)) {
+            ci.cancel();
+        }
+    }
+
+    @Override
+    @Unique
+    public int speech$getGuiLeft() { return this.guiLeft; }
+
+    @Override
+    @Unique
+    public int speech$getGuiTop() { return this.guiTop; }
+
+    @Override
+    @Unique
+    public int speech$getGuiHeight() { return this.ySize; }
 
     @Unique
     private final Random immersiveui$random = new Random();
@@ -520,5 +594,6 @@ public abstract class MixinGuiContainer extends GuiScreen implements IAnimatedSc
     public void onGuiClosed() {
         super.onGuiClosed();
         ParticleStorage.clear();
+        SpeechPanelController.resetInventoryState();
     }
 }

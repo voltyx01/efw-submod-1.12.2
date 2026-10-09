@@ -1243,7 +1243,8 @@ item.mwccf.doll.name=Плюшевая кукла Сайи
 tooltip.mwccf.doll.desc=Потрепанная мягкая игрушка. Чья-то маленькая рука держала её крепче всего остального.
 tooltip.mwccf.doll.trauma_shift=§cЭффект Травмы §8(зажмите Shift, чтобы посмотреть)
 tooltip.mwccf.doll.trauma_title=§cЭффект Травмы:
-tooltip.mwccf.doll.trauma_desc=§7Пока игрушка с вами, каждый слой крови усиливает ваш урон вплоть до §c+30%%§7. Не распространяется на огнестрельное оружие.
+tooltip.mwccf.doll.trauma_desc=§7При максимальном загрязнении кровью возьмите куклу в руки: пульс взлетает, начинается приступ ярости на 15 сек. (+50%% урона холодным оружием, ускоренная перезарядка оружия MWC). Убийства холодным оружием продлевают эффект на +3 сек., огнестрелом — на +2 сек.
+speech.mwccf.doll.sorry=Прости меня.
 inspect.doll.desc=Потрепанная мягкая игрушка. Чья-то маленькая рука держала её крепче всего остального.
 inspect.doll.lore="Сайя не выпускала её из рук. Никогда."
 
@@ -1343,6 +1344,44 @@ item.mwccf.sickle.name=Серп
 item.mwccf.swat_shield.name=Штурмовой щит SWAT
 item.mwccf.stop_sing_shield.name=Щит из знака STOP
 item.mwccf.nailgun.name=Гвоздомёт
+item.mwccf.empty_bottle.name=Пустая стеклянная бутылка
+item.mwccf.beer.name=Пиво
+item.mwccf.wine.name=Вино
+item.mwccf.whiskey.name=Виски
+item.mwccf.tequila.name=Текила
+item.mwccf.flaming_cloth.name=Самовоспламеняющаяся ткань
+
+tooltip.mwccf.item_effect=Эффект предмета:
+tooltip.mwccf.beer_effect=Тошнота I на 8 секунд
+tooltip.mwccf.wine_effect=Регенерация I на 30 секунд и Тошнота I на 8 секунд
+tooltip.mwccf.whiskey_effect=Поглощение II на 60 секунд и Тошнота I на 8 секунд
+tooltip.mwccf.tequila_effect=Сила I на 30 секунд и Тошнота II на 8 секунд
+tooltip.mwccf.fireweapon.burning=§6[ §eГорит §7(+%s урона огнём) §6]
+tooltip.mwccf.fireweapon.soaked=§6[ §cПропитано §7(+%s урона огнём) §6]
+tooltip.mwccf.fireweapon.cloth_percent=§f%s%%
+tooltip.mwccf.fireweapon.timer=§e%s:%02d
+tooltip.mwccf.fireweapon.charred=§8[ Обгоревшая ткань §7]
+tooltip.mwccf.fireweapon.soaked_ready=§6[ §cТкань пропитана горючим §6]
+tooltip.mwccf.fireweapon.wrapped_percent=§7[ §fТкань намотана §8(%s%%) §7]
+tooltip.mwccf.fireweapon.wrapped=§7[ §fТкань намотана §7]
+tooltip.mwccf.fireweapon.hint=§eПоджигание §7[Shift]
+tooltip.mwccf.fireweapon.instructions=§7Некоторое оружие можно обмотать тканью и поджечь огнивом.
+tooltip.mwccf.fireweapon.enhancers=§7Усиление: §aвиски, текила, бензин
+tooltip.mwccf.fireweapon.cloth_hint=§7ПКМ по оружию: обмотать тканью
+tooltip.mwccf.fireweapon.cloth_instructions=§7Некоторое оружие можно обмотать этой тканью и поджечь огнивом.
+tooltip.mwccf.fireweapon.alcohol_hint=§7ПКМ по оружию с тканью: подготовить усиленное зажигание
+tooltip.mwccf.fireweapon.alcohol_instructions=§7После пропитки подожгите ткань огнивом: §a+5 урона огнём и 2 урона в секунду в течение 5 секунд.
+tooltip.mwccf.fireweapon.flaming_cloth=ПКМ по оружию: обмотать и поджечь
+tooltip.mwccf.medical.hold_rmb=Удерживайте ПКМ для применения (%d сек.)
+tooltip.mwccf.medical.uses_left=Осталось применений: %d
+tooltip.mwccf.medical.morphine_effect=Снимает боль и устраняет эффекты переломов.
+tooltip.mwccf.medical.adrenaline_effect=Защищает от некоторых негативных эффектов и усиливает физические характеристики.
+
+gui.mwccf.speech.button=⋯
+gui.mwccf.speech.history=История сообщений поблизости
+gui.mwccf.speech.empty=Пока нет сообщений поблизости
+gui.mwccf.speech.input=Введите сообщение...
+gui.mwccf.speech.test_personal=Личная реплика готова.
 
 # SI Items (survival_instinct namespace fallback)
 item.survival_instinct.american_fist.name=Кастет
@@ -1534,6 +1573,7 @@ tile.survival_instinct.aluminium_block.name=Алюминиевый блок
 effect.survival_instinct.bleeding=Кровотечение
 effect.survival_instinct.dash_on_cooldown=Перезарядка рывка
 effect.mwccf.bleeding=Кровотечение
+effect.mwccf.saya_buff=Благословение Сайи
 
 # Better Combat Tooltips
 tooltip.bettercombat.two_handed=Двуручное

@@ -1,4 +1,13 @@
 {
+    "speech.letter": {
+        "category": "master",
+        "sounds": [
+            {
+                "name": "mwccf:lettersound",
+                "volume": 2.5
+            }
+        ]
+    },
     "item.doll.up": {
         "category": "player",
         "sounds": [
@@ -9,6 +18,15 @@
         "category": "player",
         "sounds": [
             "mwccf:item/doll_down"
+        ]
+    },
+    "item.doll.activate": {
+        "category": "master",
+        "sounds": [
+            {
+                "name": "mwccf:item/doll_activate",
+                "volume": 4.0
+            }
         ]
     },
     "block.chair.slide": {

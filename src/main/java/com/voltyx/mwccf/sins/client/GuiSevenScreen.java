@@ -1522,6 +1522,7 @@ public class GuiSevenScreen extends GuiScreen {
 
                 efw.util.RenderContext.isRenderingPlayerInGui = true;
                 efw.util.RenderContext.isRenderingPlayerInSevenScreen = true;
+                efw.util.RenderContext.isBlinkConfiguring = isBlinkEdit;
 
                 // Tick SevenScreen player animation player so idle_standing animates in real-time
                 efw.animation.AnimationPlayer sevenPlayer = efw.animation.AnimationRegistry.getSevenScreenPlayer();
@@ -1533,6 +1534,7 @@ public class GuiSevenScreen extends GuiScreen {
             } catch (Throwable t) {
                 t.printStackTrace();
             } finally {
+                efw.util.RenderContext.isBlinkConfiguring = false;
                 efw.util.RenderContext.isRenderingPlayerInSevenScreen = false;
                 efw.util.RenderContext.isRenderingPlayerInGui = false;
             }

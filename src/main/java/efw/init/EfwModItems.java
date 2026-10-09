@@ -3,12 +3,11 @@ package efw.init;
 import efw.item.CDiaryItem;
 import efw.item.DporItem;
 import efw.item.ItemDoll;
+import efw.item.ItemFlamingCloth;
 import efw.item.ManualItem;
 import efw.item.NoteItem;
-import net.minecraft.client.renderer.ItemMeshDefinition;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.ModelLoader;
@@ -25,6 +24,7 @@ public class EfwModItems {
     public static efw.item.ItemMedKit MED_KIT;
     public static efw.item.ItemBandage BANDAGE;
     public static efw.item.ItemCloth CLOTH;
+        public static ItemFlamingCloth FLAMING_CLOTH;
 
     /** Любимая игрушка Сайи — плюшевая кукла. */
     public static ItemDoll DOLL;
@@ -50,6 +50,7 @@ public class EfwModItems {
         MED_KIT = new efw.item.ItemMedKit();
         BANDAGE = new efw.item.ItemBandage();
         CLOTH = new efw.item.ItemCloth();
+        FLAMING_CLOTH = new ItemFlamingCloth();
         DOLL = new ItemDoll();
         BLOODY_NECKLACE = new efw.item.ItemBloodyNecklace();
         DPOR = new DporItem();
@@ -66,6 +67,7 @@ public class EfwModItems {
         ForgeRegistries.ITEMS.register(MED_KIT);
         ForgeRegistries.ITEMS.register(BANDAGE);
         ForgeRegistries.ITEMS.register(CLOTH);
+        ForgeRegistries.ITEMS.register(FLAMING_CLOTH);
         ForgeRegistries.ITEMS.register(DOLL);
         ForgeRegistries.ITEMS.register(BLOODY_NECKLACE);
         ForgeRegistries.ITEMS.register(DPOR);
@@ -108,6 +110,8 @@ public class EfwModItems {
 
         ModelLoader.setCustomModelResourceLocation(CLOTH, 0,
                 new ModelResourceLocation("mwccf:cloth", "inventory"));
+        ModelLoader.setCustomModelResourceLocation(FLAMING_CLOTH, 0,
+                new ModelResourceLocation("mwccf:flaming_cloth", "inventory"));
 
         ModelLoader.setCustomModelResourceLocation(DOLL, 0,
                 new ModelResourceLocation("mwccf:doll", "inventory"));

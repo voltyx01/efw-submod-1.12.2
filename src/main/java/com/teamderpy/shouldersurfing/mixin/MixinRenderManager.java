@@ -21,6 +21,7 @@ public class MixinRenderManager {
 
     @Inject(method = "cacheActiveRenderInfo", at = @At("RETURN"))
     private void onCacheActiveRenderInfo(World worldIn, FontRenderer textRendererIn, Entity livingPlayerIn, Entity pointedEntityIn, GameSettings optionsIn, float partialTicks, CallbackInfo ci) {
+        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering() || efw.util.SubpassRenderState.isMirrorRendering) return;
         if (ShoulderInstance.getInstance().doShoulderSurfing()) {
             ShoulderRenderer renderer = ShoulderRenderer.getInstance();
             this.playerViewY = renderer.cameraYaw - 180.0F;

@@ -23,6 +23,8 @@ public class ConfigEventHandler {
                 com.voltyx.mwccf.render.doll.DollSettings.debugHudEnabled = false;
             }
 
+            com.voltyx.mwccf.speech.SpeechConfig.load();
+
             System.out.println("[MWCCF] Конфиг успешно перезагружен!");
         }
     }

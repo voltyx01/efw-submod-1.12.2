@@ -2,6 +2,7 @@ package efw.item;
 
 import efw.init.EfwModSounds;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
@@ -106,10 +107,10 @@ public class ItemMedKit extends Item {
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-        tooltip.add(TextFormatting.GREEN + "Hold RMB for 3 seconds to use");
+        tooltip.add(TextFormatting.GREEN + I18n.format("tooltip.mwccf.medical.hold_rmb", 3));
         int usesLeft = stack.getMaxDamage() - stack.getItemDamage();
         if (usesLeft > 0) {
-            tooltip.add(TextFormatting.GRAY + "Uses left: " + usesLeft);
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.mwccf.medical.uses_left", usesLeft));
         }
     }
 }

@@ -27,5 +27,11 @@ public final class RenderContext {
      * renders at standing height during Better Combat attack animations.
      */
     public static net.minecraft.entity.Entity suppressedSneakEntity = null;
+
+    /**
+     * Set to true when the blink editor is open in GuiSevenScreen to hide
+     * the player's outer hat/hair layer for unobstructed face and eye configuration.
+     */
+    public static boolean isBlinkConfiguring = false;
 }
 

@@ -300,6 +300,11 @@ public class HeartbeatManager {
         }
 
         // ── Жёсткие границы ─────────────────────────────────────────────
+        if (com.voltyx.mwccf.doll.SayaDollManager.isBuffActive(player) || com.voltyx.mwccf.doll.SayaDollManager.isActivating(player)) {
+            currentBPM = Math.max(currentBPM, 178f);
+            displayBPM = Math.max(displayBPM, 175);
+        }
+
         if (currentBPM > 180f) currentBPM = 180f;
         if (currentBPM < 58f)  currentBPM = 58f;
         if (displayBPM > 180) displayBPM = 180;
@@ -388,17 +393,6 @@ public class HeartbeatManager {
             if (player.rotationPitch < -90f) player.rotationPitch = -90f;
         }
 
-        // ── Паника / Страх из SRP при критическом сердцебиении ─────────
-        if (currentBPM >= 165f && player.ticksExisted % 40 == 0) {
-            if (net.minecraftforge.fml.common.Loader.isModLoaded("srparasites")) {
-                try {
-                    net.minecraft.potion.Potion fear = com.dhanantry.scapeandrunparasites.init.SRPPotions.FEAR_E;
-                    if (fear != null && !player.isPotionActive(fear)) {
-                        player.addPotionEffect(new net.minecraft.potion.PotionEffect(fear, 100, 0, false, false));
-                    }
-                } catch (Throwable t) {}
-            }
-        }
 
         VisualEffectsHandler.updateCameraOverhaul(currentBPM);
     }

@@ -35,7 +35,10 @@ public class CommandReloadConfig extends CommandBase {
         // 2. Обновляем кэш хитбоксов (чтобы новые координаты мобов сразу применились)
         AdvancedHeadshotManager.reloadConfig();
 
-        // 3. Отправляем зеленое сообщение в чат тому, кто ввел команду
+        // 3. Перезагружаем конфигурацию реплик (mwccf_speech.cfg)
+        com.voltyx.mwccf.speech.SpeechConfig.reload();
+
+        // 4. Отправляем зеленое сообщение в чат тому, кто ввел команду
         sender.sendMessage(new TextComponentString("§a[MWCCF] Конфигурация успешно перезагружена с диска!"));
     }
 }

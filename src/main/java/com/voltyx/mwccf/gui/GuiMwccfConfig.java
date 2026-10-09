@@ -108,6 +108,38 @@ public class GuiMwccfConfig extends GuiConfig {
             ));
         }
 
+        // 7. Отдельная вкладка Speech & Replicas (Реплики Сайи над хотбаром и 3D облачка над игроками)
+        if (com.voltyx.mwccf.speech.SpeechConfig.getConfig() != null) {
+            Configuration sConfig = com.voltyx.mwccf.speech.SpeechConfig.getConfig();
+            List<IConfigElement> speechCategories = new ArrayList<>();
+            if (sConfig.hasCategory("personal")) {
+                speechCategories.add(new DummyConfigElement.DummyCategoryElement(
+                    "Personal Replicas (Hotbar Subtitles)",
+                    "mwccf.config.speech.personal",
+                    new ConfigElement(sConfig.getCategory("personal")).getChildElements()
+                ));
+            }
+            if (sConfig.hasCategory("public")) {
+                speechCategories.add(new DummyConfigElement.DummyCategoryElement(
+                    "Public 3D Bubbles (Over Heads)",
+                    "mwccf.config.speech.public",
+                    new ConfigElement(sConfig.getCategory("public")).getChildElements()
+                ));
+            }
+            if (sConfig.hasCategory("general")) {
+                speechCategories.add(new DummyConfigElement.DummyCategoryElement(
+                    "General Chat & Limits",
+                    "mwccf.config.speech.general",
+                    new ConfigElement(sConfig.getCategory("general")).getChildElements()
+                ));
+            }
+            list.add(new DummyConfigElement.DummyCategoryElement(
+                "Speech & Replicas",
+                "mwccf.config.speech",
+                speechCategories
+            ));
+        }
+
         return list;
     }
 
@@ -128,6 +160,10 @@ public class GuiMwccfConfig extends GuiConfig {
             if (com.voltyx.mwccf.geo.BraceletSettings.getConfig() != null && com.voltyx.mwccf.geo.BraceletSettings.getConfig().hasChanged()) {
                 com.voltyx.mwccf.geo.BraceletSettings.getConfig().save();
                 com.voltyx.mwccf.geo.BraceletSettings.load();
+            }
+            if (com.voltyx.mwccf.speech.SpeechConfig.getConfig() != null && com.voltyx.mwccf.speech.SpeechConfig.getConfig().hasChanged()) {
+                com.voltyx.mwccf.speech.SpeechConfig.getConfig().save();
+                com.voltyx.mwccf.speech.SpeechConfig.load();
             }
         } catch (Throwable t) {
             t.printStackTrace();

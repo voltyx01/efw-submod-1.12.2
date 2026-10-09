@@ -40,6 +40,9 @@ import com.eruannie_9.extragore.particle.state.BloodHotBlocks;
 import com.eruannie_9.extragore.particle.state.BloodMagic;
 import com.eruannie_9.extragore.particle.state.liquid.lava.BloodLava;
 import com.eruannie_9.extragore.particle.state.liquid.water.BloodWater;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.MobEffects;
+import net.minecraft.potion.PotionEffect;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -169,7 +172,7 @@ public final class BloodRenderType {
             oldInterpZ = ParticleBlood.getInterpZ();
             restoreInterp = true;
             BloodRenderType.setSharedParticleInterp(camX, camY, camZ);
-            ArrayList<RenderEntry> entries = BloodRenderType.collectRenderEntries((World)world, camX, camY, camZ, viewUnderwater, partialTicks);
+            ArrayList<RenderEntry> entries = BloodRenderType.collectRenderEntries((World)world, camX, camY, camZ, viewUnderwater, partialTicks, view);
             if (entries.isEmpty()) {
                 return;
             }
@@ -178,7 +181,7 @@ public final class BloodRenderType {
             boolean wasLightmapEnabled = BloodRenderType.captureLightmapTextureEnabled();
             GlStateManager.pushMatrix();
             try {
-                BloodRenderType.applyWorldLastState(mc);
+                BloodRenderType.applyWorldLastState(mc, view);
                 Tessellator tessellator = Tessellator.getInstance();
                 BufferBuilder buffer = tessellator.getBuffer();
                 BloodRenderType.beginWorldLastBatch(buffer);
@@ -251,23 +254,43 @@ public final class BloodRenderType {
     }
 
     @Nonnull
-    private static ArrayList<RenderEntry> collectRenderEntries(@Nonnull World world, double camX, double camY, double camZ, boolean viewUnderwater, float partialTicks) {
+    private static double getBlindnessMaxDistSq(@Nullable Entity view) {
+        if (view instanceof EntityLivingBase) {
+            EntityLivingBase living = (EntityLivingBase) view;
+            if (living.isPotionActive(MobEffects.BLINDNESS)) {
+                float f1 = 5.0F;
+                PotionEffect effect = living.getActivePotionEffect(MobEffects.BLINDNESS);
+                if (effect != null && effect.getDuration() < 20) {
+                    float far = Minecraft.getMinecraft().gameSettings.renderDistanceChunks * 16.0F;
+                    f1 = 5.0F + (far - 5.0F) * (1.0F - (float) effect.getDuration() / 20.0F);
+                }
+                return (double) (f1 * f1);
+            }
+        }
+        return Double.MAX_VALUE;
+    }
+
+    @Nonnull
+    private static ArrayList<RenderEntry> collectRenderEntries(@Nonnull World world, double camX, double camY, double camZ, boolean viewUnderwater, float partialTicks, @Nullable Entity view) {
         int estimate = DECALS.size() + (viewUnderwater ? 0 : BLOOD_BILLBOARD_QUEUE.size()) + WATER_TRACKED.size() + LAVA_TRACKED.size() + LAVA_BILLBOARD_QUEUE.size() + (viewUnderwater ? 0 : MAGIC_BILLBOARD_QUEUE.size()) + (viewUnderwater ? WATER_DROPLET_QUEUE.size() : 0);
         ArrayList<RenderEntry> out = new ArrayList<RenderEntry>(estimate);
-        BloodRenderType.collectDecalEntries(out, world, camX, camY, camZ, partialTicks);
+        double maxDistSq = getBlindnessMaxDistSq(view);
+        BloodRenderType.collectDecalEntries(out, world, camX, camY, camZ, partialTicks, maxDistSq);
         if (!viewUnderwater) {
-            BloodRenderType.collectBloodBillboardEntries(out, world, camX, camY, camZ);
-            BloodRenderType.collectMagicEntries(out, world, camX, camY, camZ);
+            BloodRenderType.collectBloodBillboardEntries(out, world, camX, camY, camZ, maxDistSq);
+            BloodRenderType.collectMagicEntries(out, world, camX, camY, camZ, maxDistSq);
         }
-        BloodRenderType.collectWaterEntries(out, world, camX, camY, camZ, viewUnderwater);
-        BloodRenderType.collectLavaEntries(out, world, camX, camY, camZ);
+        BloodRenderType.collectWaterEntries(out, world, camX, camY, camZ, viewUnderwater, maxDistSq);
+        BloodRenderType.collectLavaEntries(out, world, camX, camY, camZ, maxDistSq);
         return out;
     }
 
-    private static void collectBloodBillboardEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ) {
+    private static void collectBloodBillboardEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, double maxDistSq) {
         for (ParticleBlood p : BLOOD_BILLBOARD_QUEUE) {
             if (!BloodRenderType.isBloodBillboardQueuedValid(p, world)) continue;
-            out.add(RenderEntry.bloodBillboard(p.getDistanceSqTo(camX, camY, camZ), p));
+            double distSq = p.getDistanceSqTo(camX, camY, camZ);
+            if (distSq > maxDistSq) continue;
+            out.add(RenderEntry.bloodBillboard(distSq, p));
         }
     }
 
@@ -275,7 +298,7 @@ public final class BloodRenderType {
         return p != null && p.isAlive() && p.getParticleWorld() == world && !p.isStuck && p.getAlpha() > 0.001f;
     }
 
-    private static void collectDecalEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, float partialTicks) {
+    private static void collectDecalEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, float partialTicks, double maxDistSq) {
         Iterator<ParticleBlood> it = DECALS.iterator();
         while (it.hasNext()) {
             ParticleBlood p = it.next();
@@ -284,6 +307,7 @@ public final class BloodRenderType {
                 continue;
             }
             double sortDistSq = p.isStuck && p.stuckFace == EnumFacing.DOWN ? BloodRenderType.computeCeilingDecalSortDistanceSq(p, camX, camY, camZ, partialTicks) : p.getDistanceSqTo(camX, camY, camZ);
+            if (sortDistSq > maxDistSq) continue;
             out.add(RenderEntry.decal(sortDistSq, p));
         }
     }
@@ -326,7 +350,7 @@ public final class BloodRenderType {
         return best != Double.POSITIVE_INFINITY ? best : p.getDistanceSqTo(camX, camY, camZ);
     }
 
-    private static void collectWaterEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, boolean viewUnderwater) {
+    private static void collectWaterEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, boolean viewUnderwater, double maxDistSq) {
         Iterator<BloodWater> it = WATER_TRACKED.iterator();
         while (it.hasNext()) {
             BloodWater water = it.next();
@@ -335,6 +359,7 @@ public final class BloodRenderType {
                 continue;
             }
             double distSq = water.getDistanceSqTo(camX, camY, camZ);
+            if (distSq > maxDistSq) continue;
             if (water.isSurfaceDecal()) {
                 out.add(RenderEntry.water(distSq, water, RenderKind.WATER_SURFACE));
                 continue;
@@ -347,11 +372,13 @@ public final class BloodRenderType {
         }
         for (BloodWater water : WATER_DROPLET_QUEUE) {
             if (!BloodRenderType.isWaterDropletQueuedValid(water, world)) continue;
-            out.add(RenderEntry.water(water.getDistanceSqTo(camX, camY, camZ), water, RenderKind.WATER_DROPLET));
+            double distSq = water.getDistanceSqTo(camX, camY, camZ);
+            if (distSq > maxDistSq) continue;
+            out.add(RenderEntry.water(distSq, water, RenderKind.WATER_DROPLET));
         }
     }
 
-    private static void collectLavaEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ) {
+    private static void collectLavaEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, double maxDistSq) {
         Iterator<BloodLava> it = LAVA_TRACKED.iterator();
         while (it.hasNext()) {
             BloodLava lava = it.next();
@@ -359,19 +386,25 @@ public final class BloodRenderType {
                 it.remove();
                 continue;
             }
+            double distSq = lava.getDistanceSqTo(camX, camY, camZ);
+            if (distSq > maxDistSq) continue;
             if (!lava.isSurfaceDecal()) continue;
-            out.add(RenderEntry.lava(lava.getDistanceSqTo(camX, camY, camZ), lava, RenderKind.LAVA_SURFACE));
+            out.add(RenderEntry.lava(distSq, lava, RenderKind.LAVA_SURFACE));
         }
         for (BloodLava lava : LAVA_BILLBOARD_QUEUE) {
             if (!BloodRenderType.isLavaBillboardQueuedValid(lava, world)) continue;
-            out.add(RenderEntry.lava(lava.getDistanceSqTo(camX, camY, camZ), lava, RenderKind.LAVA_BILLBOARD));
+            double distSq = lava.getDistanceSqTo(camX, camY, camZ);
+            if (distSq > maxDistSq) continue;
+            out.add(RenderEntry.lava(distSq, lava, RenderKind.LAVA_BILLBOARD));
         }
     }
 
-    private static void collectMagicEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ) {
+    private static void collectMagicEntries(@Nonnull List<RenderEntry> out, @Nonnull World world, double camX, double camY, double camZ, double maxDistSq) {
         for (ParticleBlood p : MAGIC_BILLBOARD_QUEUE) {
             if (!BloodRenderType.isMagicBillboardQueuedValid(p, world)) continue;
-            out.add(RenderEntry.magic(p.getDistanceSqTo(camX, camY, camZ), p));
+            double distSq = p.getDistanceSqTo(camX, camY, camZ);
+            if (distSq > maxDistSq) continue;
+            out.add(RenderEntry.magic(distSq, p));
         }
     }
 
@@ -416,7 +449,7 @@ public final class BloodRenderType {
         return enabled;
     }
 
-    private static void applyWorldLastState(@Nonnull Minecraft mc) {
+    private static void applyWorldLastState(@Nonnull Minecraft mc, @Nullable Entity view) {
         GlStateManager.disableLighting();
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -433,9 +466,28 @@ public final class BloodRenderType {
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         GlStateManager.enableTexture2D();
         mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+
+        // Blindness fog support: smoothly fade particles into black darkness
+        if (view instanceof EntityLivingBase && ((EntityLivingBase) view).isPotionActive(MobEffects.BLINDNESS)) {
+            EntityLivingBase living = (EntityLivingBase) view;
+            float f1 = 5.0F;
+            PotionEffect effect = living.getActivePotionEffect(MobEffects.BLINDNESS);
+            if (effect != null && effect.getDuration() < 20) {
+                float far = mc.gameSettings.renderDistanceChunks * 16.0F;
+                f1 = 5.0F + (far - 5.0F) * (1.0F - (float) effect.getDuration() / 20.0F);
+            }
+            GlStateManager.enableFog();
+            GlStateManager.setFog(GlStateManager.FogMode.LINEAR);
+            GlStateManager.setFogStart(f1 * 0.25F);
+            GlStateManager.setFogEnd(f1);
+            java.nio.FloatBuffer fogColor = org.lwjgl.BufferUtils.createFloatBuffer(4);
+            fogColor.put(new float[]{0.0F, 0.0F, 0.0F, 1.0F}).flip();
+            GL11.glFog(GL11.GL_FOG_COLOR, fogColor);
+        }
     }
 
     private static void restoreWorldLastState(@Nonnull Minecraft mc, boolean wasLightmapEnabled) {
+        GlStateManager.disableFog();
         mc.entityRenderer.disableLightmap();
         GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
         GlStateManager.disableTexture2D();

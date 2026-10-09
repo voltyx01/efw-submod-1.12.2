@@ -47,6 +47,11 @@ public class ShoulderInstance
 		{
 			if(this.doShoulderSurfing && mc.gameSettings.thirdPersonView == 0 && !this.isTransitioningToFirstPerson)
 			{
+				if(com.voltyx.mwccf.terminal.client.TerminalCameraController.isActive())
+				{
+					this.setFirstPersonImmediate();
+					return;
+				}
 				mc.gameSettings.thirdPersonView = 1;
 				this.startTransitionToFirstPerson();
 				return;
@@ -217,6 +222,44 @@ public class ShoulderInstance
 		{
 			this.resetOffsetsForSmoothEntry();
 		}
+	}
+	
+	public void setFirstPersonImmediate()
+	{
+		boolean wasSS = this.doShoulderSurfing;
+		this.isTransitioningToFirstPerson = false;
+		this.doShoulderSurfing = false;
+		Minecraft mc = Minecraft.getMinecraft();
+		if(mc != null && mc.gameSettings != null)
+		{
+			mc.gameSettings.thirdPersonView = 0;
+		}
+		this.thirdPersonView = 0;
+		
+		if(wasSS && mc != null && mc.player != null)
+		{
+			ShoulderRenderer renderer = ShoulderRenderer.getInstance();
+			float camYaw = net.minecraft.util.math.MathHelper.wrapDegrees(renderer.cameraYaw + 180.0F);
+			float camPitch = net.minecraft.util.math.MathHelper.clamp(renderer.cameraPitch, -90.0F, 90.0F);
+			mc.player.rotationYaw = camYaw;
+			mc.player.rotationPitch = camPitch;
+			mc.player.prevRotationYaw = camYaw;
+			mc.player.prevRotationPitch = camPitch;
+			mc.player.rotationYawHead = camYaw;
+			mc.player.prevRotationYawHead = camYaw;
+			mc.player.renderYawOffset = camYaw;
+			mc.player.prevRenderYawOffset = camYaw;
+		}
+		
+		this.targetOffsetX = Config.CLIENT.getOffsetX();
+		this.targetOffsetY = Config.CLIENT.getOffsetY();
+		this.targetOffsetZ = Config.CLIENT.getOffsetZ();
+		this.offsetX = this.targetOffsetX;
+		this.offsetY = this.targetOffsetY;
+		this.offsetZ = this.targetOffsetZ;
+		this.lastOffsetX = this.offsetX;
+		this.lastOffsetY = this.offsetY;
+		this.lastOffsetZ = this.offsetZ;
 	}
 	
 	public boolean isTransitioningToFirstPerson()

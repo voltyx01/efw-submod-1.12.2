@@ -37,90 +37,161 @@ public class VisualEffectsHandler {
     // Сглаженные значения для интерполяции (lerp) — исключают резкие скачки
     private static float smoothShake      = 0f; // 0..1
     private static float smoothVignette   = 0f; // 0..1
-    private static float smoothBlackout   = 0f; // 0..1
+    // Трейлы / шлейф изображения (Motion Blur / Ghosting Accumulation)
+    private static net.minecraft.client.shader.Framebuffer trailFbo = null;
+    private static float smoothTrailAlpha = 0f;
 
     public static void reset() {
         smoothShake = 0f;
         smoothVignette = 0f;
-        smoothBlackout = 0f;
+        smoothTrailAlpha = 0f;
     }
 
     public static void updateCameraOverhaul(float bpm) {
         // Ничего (legacy hook, оставлен для совместимости)
     }
 
-    /** Тряска камеры (pitch/yaw/roll) — только на 120+ */
+    /**
+     * Рендер шлейфа (Motion Blur) в конце кадра мира.
+     * Запоминает предыдущий кадр мира и плавно накладывает поверх нового при высоком BPM.
+     */
     @SubscribeEvent
-    public void onCameraSetup(EntityViewRenderEvent.CameraSetup event) {
-        if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) return;
+    public void onRenderWorldLast(net.minecraftforge.client.event.RenderWorldLastEvent event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player == null || mc.world == null) return;
+
         float bpm = HeartbeatManager.currentBPM;
+        boolean hasResistance = com.voltyx.mwccf.doll.SayaDollManager.hasBpmResistance(mc.player);
 
-        // Целевое значение тряски
-        float targetShake = 0f;
-        if (bpm >= 120f) {
-            targetShake = (bpm - 120f) / 60f; // 0 при 120, 1 при 180
+        // Целевая альфа шлейфа (начинается со 155 BPM, плавно нарастает до ~0.65 при 180 BPM)
+        float targetTrail = 0f;
+        if (!hasResistance && bpm >= 155f) {
+            targetTrail = Math.min(0.68f, (bpm - 155f) / 25f * 0.68f);
         }
-        // Плавный lerp 20%/кадр ≈ ~0.5 сек до полного значения
-        smoothShake = lerp(smoothShake, targetShake, 0.06f);
+        smoothTrailAlpha = lerp(smoothTrailAlpha, targetTrail, 0.08f);
 
-        if (smoothShake > 0.001f) {
-            float amp = smoothShake * 0.6f; // макс ±0.6° при 180 BPM
-            event.setPitch(event.getPitch() + (rand.nextFloat() - 0.5f) * amp);
-            event.setYaw  (event.getYaw()   + (rand.nextFloat() - 0.5f) * amp);
-            event.setRoll (event.getRoll()  + (rand.nextFloat() - 0.5f) * amp * 0.5f);
+        if (smoothTrailAlpha > 0.01f) {
+            renderAndCaptureTrail(mc, smoothTrailAlpha);
+        } else if (trailFbo != null) {
+            // Если эффект закончился, просто очищаем FBO, чтобы не зависал старый кадр
+            trailFbo.framebufferClear();
         }
     }
 
-    /** Тряска рук — только при 150+ */
-    @SubscribeEvent
-    public void onRenderHand(RenderHandEvent event) {
-        if (smoothShake < 0.3f) return; // под 150 не трясём руки
+    private static void renderAndCaptureTrail(Minecraft mc, float alpha) {
+        int w = mc.displayWidth;
+        int h = mc.displayHeight;
+        if (w <= 0 || h <= 0) return;
 
-        float amp = (smoothShake - 0.3f) / 0.7f; // 0..1 только на 150..180
-        amp = amp * amp * 0.06f;                  // квадратичная кривая, макс 0.06
+        if (trailFbo == null) {
+            trailFbo = new net.minecraft.client.shader.Framebuffer(w, h, false);
+            trailFbo.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
+            trailFbo.setFramebufferFilter(org.lwjgl.opengl.GL11.GL_LINEAR);
+        } else if (trailFbo.framebufferWidth != w || trailFbo.framebufferHeight != h) {
+            trailFbo.createBindFramebuffer(w, h);
+            trailFbo.setFramebufferFilter(org.lwjgl.opengl.GL11.GL_LINEAR);
+        }
 
-        // Translate остаётся в матрице — EntityRenderer сбрасывает её после рендера руки.
-        // RenderSpecificHandEvent (V-режим) имеет собственную матрицу и не затрагивается.
-        GlStateManager.translate(
-            (rand.nextFloat() - 0.5f) * amp,
-            (rand.nextFloat() - 0.5f) * amp,
-            (rand.nextFloat() - 0.5f) * amp * 0.3f
+        // 1. Отрисовываем предыдущий сохраненный кадр поверх текущего экрана
+        if (trailFbo.framebufferTexture >= 0) {
+            GlStateManager.pushMatrix();
+            GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_PROJECTION);
+            GlStateManager.pushMatrix();
+            GlStateManager.loadIdentity();
+            GlStateManager.ortho(0.0D, 1.0D, 1.0D, 0.0D, -100.0D, 100.0D);
+            GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_MODELVIEW);
+            GlStateManager.pushMatrix();
+            GlStateManager.loadIdentity();
+
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO
+            );
+            GlStateManager.disableDepth();
+            GlStateManager.depthMask(false);
+            GlStateManager.enableTexture2D();
+            GlStateManager.bindTexture(trailFbo.framebufferTexture);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
+
+            Tessellator tess = Tessellator.getInstance();
+            BufferBuilder buf = tess.getBuffer();
+            buf.begin(7, DefaultVertexFormats.POSITION_TEX);
+            buf.pos(0.0D, 1.0D, 0.0D).tex(0.0D, 0.0D).endVertex();
+            buf.pos(1.0D, 1.0D, 0.0D).tex(1.0D, 0.0D).endVertex();
+            buf.pos(1.0D, 0.0D, 0.0D).tex(1.0D, 1.0D).endVertex();
+            buf.pos(0.0D, 0.0D, 0.0D).tex(0.0D, 1.0D).endVertex();
+            tess.draw();
+
+            GlStateManager.depthMask(true);
+            GlStateManager.enableDepth();
+            GlStateManager.disableBlend();
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+            GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_PROJECTION);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_MODELVIEW);
+            GlStateManager.popMatrix();
+            GlStateManager.popMatrix();
+        }
+
+        // 2. Копируем получившийся кадр (текущий мир + шлейф) в FBO для следующего кадра
+        GlStateManager.bindTexture(trailFbo.framebufferTexture);
+        org.lwjgl.opengl.GL11.glCopyTexSubImage2D(
+            org.lwjgl.opengl.GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, w, h
         );
+        GlStateManager.bindTexture(0);
     }
 
-    /** Виньетка + блэкаут поверх HUD */
+    /** Виньетка поверх HUD (блэкаут полностью убран в пользу шлейфа) */
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Pre event) {
         if (event.getType() != RenderGameOverlayEvent.ElementType.ALL) return;
 
         float bpm = HeartbeatManager.currentBPM;
 
-        // Целевые значения
+        // Целевые значения для мягкой виньетки
         float targetVignette = 0f;
-        float targetBlackout = 0f;
 
-        if (bpm >= 165f) {
-            targetVignette = Math.min(1f, (bpm - 165f) / 15f); // 165→0, 180→1
-            targetBlackout = 0f; // blackout приходит чуть позже
+        Minecraft mc = Minecraft.getMinecraft();
+        boolean hasResistance = mc.player != null && com.voltyx.mwccf.doll.SayaDollManager.hasBpmResistance(mc.player);
+
+        if (hasResistance) {
+            targetVignette = 0f;
+            smoothVignette = 0f;
+        } else {
+            // Мягкая виньетка по краям при 165+ BPM (максимум до 0.65, без полного перекрытия)
+            if (bpm >= 165f) {
+                targetVignette = Math.min(0.65f, (bpm - 165f) / 15f * 0.65f);
+            }
+            float vignetteIn = (bpm >= 170f) ? 0.08f : 0.03f;
+            smoothVignette = lerp(smoothVignette, targetVignette, vignetteIn);
         }
-        if (bpm >= 170f) {
-            targetBlackout = Math.min(0.9f, (bpm - 170f) / 5f * 0.9f);  // 170→0, 175→0.9
-        }
-
-        // Плавный lerp: вигнетка быстрее появляется, медленнее исчезает
-        float vignetteIn  = bpm >= 170f ? 0.08f : 0.03f;
-        float blackoutIn  = bpm >= 170f ? 0.05f : 0.015f; // blackout появляется быстро, исчезает медленно
-
-        smoothVignette = lerp(smoothVignette, targetVignette, vignetteIn);
-        smoothBlackout = lerp(smoothBlackout, targetBlackout, blackoutIn);
 
         ScaledResolution res = event.getResolution();
 
         if (smoothVignette > 0.001f) {
             renderVignette(res, smoothVignette);
         }
-        if (smoothBlackout > 0.001f) {
-            renderBlackout(res, smoothBlackout); // Линейная прозрачность
+
+        // Рендер потемнения куклы и скрытие интерфейса
+        float dollDarkAlpha = com.voltyx.mwccf.doll.SayaDollManager.getDarknessAlpha();
+        if (dollDarkAlpha > 0.001f) {
+            boolean thirdPerson = mc.gameSettings.thirdPersonView != 0;
+            boolean dollFinished = !com.voltyx.mwccf.render.doll.DollRenderer.isDollActive();
+            if (thirdPerson || dollFinished) {
+                renderDollActivationDarkness(dollDarkAlpha);
+            }
+
+            if (com.voltyx.mwccf.doll.SayaDollManager.isActivating(mc.player)) {
+                // Полностью отменяем весь игровой интерфейс во время фазы удержания куклы
+                event.setCanceled(true);
+
+                // И отображаем только персональную реплику куклы ("Прости.")
+                com.voltyx.mwccf.speech.client.SpeechClientEvents.renderPersonalReplica(res, mc);
+            }
         }
     }
 
@@ -129,11 +200,39 @@ public class VisualEffectsHandler {
     // =====================================================================
 
     /**
+     * Затемнение мира при активации куклы Сайи (плавное потемнение).
+     */
+    public static void renderDollActivationDarkness(float alpha) {
+        if (alpha <= 0.001f) return;
+        Minecraft mc = Minecraft.getMinecraft();
+        ScaledResolution res = new ScaledResolution(mc);
+
+        GlStateManager.pushMatrix();
+        GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_PROJECTION);
+        GlStateManager.pushMatrix();
+        GlStateManager.loadIdentity();
+        GlStateManager.ortho(0.0D, res.getScaledWidth_double(), res.getScaledHeight_double(), 0.0D, 1000.0D, 3000.0D);
+        GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_MODELVIEW);
+        GlStateManager.pushMatrix();
+        GlStateManager.loadIdentity();
+        GlStateManager.translate(0.0F, 0.0F, -2000.0F);
+
+        renderVignette(res, Math.min(1.0f, alpha * 1.15f));
+        renderBlackout(res, Math.min(0.92f, alpha * 0.92f));
+
+        GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_PROJECTION);
+        GlStateManager.popMatrix();
+        GlStateManager.matrixMode(org.lwjgl.opengl.GL11.GL_MODELVIEW);
+        GlStateManager.popMatrix();
+        GlStateManager.popMatrix();
+    }
+
+    /**
      * Виньетка: затемняет края экрана.
      * Использует ванильную текстуру vignette.png + blendmode ONE_MINUS_SRC_COLOR.
      * opacity: 0=нет эффекта, 1=максимально тёмные края.
      */
-    private static void renderVignette(ScaledResolution res, float opacity) {
+    public static void renderVignette(ScaledResolution res, float opacity) {
         Minecraft mc = Minecraft.getMinecraft();
 
         GlStateManager.enableBlend();

@@ -40,7 +40,18 @@ public class DollItemStackRenderer extends TileEntityItemStackRenderer {
         GlStateManager.translate(0.0F, guiOffsetY, 0.0F);
 
         mc.getTextureManager().bindTexture(TEX_LOC);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        boolean ready = mc.player != null && com.voltyx.mwccf.doll.SayaDollManager.isReady(mc.player);
+        float redG = 1.0F;
+        float redB = 1.0F;
+        if (ready) {
+            long now = System.currentTimeMillis();
+            float pulse = (float) (Math.sin((now % 800L) / 800.0 * Math.PI * 2.0) * 0.5 + 0.5);
+            redG = 1.0F - pulse * 0.85F;
+            redB = 1.0F - pulse * 0.85F;
+        }
+
+        GlStateManager.color(1.0F, redG, redB, 1.0F);
         GlStateManager.enableBlend();
         GlStateManager.enableAlpha();
         GlStateManager.alphaFunc(516, 0.1F);
@@ -55,6 +66,16 @@ public class DollItemStackRenderer extends TileEntityItemStackRenderer {
         // Поза куклы (аккуратная поза удержания)
         model.applyAnimation("animation", 0.625F);
         model.render(0.0625F);
+
+        if (ready) {
+            // Additive crimson glow pass for vibrant blinking
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+            float glowAlpha = (1.0F - redG) * 0.7F;
+            GlStateManager.color(1.0F, 0.15F, 0.15F, glowAlpha);
+            model.render(0.0625F);
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        }
 
         // Восстанавливаем стандартный обход и состояние OpenGL для GUI и рендера мира
         org.lwjgl.opengl.GL11.glFrontFace(org.lwjgl.opengl.GL11.GL_CCW);

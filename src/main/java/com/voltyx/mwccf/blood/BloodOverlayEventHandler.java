@@ -60,21 +60,6 @@ public class BloodOverlayEventHandler {
 
         boolean isMwcRanged = isMwcRangedDamage(source, attacker);
 
-        // --- Механика «Эффект Травмы» (плюшевая кукла Сайи) ---
-        // Пока игрушка активна (в инвентаре или слоте Baubles), чем сильнее игрок покрыт кровью,
-        // тем выше прибавка к наносимому урону (максимум +30%).
-        // На огнестрельное оружие MWC не распространяется!
-        if (attacker != null && !isMwcRanged) {
-            if (efw.item.ItemDoll.hasDoll(attacker)) {
-                float blood = BloodManager.getBloodLevel(attackerId);
-                if (blood > 0.0f) {
-                    float bonus = Math.min(0.30f, 0.30f * blood);
-                    amount = amount * (1.0f + bonus);
-                    event.setAmount(amount);
-                }
-            }
-        }
-
         // Determine if this is a melee-like hit (excludes projectiles, explosions, magic, fire, and MWC guns)
         boolean isMelee = !isMwcRanged
                 && !source.isProjectile()
@@ -128,7 +113,7 @@ public class BloodOverlayEventHandler {
     /**
      * Checks if the damage was caused by an MWC firearm, bullet, or grenade.
      */
-    private static boolean isMwcRangedDamage(DamageSource source, EntityPlayer attacker) {
+    public static boolean isMwcRangedDamage(DamageSource source, EntityPlayer attacker) {
         if (source == null) return false;
 
         String type = source.getDamageType();

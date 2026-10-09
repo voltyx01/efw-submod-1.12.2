@@ -42,6 +42,12 @@ public class BloodManager {
         bloodLevels.merge(id, amount, (old, delta) -> Math.min(1.0f, old + delta));
     }
 
+    /** Sets blood to a specific level in [0, 1]. */
+    public static void setBloodLevel(UUID id, float level) {
+        lastGainTimes.put(id, System.currentTimeMillis());
+        bloodLevels.put(id, Math.max(0.0f, Math.min(1.0f, level)));
+    }
+
     /**
      * Safely applies melee attack blood gain with a 150ms debounce window
      * to prevent double counting if both AttackEntityEvent and LivingHurtEvent fire.

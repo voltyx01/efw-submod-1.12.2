@@ -71,17 +71,54 @@ public class MixinItemRenderer {
         com.voltyx.mwccf.blood.BloodTextureManager.clearRenderingPlayer();
     }
 
+    @Shadow
+    private ItemStack itemStackMainHand;
+    @Shadow
+    private ItemStack itemStackOffHand;
+
     /**
      * Держим прогресс экипировки рук на нуле, пока кукла в руках или прячется.
      * Когда кукла полностью скрылась за экраном, обычная рука/предмет плавно поднимется снизу.
+     *
+     * Также предотвращаем постоянное дергание/опускание оружия вниз от первого лица,
+     * когда на сервере или клиенте тикает NBT горящего оружия:
+     * если предмет тот же самый (тот же Item, то же повреждение, слот не менялся),
+     * мы синхронизируем сохраненный стек в ItemRenderer ДО проверки vanilla areItemStacksEqual,
+     * чтобы ванильный код не считал, что в руку взят совершенно новый предмет,
+     * но при этом ванильная анимация удара/свинга и смена слота продолжают нормально работать!
      */
+    @Inject(method = "updateEquippedItem", at = @At("HEAD"))
+    private void onUpdateEquippedItemHead(CallbackInfo ci) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player == null) return;
+
+        ItemStack heldMain = mc.player.getHeldItemMainhand();
+        if (isSameFireWeapon(this.itemStackMainHand, heldMain)) {
+            this.itemStackMainHand = heldMain;
+        }
+
+        ItemStack heldOff = mc.player.getHeldItemOffhand();
+        if (isSameFireWeapon(this.itemStackOffHand, heldOff)) {
+            this.itemStackOffHand = heldOff;
+        }
+    }
+
     @Inject(method = "updateEquippedItem", at = @At("RETURN"))
-    private void onUpdateEquippedItem(CallbackInfo ci) {
+    private void onUpdateEquippedItemReturn(CallbackInfo ci) {
         if (com.voltyx.mwccf.render.doll.DollRenderer.isDollActive()) {
             this.equippedProgressMainHand = 0.0F;
             this.prevEquippedProgressMainHand = 0.0F;
             this.equippedProgressOffHand = 0.0F;
             this.prevEquippedProgressOffHand = 0.0F;
         }
+    }
+
+    private static boolean isSameFireWeapon(ItemStack oldStack, ItemStack newStack) {
+        if (oldStack == null || newStack == null) return false;
+        if (oldStack.isEmpty() || newStack.isEmpty()) return false;
+        if (oldStack.getItem() != newStack.getItem()) return false;
+        if (oldStack.getItemDamage() != newStack.getItemDamage()) return false;
+        return com.voltyx.mwccf.fireweapon.FireWeaponHelper.isWrapped(oldStack)
+                || com.voltyx.mwccf.fireweapon.FireWeaponHelper.isWrapped(newStack);
     }
 }

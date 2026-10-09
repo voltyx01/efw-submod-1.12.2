@@ -6,10 +6,14 @@ import net.minecraft.item.Item;
 public class ItemCloth extends Item {
 
     public ItemCloth() {
+        this("cloth");
+    }
+
+    public ItemCloth(String name) {
         super();
         setMaxStackSize(64);
-        setTranslationKey("mcore.cloth");
-        setRegistryName("mwccf", "cloth");
+        setTranslationKey("mcore." + name);
+        setRegistryName("mwccf", name);
         setCreativeTab(CreativeTabs.MATERIALS);
     }
 }

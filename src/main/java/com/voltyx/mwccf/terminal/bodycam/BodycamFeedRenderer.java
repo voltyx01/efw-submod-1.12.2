@@ -84,47 +84,7 @@ public class BodycamFeedRenderer {
         }
     }
 
-    /**
-     * Forces the correct sky/fog colour during the bodycam FBO render.
-     *
-     * Third-party mods (BoP, Dynamic Surroundings, etc.) subscribe to FogColors and
-     * often check instanceof EntityPlayerSP before applying their colour. Because our
-     * BodycamCameraEntity is only an EntityLivingBase those handlers skip the
-     * colour assignment, leaving fogColor at 0,0,0 → black horizon.
-     *
-     * By subscribing with HIGHEST priority we run first and seed the event with the
-     * correct sky colour; other handlers can then adjust it, but at least start from
-     * a non-black baseline.
-     */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onFogColors(EntityViewRenderEvent.FogColors event) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.world == null) return;
 
-        boolean mirror = efw.util.SubpassRenderState.isMirrorRendering;
-        Entity rve = mc.getRenderViewEntity();
-        if (!mirror && rve != null && rve.getClass().getName().contains("EntityMirror")) {
-            mirror = true;
-        }
-
-        if (!isRendering && !mirror) return;
-
-        Entity lookupEntity = (isRendering && currentCarrier != null) ? currentCarrier : mc.player;
-        if (lookupEntity == null) lookupEntity = rve;
-        if (lookupEntity == null) return;
-
-        Vec3d skyColor = mc.world.getSkyColor(lookupEntity, (float) event.getRenderPartialTicks());
-        if (skyColor.x > 0.001 || skyColor.y > 0.001 || skyColor.z > 0.001) {
-            event.setRed((float) skyColor.x);
-            event.setGreen((float) skyColor.y);
-            event.setBlue((float) skyColor.z);
-        } else if (mc.player != null) {
-            Vec3d playerSky = mc.world.getSkyColor(mc.player, (float) event.getRenderPartialTicks());
-            event.setRed((float) playerSky.x);
-            event.setGreen((float) playerSky.y);
-            event.setBlue((float) playerSky.z);
-        }
-    }
 
     public static class TacticalRect {
         public final float left;
@@ -165,7 +125,7 @@ public class BodycamFeedRenderer {
 
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.world == null || mc.player == null) return;
-        if (!mc.inGameHasFocus) return;
+        if (mc.isGamePaused()) return;
 
         TerminalSession session = TerminalSession.getInstance();
         if (session.getStage() != TerminalSession.Stage.BODYCAM_VIEW) {
@@ -373,7 +333,16 @@ public class BodycamFeedRenderer {
             mc.gameSettings.fovSetting = camFov;
             mc.setRenderViewEntity(dummyCamera);
 
-            GlStateManager.clearColor(0.02F, 0.04F, 0.03F, 1.0F);
+            Vec3d skyVec = mc.world.getSkyColor(carrier, event.renderTickTime);
+            if (skyVec == null || (skyVec.x <= 0.001 && skyVec.y <= 0.001 && skyVec.z <= 0.001)) {
+                if (mc.player != null) {
+                    skyVec = mc.world.getSkyColor(mc.player, event.renderTickTime);
+                }
+            }
+            float clearR = (skyVec != null) ? (float) Math.max(0.02, skyVec.x) : 0.02F;
+            float clearG = (skyVec != null) ? (float) Math.max(0.04, skyVec.y) : 0.04F;
+            float clearB = (skyVec != null) ? (float) Math.max(0.03, skyVec.z) : 0.03F;
+            GlStateManager.clearColor(clearR, clearG, clearB, 1.0F);
             GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
             long finishTime = System.nanoTime() + 1000000000L / 60;

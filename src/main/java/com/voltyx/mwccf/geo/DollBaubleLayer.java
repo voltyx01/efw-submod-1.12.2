@@ -393,7 +393,18 @@ public class DollBaubleLayer implements LayerRenderer<AbstractClientPlayer> {
         model.currentSlot = EntityEquipmentSlot.CHEST;
 
         this.renderer.bindTexture(TEXTURE_LOCATION);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        boolean ready = com.voltyx.mwccf.doll.SayaDollManager.isReady(player);
+        if (ready) {
+            long now = System.currentTimeMillis();
+            float pulse = (float) (Math.sin((now % 800L) / 800.0 * Math.PI * 2.0) * 0.5 + 0.5);
+            float redG = 1.0F - pulse * 0.85F;
+            float redB = 1.0F - pulse * 0.85F;
+            GlStateManager.color(1.0F, redG, redB, 1.0F);
+        } else {
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        }
+
         GlStateManager.enableAlpha();
         GlStateManager.enableCull();
 

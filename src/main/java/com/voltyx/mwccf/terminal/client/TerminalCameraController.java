@@ -38,7 +38,16 @@ public class TerminalCameraController {
 
     private static float targetPlayerYaw = 0.0f;
     private static float targetCameraYaw = 0.0f;
-    private static float targetPitch = 3.0f;
+    private static float targetPitch = 0.0f;
+
+    private static double normalX = 0.0;
+    private static double normalZ = 0.0;
+    private static double targetCenterX = 0.0;
+    private static double targetCenterY = 0.0;
+    private static double targetCenterZ = 0.0;
+
+    private static final double CAM_DIST = 0.55;
+    private static final double STAND_DIST = 0.70;
 
     private static double targetPlayerX = 0.0;
     private static double targetPlayerZ = 0.0;
@@ -67,21 +76,58 @@ public class TerminalCameraController {
         active = true;
         transitionProgress = 0.0f;
 
-        // In front of the terminal monitor
-        float standDist = 0.72f;
-        targetPlayerX = pos.getX() + 0.5 + facing.getXOffset() * standDist;
-        targetPlayerZ = pos.getZ() + 0.5 + facing.getZOffset() * standDist;
+        double cx = pos.getX() + 0.5;
+        double cy = pos.getY();
+        double cz = pos.getZ() + 0.5;
 
-        // Facing points into the room (away from the wall).
-        // The player looking AT the terminal must face towards the wall (facing.getOpposite()):
-        targetPlayerYaw = facing.getOpposite().getHorizontalAngle();
-        // In Minecraft Forge CameraSetup, camera yaw in OpenGL is (playerYaw + 180.0F).
-        // Therefore targetCameraYaw must be targetPlayerYaw + 180.0F to look directly at the terminal:
-        targetCameraYaw = MathHelper.wrapDegrees(targetPlayerYaw + 180.0F);
-        targetPitch = 0.0f; // Eye level centered directly at monitor screen
+        switch (facing) {
+            case NORTH:
+                normalX = 0.0;
+                normalZ = -1.0;
+                targetPlayerYaw = 0.0F;
+                targetCameraYaw = 180.0F;
+                break;
+            case SOUTH:
+                normalX = 0.0;
+                normalZ = 1.0;
+                targetPlayerYaw = 180.0F;
+                targetCameraYaw = 0.0F;
+                break;
+            case WEST:
+                normalX = -1.0;
+                normalZ = 0.0;
+                targetPlayerYaw = 270.0F;
+                targetCameraYaw = 90.0F;
+                break;
+            case EAST:
+                normalX = 1.0;
+                normalZ = 0.0;
+                targetPlayerYaw = 90.0F;
+                targetCameraYaw = 270.0F;
+                break;
+            default:
+                break;
+        }
+
+        // Center of the terminal screen / monitor:
+        // The display casing is mounted against the back wall, facing along (normalX, normalZ).
+        // Front surface of display is at: center - normal * (7.0 / 16.0)
+        double screenSurfaceOffset = 7.0 / 16.0;
+        targetCenterX = cx - normalX * screenSurfaceOffset;
+        targetCenterY = cy + (9.5 / 16.0); // Exact vertical center of terminal display screen
+        targetCenterZ = cz - normalZ * screenSurfaceOffset;
+
+        targetPitch = 0.0f; // Strictly horizontal, centered right at the terminal monitor
+
+        targetPlayerX = targetCenterX + normalX * STAND_DIST;
+        targetPlayerZ = targetCenterZ + normalZ * STAND_DIST;
 
         prevThirdPerson = mc.gameSettings.thirdPersonView;
-        mc.gameSettings.thirdPersonView = 0; // Force first person
+        try {
+            com.teamderpy.shouldersurfing.client.ShoulderInstance.getInstance().setFirstPersonImmediate();
+        } catch (Throwable ignored) {
+            mc.gameSettings.thirdPersonView = 0;
+        }
 
         lastFrameTime = System.nanoTime();
 
@@ -318,22 +364,9 @@ public class TerminalCameraController {
             double camY = entity.prevPosY + (entity.posY - entity.prevPosY) * partialTicks + entity.getEyeHeight();
             double camZ = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * partialTicks;
 
-            double cx = terminalPos.getX() + 0.5;
-            double cy = terminalPos.getY();
-            double cz = terminalPos.getZ() + 0.5;
-            double nx = terminalFacing.getXOffset();
-            double nz = terminalFacing.getZOffset();
-
-            // Center of screen monitor (at Y = 9.5 / 16.0, Z = 7 / 16.0)
-            double screenTargetX = cx + nx * (7.0 / 16.0);
-            double screenTargetY = cy + (9.5 / 16.0);
-            double screenTargetZ = cz + nz * (7.0 / 16.0);
-
-            // Exact safe-like camera approach distance directly in front of screen
-            double curDist = 0.40;
-            double desiredCamX = screenTargetX + nx * curDist;
-            double desiredCamY = screenTargetY;
-            double desiredCamZ = screenTargetZ + nz * curDist;
+            double desiredCamX = targetCenterX + normalX * CAM_DIST;
+            double desiredCamY = targetCenterY;
+            double desiredCamZ = targetCenterZ + normalZ * CAM_DIST;
 
             double deltaX = desiredCamX - camX;
             double deltaY = desiredCamY - camY;

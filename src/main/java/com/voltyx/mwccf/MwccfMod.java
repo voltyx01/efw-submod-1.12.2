@@ -79,6 +79,7 @@ public class MwccfMod {
 		// GameRegistry.registerTileEntity(TGSpawnerTileEnt.class, new
 		// ResourceLocation("mwccf", "tg_spawner"));
 		NetworkRegistry.INSTANCE.registerGuiHandler(this, new com.voltyx.mwccf.furniture.client.gui.FurnitureGuiHandler());
+		com.voltyx.mwccf.speech.SpeechConfig.init(event.getModConfigurationDirectory());
 		elements.preInit(event);
 		MinecraftForge.EVENT_BUS.register(elements);
 		elements.getElements().forEach(element -> element.preInit(event));
@@ -121,7 +122,16 @@ public class MwccfMod {
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketRequestBodycamList.Handler.class, com.voltyx.mwccf.terminal.network.PacketRequestBodycamList.class, 31, Side.SERVER);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.terminal.network.PacketResponseBodycamList.Handler.class, com.voltyx.mwccf.terminal.network.PacketResponseBodycamList.class, 32, Side.CLIENT);
 		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.network.PacketOpenInspect.Handler.class, com.voltyx.mwccf.network.PacketOpenInspect.class, 33, Side.CLIENT);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.fireweapon.network.PacketFireWeaponAction.Handler.class, com.voltyx.mwccf.fireweapon.network.PacketFireWeaponAction.class, 34, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.fireweapon.network.PacketSmolderingSync.Handler.class, com.voltyx.mwccf.fireweapon.network.PacketSmolderingSync.class, 35, Side.CLIENT);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.speech.network.PacketPublicSpeech.Handler.class, com.voltyx.mwccf.speech.network.PacketPublicSpeech.class, 36, Side.CLIENT);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.speech.network.PacketPersonalSpeech.Handler.class, com.voltyx.mwccf.speech.network.PacketPersonalSpeech.class, 37, Side.CLIENT);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.doll.network.PacketDollActivate.Handler.class, com.voltyx.mwccf.doll.network.PacketDollActivate.class, 38, Side.SERVER);
+		PACKET_HANDLER.registerMessage(com.voltyx.mwccf.doll.network.PacketDollBuffSync.Handler.class, com.voltyx.mwccf.doll.network.PacketDollBuffSync.class, 39, Side.CLIENT);
 
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.fireweapon.FireWeaponActionHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.fireweapon.FireWeaponCombatHandler());
+		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.speech.SpeechServerHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.zone.QuestZoneEventHandler());
 		MinecraftForge.EVENT_BUS.register(new com.voltyx.mwccf.armor.SurvivalInstinctArmorHandler());
 
@@ -254,6 +264,10 @@ public class MwccfMod {
 				com.voltyx.mwccf.mcore.MCoreItems.TITANIUM_SHEET);
 		net.minecraftforge.oredict.OreDictionary.registerOre("oreTitanium",
 				com.voltyx.mwccf.mcore.MCoreBlocks.DEEPSLATE_TITANIUM_ORE);
+		net.minecraftforge.oredict.OreDictionary.registerOre("alcohol", com.voltyx.mwccf.si.SIItems.BEER);
+		net.minecraftforge.oredict.OreDictionary.registerOre("alcohol", com.voltyx.mwccf.si.SIItems.WINE);
+		net.minecraftforge.oredict.OreDictionary.registerOre("alcohol", com.voltyx.mwccf.si.SIItems.WHISKEY);
+		net.minecraftforge.oredict.OreDictionary.registerOre("alcohol", com.voltyx.mwccf.si.SIItems.TEQUILA);
 
 		net.minecraftforge.fml.common.registry.GameRegistry.addSmelting(com.voltyx.mwccf.mcore.MCoreItems.STEEL_SCRAP,
 				new net.minecraft.item.ItemStack(com.voltyx.mwccf.mcore.MCoreItems.STEEL_INGOT), 0.1F);
@@ -290,6 +304,8 @@ public class MwccfMod {
 		// Регистрируем команды
 		event.registerServerCommand(new CommandReloadConfig());
 		event.registerServerCommand(new CommandDumpChests());
+		event.registerServerCommand(new com.voltyx.mwccf.speech.SpeechTestCommand());
+		event.registerServerCommand(new com.voltyx.mwccf.blood.CommandBloodMax());
 	}
 
 	@SubscribeEvent
@@ -364,6 +380,7 @@ public class MwccfMod {
 		event.getRegistry().registerAll(elements.getPotions().stream().map(Supplier::get).toArray(Potion[]::new));
 		event.getRegistry().register(com.voltyx.mwccf.dash.PotionEnergyBoost.INSTANCE);
 		event.getRegistry().register(com.voltyx.mwccf.potion.PotionAdrenalineEffect.INSTANCE);
+		event.getRegistry().register(com.voltyx.mwccf.potion.PotionSayaBuff.INSTANCE);
 		event.getRegistry().register(com.voltyx.mwccf.si.PotionBleeding.INSTANCE);
 	}
 

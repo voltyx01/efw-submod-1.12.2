@@ -353,7 +353,7 @@ public class ClientEventHandler
 	@SubscribeEvent
 	public void onCameraSetup(EntityViewRenderEvent.CameraSetup event)
 	{
-		if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()) return;
+		if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering() || efw.util.SubpassRenderState.isMirrorRendering) return;
 		ShoulderInstance instance = ShoulderInstance.getInstance();
 		if (instance.doShoulderSurfing()) {
 			ShoulderRenderer renderer = ShoulderRenderer.getInstance();

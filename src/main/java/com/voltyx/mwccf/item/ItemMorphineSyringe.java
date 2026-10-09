@@ -3,6 +3,7 @@ package com.voltyx.mwccf.item;
 import ichttt.mods.firstaid.api.CapabilityExtendedHealthSystem;
 import ichttt.mods.firstaid.api.damagesystem.AbstractPlayerDamageModel;
 import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -84,7 +85,7 @@ public class ItemMorphineSyringe extends Item {
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-        tooltip.add(TextFormatting.GREEN + "Hold RMB for 1 second to use");
-        tooltip.add(TextFormatting.GRAY + "Suppresses pain and nullifies fracture debuffs.");
+        tooltip.add(TextFormatting.GREEN + I18n.format("tooltip.mwccf.medical.hold_rmb", 1));
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.mwccf.medical.morphine_effect"));
     }
 }

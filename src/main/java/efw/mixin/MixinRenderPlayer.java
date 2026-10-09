@@ -75,6 +75,11 @@ public class MixinRenderPlayer {
 
     @Inject(method = "setModelVisibilities(Lnet/minecraft/client/entity/AbstractClientPlayer;)V", at = @At("RETURN"))
     private void efw$showOnlyFirstPersonAttackArms(AbstractClientPlayer player, CallbackInfo ci) {
+        if (efw.util.RenderContext.isBlinkConfiguring) {
+            ModelPlayer model = ((RenderPlayer) (Object) this).getMainModel();
+            model.bipedHeadwear.showModel = false;
+        }
+
         if (com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.isRendering()
                 && player == com.voltyx.mwccf.terminal.bodycam.BodycamFeedRenderer.getCurrentCarrier()) {
             ModelPlayer model = ((RenderPlayer) (Object) this).getMainModel();

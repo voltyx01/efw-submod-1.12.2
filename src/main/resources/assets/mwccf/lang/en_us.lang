@@ -1252,7 +1252,8 @@ item.mwccf.doll.name=Saya's Plush Doll
 tooltip.mwccf.doll.desc=A worn-out plush toy. Someone's small hand held onto it tighter than anything else.
 tooltip.mwccf.doll.trauma_shift=§cTrauma Effect §8(hold Shift to view)
 tooltip.mwccf.doll.trauma_title=§cTrauma Effect:
-tooltip.mwccf.doll.trauma_desc=§7While the toy is with you, each layer of blood increases your damage by up to §c+30%%§7. Does not affect firearms.
+tooltip.mwccf.doll.trauma_desc=§7When body is covered in blood to maximum, take doll into hands to awaken it: surges BPM, enters trauma frenzy for 15s (+50%% melee damage, faster MWC firearm reload). Melee kills extend by +3s, firearm kills by +2s.
+speech.mwccf.doll.sorry=I'm sorry
 inspect.doll.desc=A worn-out plush toy. Someone's small hand held onto it tighter than anything else.
 inspect.doll.lore="Saya never let go of it. Never."
 
@@ -1352,6 +1353,44 @@ item.mwccf.sickle.name=Sickle
 item.mwccf.swat_shield.name=SWAT Riot Shield
 item.mwccf.stop_sing_shield.name=Stop Sign Shield
 item.mwccf.nailgun.name=Nailgun
+item.mwccf.empty_bottle.name=Empty Bottle
+item.mwccf.beer.name=Beer
+item.mwccf.wine.name=Wine
+item.mwccf.whiskey.name=Whiskey
+item.mwccf.tequila.name=Tequila
+item.mwccf.flaming_cloth.name=Self-Igniting Cloth
+
+tooltip.mwccf.item_effect=Item Effect:
+tooltip.mwccf.beer_effect=Nausea I for 8 seconds
+tooltip.mwccf.wine_effect=Regeneration I for 30 seconds and Nausea I for 8 seconds
+tooltip.mwccf.whiskey_effect=Absorption II for 60 seconds and Nausea I for 8 seconds
+tooltip.mwccf.tequila_effect=Strength I for 30 seconds and Nausea II for 8 seconds
+tooltip.mwccf.fireweapon.burning=§6[ §eBurning §7(+%s fire damage) §6]
+tooltip.mwccf.fireweapon.soaked=§6[ §cFuel-soaked §7(+%s fire damage) §6]
+tooltip.mwccf.fireweapon.cloth_percent=§f%s%%
+tooltip.mwccf.fireweapon.timer=§e%s:%02d
+tooltip.mwccf.fireweapon.charred=§8[ Charred cloth §7]
+tooltip.mwccf.fireweapon.soaked_ready=§6[ §cSoaked with fuel §6]
+tooltip.mwccf.fireweapon.wrapped_percent=§7[ §fCloth wrapped §8(%s%%) §7]
+tooltip.mwccf.fireweapon.wrapped=§7[ §fCloth wrapped §7]
+tooltip.mwccf.fireweapon.hint=§eIgnition §7[Shift]
+tooltip.mwccf.fireweapon.instructions=§7Wrap some weapons with cloth and ignite it using flint and steel.
+tooltip.mwccf.fireweapon.enhancers=§7Enhancers: §awhiskey, tequila, gasoline
+tooltip.mwccf.fireweapon.cloth_hint=§7Right-click a weapon to wrap it in cloth
+tooltip.mwccf.fireweapon.cloth_instructions=§7Some weapons can be wrapped in this cloth and ignited with flint and steel.
+tooltip.mwccf.fireweapon.alcohol_hint=§7Right-click a cloth-wrapped weapon to prepare enhanced ignition
+tooltip.mwccf.fireweapon.alcohol_instructions=§7After soaking, ignite the cloth with flint and steel: §a+5 fire damage and 2 damage per second for 5 seconds.
+tooltip.mwccf.fireweapon.flaming_cloth=Right-click a weapon to wrap and ignite it
+tooltip.mwccf.medical.hold_rmb=Hold RMB to use (%d sec)
+tooltip.mwccf.medical.uses_left=Uses left: %d
+tooltip.mwccf.medical.morphine_effect=Suppresses pain and nullifies fracture debuffs.
+tooltip.mwccf.medical.adrenaline_effect=Grants immunity to some negative effects and boosts physical stats.
+
+gui.mwccf.speech.button=⋯
+gui.mwccf.speech.history=Nearby messages
+gui.mwccf.speech.empty=No nearby messages yet
+gui.mwccf.speech.input=Type a message...
+gui.mwccf.speech.test_personal=Private speech is working.
 
 # SI Items (survival_instinct namespace fallback)
 item.survival_instinct.american_fist.name=Brass Knuckles
@@ -1543,6 +1582,7 @@ tile.survival_instinct.aluminium_block.name=Aluminium Block
 effect.survival_instinct.bleeding=Bleeding
 effect.survival_instinct.dash_on_cooldown=Dash On Cooldown
 effect.mwccf.bleeding=Bleeding
+effect.mwccf.saya_buff=Saya's Blessing
 
 # Better Combat Tooltips
 tooltip.bettercombat.two_handed=Two-Handed

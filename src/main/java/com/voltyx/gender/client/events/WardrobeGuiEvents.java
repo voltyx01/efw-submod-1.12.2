@@ -10,10 +10,22 @@ public class WardrobeGuiEvents {
 
     @SubscribeEvent
     public void guiPostInit(GuiScreenEvent.InitGuiEvent.Post event) {
-        if (event.getGui() instanceof GuiInventory) {
+        if (event.getGui() instanceof GuiInventory || isBaublesExpandedGui(event.getGui())) {
             GuiContainer gui = (GuiContainer) event.getGui();
             event.getButtonList().add(new GuiWardrobeButton(56, gui, 27, 9, 10, 10));
         }
+    }
+
+    private static boolean isBaublesExpandedGui(Object gui) {
+        if (gui == null) return false;
+        Class<?> clazz = gui.getClass();
+        while (clazz != null && clazz != Object.class) {
+            if ("baubles.client.gui.GuiPlayerExpanded".equals(clazz.getName())) {
+                return true;
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return false;
     }
 
     @SubscribeEvent
